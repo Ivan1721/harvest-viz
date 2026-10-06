@@ -42,18 +42,19 @@ function parseLog(text, n) {
       const h = /from h(\d+)/.exec(body), a = /box_product=([\d.]+)/.exec(body), p = /robot=\[(-?[\d.]+)\s+(-?[\d.]+)\]/.exec(body)
       if (h && p) { key.push({ idx, x: +p[1], y: +p[2] }); picks.push({ idx, h: +h[1], amount: a ? +a[1] : 0 }) }
     } else if (/Robot detected BOX/.test(body)) {
-      const h = /from h(\d+)/.exec(body), b = /box=\[(-?[\d.]+)\s+(-?[\d.]+)\]/.exec(body)
-      if (h && b) boxes.push({ idx, h: +h[1], x: +b[1], y: +b[2], picked: n + 1 })
+      const h = /from h(\d+)/.exec(body)
+      const b = /box=\[(-?[\d.]+)\s+(-?[\d.]+)\]/.exec(body) || /at \[(-?[\d.]+)\s+(-?[\d.]+)\]/.exec(body)
+      if (h && b) boxes.push({ idx, h: +h[1], x: +b[1], y: +b[2], picked: n + 1, served: false })
     } else if (/reached CARGO ZONE/.test(body)) {
       const a = /unloading ([\d.]+)/.exec(body)
       key.push({ idx, x: CARGO.wp[0], y: CARGO.wp[1] })
       unloads.push({ idx, amount: a ? +a[1] : 0 })
     }
   })
-  // cada caja detectada se "recoge" en el siguiente pick del mismo trabajador
+  // cada pick cierra la detección pendiente más antigua del mismo trabajador (espera = pick - detección)
   picks.forEach((p) => {
-    const b = boxes.filter((x) => x.h === p.h && x.idx <= p.idx && x.picked > n).pop()
-    if (b) b.picked = p.idx
+    const b = boxes.find((x) => x.h === p.h && x.idx <= p.idx && !x.served)
+    if (b) { b.picked = p.idx; b.served = true }
   })
   key.sort((a, b) => a.idx - b.idx)
   const uniq = []

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import WorkloadScene, { play } from './WorkloadScene'
 import { buildRun, parseName, onboard, FLAG, DT } from './run'
+import { analyzeHRI, heatGradient, ZONES } from './hri'
 import { ACT_LABEL } from './spec'
 
 const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const ACT_COLOR = { ground: '#16a34a', ladder: '#8b5cf6', picker: '#ff8a1f' }
 const SAMPLE = 'HUMAN_ROBOT_12_ROW3_harv_mixed_RP0'
+const makeRun = (args) => { const r = buildRun(args); r.hri = analyzeHRI(r); return r }
 
 function Kpi({ icon, label, value, sub, tone }) {
   return (
@@ -51,6 +53,89 @@ function Stack({ run, w }) {
         {[1, 2, 3, 4, 5].filter((f) => counts[f]).map((f) => <span key={f}><i style={{ background: FLAG[f].color }} />{FLAG[f].label} {(counts[f] * DT).toFixed(0)} s</span>)}
       </div>
     </>
+  )
+}
+
+
+function Bar({ v, max, color }) {
+  return <span className="mbar"><i style={{ width: `${Math.min(100, (v / (max || 1)) * 100)}%`, background: color }} /></span>
+}
+
+function Analysis({ run, i, sel, seek, ov, setOv }) {
+  const [tab, setTab] = useState('carga')
+  const a = run.hri
+  const tabs = [['carga', 'Carga'], ...(a ? [['cortesia', 'Cortesía'], ['cesion', 'Cesión'], ['asign', 'Asignación']] : [])]
+  const nw = run.workers.length
+  return (
+    <div className="card chartcard">
+      <div className="tabs">
+        {tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+      </div>
+      {a && (
+        <div className="ovrow">
+          <label className={ov.zones ? 'on' : ''}><input type="checkbox" checked={ov.zones} onChange={(e) => setOv({ ...ov, zones: e.target.checked })} />Zonas de cortesía</label>
+          <label className={ov.intent ? 'on' : ''}><input type="checkbox" checked={ov.intent} onChange={(e) => setOv({ ...ov, intent: e.target.checked })} />Ruta anticipada</label>
+        </div>
+      )}
+      {tab === 'carga' && (
+        <>
+          <div className="muted small">Carga acumulada · kcal por trabajador</div>
+          <Chart run={run} i={i} sel={sel} />
+          <div className="legend"><span><i style={{ background: ACT_COLOR.ground }} />Suelo</span><span><i style={{ background: ACT_COLOR.ladder }} />Escalera</span><span><i style={{ background: ACT_COLOR.picker }} />Gancho</span></div>
+        </>
+      )}
+      {tab === 'cortesia' && a && (
+        <>
+          <div className="legend wrap">{ZONES.map((z) => <span key={z.key}><i style={{ background: z.color }} />{z.label} &lt; {z.r} m</span>)}</div>
+          <div className="row"><span>Distancia mínima en la corrida</span><b>{Math.min(...a.minD).toFixed(2)} m</b></div>
+          <div className="row"><span>Trabajadores con invasión íntima</span><b className={a.nIntimate ? 'warn' : 'good'}>{a.nIntimate} de {nw}</b></div>
+          <div className="row"><span>Distancia ahora (más cercano)</span><b>{a.minD[i].toFixed(2)} m · H{run.workers[a.minW[i]].h}</b></div>
+          <div className="muted small" style={{ marginTop: 6 }}>Tiempo dentro de la zona personal (&lt; 1,2 m)</div>
+          <div className="wl short">
+            {[...a.perWorker].sort((x, y) => y.tPersonal - x.tPersonal).map((w) => (
+              <div key={w.h} className="li" onClick={() => seek(null, w.h)}>
+                <b style={{ width: 28 }}>H{w.h}</b><Bar v={w.tPersonal} max={Math.max(...a.perWorker.map((q) => q.tPersonal))} color="#f59e0b" />
+                <span className="small" style={{ width: 104, textAlign: 'right' }}>{w.tPersonal.toFixed(0)} s · mín {w.minD.toFixed(1)} m</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {tab === 'cesion' && a && (
+        <>
+          <div className="row"><span>Encuentros (&lt; 1,5 m)</span><b>{a.encounters.length}</b></div>
+          <div className="row"><span>Con robot en movimiento y humano ocupado</span><b>{a.encounters.filter((e) => e.verdict === 'robot debe ceder').length}</b></div>
+          <div className="muted small" style={{ marginTop: 6 }}>Clic para saltar al instante del encuentro</div>
+          <div className="wl short">
+            {a.encounters.map((e, k) => (
+              <div key={k} className="li" onClick={() => seek(Math.max(0, e.tMin - 3))}>
+                <b style={{ width: 52 }}>{fmtT(e.tMin)}</b><span style={{ width: 28 }}>H{e.h}</span>
+                <span className="small" style={{ width: 44 }}>{e.minD.toFixed(2)} m</span>
+                <span className="muted small grow">{e.verdict}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {tab === 'asign' && a && (
+        <>
+          <div className="row"><span>Cajas atendidas / pendientes</span><b>{a.assign.n} / {a.assign.pending}</b></div>
+          <div className="row"><span>Espera media · máxima</span><b>{a.assign.mean.toFixed(0)} s · {a.assign.max.toFixed(0)} s</b></div>
+          <div className="row"><span>Equidad entre trabajadores (Jain)</span><b className={a.assign.jain < 0.8 ? 'warn' : ''}>{a.assign.jain.toFixed(2)}</b></div>
+          <div className="row"><span>Pares atendidos fuera de orden (vs FIFO)</span><b>{a.assign.inversions} de {a.assign.pairs}</b></div>
+          <div className="muted small" style={{ marginTop: 6 }}>Espera media por trabajador (detección → recogida)</div>
+          <div className="wl short">
+            {a.assign.byWorker.map((w) => (
+              <div key={w.h} className="li" onClick={() => seek(null, w.h)}>
+                <b style={{ width: 28 }}>H{w.h}</b><Bar v={w.mean} max={Math.max(...a.assign.byWorker.map((q) => q.mean))} color="#2f6bff" />
+                <span className="small" style={{ width: 104, textAlign: 'right' }}>{w.n ? `${w.mean.toFixed(0)} s · ${w.n} cajas` : '—'}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {a && <div className="muted small" style={{ marginTop: 6 }}>Distancias aproximadas: posiciones reconstruidas.</div>}
+    </div>
   )
 }
 
@@ -104,6 +189,7 @@ export default function WorkloadApp({ modeSwitch }) {
   const [snap, setSnap] = useState({ t: 0, playing: true, speed: play.speed, colorBy: play.colorBy, sel: null })
   const [version, setVersion] = useState(0)
   const [empty, setEmpty] = useState(false)
+  const [ov, setOv] = useState({ zones: false, intent: false })
   const fileRef = useRef()
 
   const base = import.meta.env.BASE_URL
@@ -112,7 +198,7 @@ export default function WorkloadApp({ modeSwitch }) {
     Promise.all([get(`${base}data/${SAMPLE}_timeseries.csv`), get(`${base}data/${SAMPLE}_robot_status_log.txt`)])
       .then(([csvText, logText]) => {
         if (!csvText.startsWith('Time_s')) { setEmpty(true); return }
-        play.t = 0; setRun(buildRun({ csvText, logText: logText.startsWith('idx=') ? logText : null, name: SAMPLE }))
+        play.t = 0; setRun(makeRun({ csvText, logText: logText.startsWith('idx=') ? logText : null, name: SAMPLE }))
       })
       .catch(() => setEmpty(true))
   }, [])
@@ -123,12 +209,14 @@ export default function WorkloadApp({ modeSwitch }) {
   }, [])
 
   const select = (s) => { play.selected = s; setSnap((p) => ({ ...p, sel: s })) }
+  const setOvAll = (o) => { play.zones = o.zones; play.intent = o.intent; setOv(o) }
+  const seek = (t, h) => { if (t != null) { play.t = t; setSnap((p) => ({ ...p, t })) } if (h != null) select(h) }
   const loadFiles = async (files) => {
     try {
       const fl = [...files]
       const csv = fl.find((f) => /\.csv$/i.test(f.name)), log = fl.find((f) => /\.txt$/i.test(f.name))
       if (!csv) throw new Error('Selecciona al menos el *_timeseries.csv (y opcionalmente el *_robot_status_log.txt).')
-      const r = buildRun({ csvText: await csv.text(), logText: log ? await log.text() : null, name: csv.name })
+      const r = makeRun({ csvText: await csv.text(), logText: log ? await log.text() : null, name: csv.name })
       play.t = 0; play.selected = null; play.playing = true
       setRun(r); setVersion((v) => v + 1); setErr(null)
     } catch (e) { setErr(e.message) }
@@ -216,13 +304,16 @@ export default function WorkloadApp({ modeSwitch }) {
 
       <div className="right-col">
         <Detail run={run} i={i} sel={snap.sel} />
-        <div className="card chartcard">
-          <div className="sel-head"><b>Carga acumulada</b><span className="muted small">kcal por trabajador</span></div>
-          <Chart run={run} i={i} sel={snap.sel} />
-          <div className="legend"><span><i style={{ background: ACT_COLOR.ground }} />Suelo</span><span><i style={{ background: ACT_COLOR.ladder }} />Escalera</span><span><i style={{ background: ACT_COLOR.picker }} />Gancho</span></div>
-        </div>
+        <Analysis run={run} i={i} sel={snap.sel} seek={seek} ov={ov} setOv={setOvAll} />
       </div>
 
+      {run.hri && (
+        <div className="heatwrap" title="Distancia mínima robot–humano: rojo &lt; 0,45 m · naranja &lt; 1,2 m · amarillo &lt; 3,6 m"
+          onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); const t = ((e.clientX - r.left) / r.width) * tmax; play.t = t; setSnap((p) => ({ ...p, t })) }}>
+          <div className="heat" style={{ background: heatGradient(run.hri) }} />
+          <span className="small muted">Proximidad robot–humano</span>
+        </div>
+      )}
       <div className="timeline card">
         <button onClick={() => { if (play.t >= tmax) play.t = 0; play.playing = !play.playing; setSnap((p) => ({ ...p, playing: play.playing })) }}>{snap.playing ? '⏸' : '▶'}</button>
         <input type="range" min="0" max={tmax} step={DT} value={snap.t} onChange={(e) => { play.t = Number(e.target.value); setSnap((p) => ({ ...p, t: play.t })) }} />

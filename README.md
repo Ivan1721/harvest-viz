@@ -10,6 +10,14 @@ Geometría exacta de `scene_spec.json` (3 filas × 4 árboles, copa 3,25 m, mapa
 **Posiciones reconstruidas**: el CSV no guarda trayectorias; los trabajadores se ubican en su posición base y viajan a su caja
 según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola entre eventos del log.
 
+### Análisis HRI sobre la corrida (paso 2, etapa A)
+Panel "Análisis" con 4 pestañas y dos capas 3D (casillas "Zonas de cortesía" y "Ruta anticipada"):
+- **Cortesía**: zonas de proxemia (íntima < 0,45 m, personal < 1,2 m, social < 3,6 m) alrededor del robot; distancia mínima y tiempo en zona personal por trabajador.
+- **Cesión**: encuentros robot–humano (< 1,5 m) con instante, trabajador, distancia mínima y quién debería ceder; clic para saltar al instante.
+- **Asignación**: espera de cada caja (detección → recogida en el log), equidad entre trabajadores (índice de Jain) y pares atendidos fuera de orden respecto de FIFO.
+- **Anticipación**: la ruta del robot en los próximos 8 s, verde / naranja / roja si se prevé conflicto; tira de proximidad robot–humano sobre la línea de tiempo.
+Las distancias son aproximadas porque las posiciones están reconstruidas. La etapa B (simulador propio en JS para probar reglas) viene después.
+
 # Modo Oclusión (nivel 2)
 
 ## Ejecutar

@@ -4,10 +4,11 @@ import { OrthographicCamera, OrbitControls, Html, Line } from '@react-three/drei
 import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec'
 import { FLAG, DT, onboard } from './run'
+import { ZONES, zoneOf } from './hri'
 import { Person, BigTree, Crate, Ladder } from '../shared/models'
 
 // reloj de reproducción compartido (mutable, fuera de React)
-export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null }
+export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false }
 
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
 
@@ -44,7 +45,12 @@ function Worker({ w, run, onSelect, selected }) {
     // color del chaleco
     const c = play.colorBy === 'rate' ? ramp(w.rate[i] / run.rateMax) : new THREE.Color(FLAG[flag]?.color || '#9aa6bf')
     refs.vest.current.color.copy(c)
-    if (disc.current) disc.current.material.color.copy(c)
+    if (disc.current) {
+      if (play.zones && run.hri) {
+        const z = zoneOf(run.hri.dist[i * run.workers.length + (w.h - 1)])
+        disc.current.material.color.set(z < 3 ? ZONES[z].color : '#9aa6bf')
+      } else disc.current.material.color.copy(c)
+    }
     if (ladder.current) { ladder.current.visible = hz > 0.05 || flag === 5 || flag === 4 }
     if (picker.current) picker.current.visible = flag === 1
     if (tag.current) tag.current.className = 'tag small' + (selected ? ' sel' : '')
@@ -78,7 +84,7 @@ function Worker({ w, run, onSelect, selected }) {
 
 // Vehículo 4WS (Warthog-like): 3.2 m de largo visual, ruedas r=0.5 m
 function RobotCarrier({ run, onSelect, selected }) {
-  const root = useRef(), fan = useRef(), load = useRef(), lab = useRef()
+  const root = useRef(), fan = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
   const wheels = useRef([])
   useFrame(() => {
     const i = Math.min(run.n - 1, Math.floor(play.t / DT))
@@ -87,12 +93,25 @@ function RobotCarrier({ run, onSelect, selected }) {
     root.current.position.set(px, 0, pz)
     root.current.rotation.y = p[i * 3 + 2]
     wheels.current.forEach((m) => m && (m.rotation.z -= 0.15))
+    zr.current.forEach((m) => m && (m.visible = play.zones))
     const ob = onboard(run, i)
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, ob / 600))
     if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(ob)}`
   })
   return (
     <group ref={root} onClick={(e) => { e.stopPropagation(); onSelect('robot') }}>
+      {ZONES.map((z, k) => (
+        <group key={z.key} ref={(m) => (zr.current[k] = m)} visible={false}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07 + k * 0.001, 0]}>
+            <ringGeometry args={[z.r - 0.04, z.r, 64]} />
+            <meshBasicMaterial color={z.color} transparent opacity={0.9} depthTest={false} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+            <circleGeometry args={[z.r, 64]} />
+            <meshBasicMaterial color={z.color} transparent opacity={0.07} depthWrite={false} />
+          </mesh>
+        </group>
+      ))}
       {/* campo de detección (FOV 120°, 3 m) y LIDAR (±90°, 1.5 m) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <circleGeometry args={[3, 28, -Math.PI / 3, (2 * Math.PI) / 3]} />
@@ -138,6 +157,49 @@ function RobotCarrier({ run, onSelect, selected }) {
           <meshBasicMaterial color="#2f6bff" />
         </mesh>
       )}
+    </group>
+  )
+}
+
+// Ruta anticipada del robot (legibilidad): próximos 8 s; cambia de color si se prevé un conflicto con un humano
+const AHEAD = 32
+function Intent({ run }) {
+  const line = useRef(), cone = useRef()
+  const buf = useMemo(() => new Float32Array((AHEAD + 1) * 3), [])
+  useFrame(() => {
+    const on = play.intent && run.robot && run.robot.pos
+    if (line.current) line.current.visible = !!on
+    if (cone.current) cone.current.visible = !!on
+    if (!on) return
+    const i = Math.min(run.n - 1, Math.floor(play.t / DT))
+    const p = run.robot.pos
+    let last = i, minD = 1e9
+    for (let k = 0; k <= AHEAD; k++) {
+      const j = Math.min(run.n - 1, i + k)
+      const w = toW(p[j * 3], p[j * 3 + 1])
+      buf[k * 3] = w[0]; buf[k * 3 + 1] = 0.35; buf[k * 3 + 2] = w[2]
+      if (run.hri) minD = Math.min(minD, run.hri.minD[j])
+      last = j
+    }
+    const col = minD < 0.45 ? '#dc2626' : minD < 1.2 ? '#f59e0b' : '#16a34a'
+    line.current.geometry.setPositions(buf)
+    line.current.geometry.computeBoundingSphere()
+    line.current.material.color.set(col)
+    cone.current.material.color.set(col)
+    cone.current.position.set(buf[AHEAD * 3], 0.35, buf[AHEAD * 3 + 2])
+    const dx = buf[AHEAD * 3] - buf[(AHEAD - 3) * 3], dz = buf[AHEAD * 3 + 2] - buf[(AHEAD - 3) * 3 + 2]
+    cone.current.rotation.set(Math.PI / 2, 0, 0)
+    cone.current.rotation.order = 'YXZ'
+    cone.current.rotation.y = Math.atan2(dx, dz)
+    cone.current.visible = Math.hypot(dx, dz) > 0.05
+  })
+  return (
+    <group>
+      <Line ref={line} points={[[0, 0, 0], [0, 0, 1]]} lineWidth={4} color="#16a34a" transparent opacity={0.9} depthTest={false} frustumCulled={false} renderOrder={11} />
+      <mesh ref={cone} renderOrder={12} frustumCulled={false}>
+        <coneGeometry args={[0.35, 0.8, 12]} />
+        <meshBasicMaterial color="#16a34a" depthTest={false} />
+      </mesh>
     </group>
   )
 }
@@ -225,6 +287,7 @@ function World({ run, selected, onSelect, version }) {
       <Clock run={run} />
       <Ground run={run} />
       <CargoPile run={run} />
+      {run.robot && <Intent run={run} />}
       <Boxes run={run} />
       {run.workers.map((w) => <Worker key={`${version}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} />)}
       {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}

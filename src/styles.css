@@ -118,3 +118,13 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; col
 .emptycard { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); padding: 24px; font-size: 13.5px; line-height: 1.5; }
 .emptycard h3 { margin: 0 0 8px; font-size: 18px; }
 .emptycard button { border: 0; background: var(--blue); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+
+/* ---- análisis HRI ---- */
+.chartcard .tabs { margin-bottom: 6px; } .chartcard .tabs button { padding: 5px 4px; font-size: 11.5px; }
+.ovrow { display: flex; gap: 6px; margin: 4px 0 8px; flex-wrap: wrap; }
+.ovrow label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--muted); background: #f1f4fb; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+.ovrow label.on { background: #e3ebff; color: var(--blue); } .ovrow input { accent-color: var(--blue); margin: 0; }
+.wl.short { max-height: 150px; }
+.heatwrap { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); width: 560px; max-width: calc(100vw - 700px); min-width: 420px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.heatwrap .heat { flex: 1; height: 8px; border-radius: 4px; border: 1px solid var(--line); }
+.heatwrap span { white-space: nowrap; }
