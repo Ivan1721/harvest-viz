@@ -1,7 +1,5 @@
 node_modules
 dist
 .DS_Store
-# Datos del paper (en revisión): no se publican. Se cargan con "Cargar corrida".
-public/data/*.csv
-public/data/*.txt
+# scene_spec.json no lo usa la app (la geometria esta en src/workload/spec.js)
 public/data/scene_spec.json
