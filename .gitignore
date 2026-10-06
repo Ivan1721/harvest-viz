@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+# Datos del paper (en revisión): no se publican. Se cargan con "Cargar corrida".
+public/data/*.csv
+public/data/*.txt
+public/data/scene_spec.json
