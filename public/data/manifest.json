@@ -1,0 +1,6 @@
+{
+  "runs": [
+    { "id": "HO-12-3-mixed-0", "robot": false, "nw": 12, "row": 3, "act": "mixed", "rp": 0, "csv": "HUMAN_ONLY_12_ROW3_harv_mixed_RP0_timeseries.csv" },
+    { "id": "HR-12-3-mixed-0", "robot": true, "nw": 12, "row": 3, "act": "mixed", "rp": 0, "csv": "HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_timeseries.csv", "log": "HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_robot_status_log.txt" }
+  ]
+}

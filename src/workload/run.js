@@ -4,7 +4,10 @@
 // robot: interpolación lineal entre los eventos del log).
 import { MIX, workerBase, boxXY, CARGO } from './spec'
 
-export const DT = 0.25
+// Paso interno del simulador MATLAB: los índices `idx=` del log están en ticks de 0.25 s.
+// El CSV puede estar muestreado a otro paso (p. ej. 1 s en el estudio de 45 min): se deduce de Time_s.
+export const SIM_TICK = 0.25
+export const DT = SIM_TICK
 export const FLAG = {
   0: { label: 'Inicio', color: '#9aa6bf' },
   1: { label: 'Cosechando', color: '#16a34a' },
@@ -28,14 +31,15 @@ function parseCSV(text) {
   return { col, rows }
 }
 
-function parseLog(text, n) {
+function parseLog(text, n, dt) {
+  const row = (idx) => Math.max(0, Math.round(((idx - 1) * SIM_TICK) / dt))
   const key = [], picks = [], boxes = [], unloads = []
   const num = '(-?[\\d.]+)'
   const reXY = new RegExp(`\\[${num}\\s+${num}\\]`)
   text.replace(/\r/g, '').split('\n').forEach((line) => {
     const m = /^idx=(\d+)\s*\|\s*(.+)$/.exec(line)
     if (!m) return
-    const idx = +m[1], body = m[2]
+    const idx = row(+m[1]), body = m[2]
     let r
     if (/reached ROUTE waypoint/.test(body) && (r = /pos=\[(-?[\d.]+)\s+(-?[\d.]+)\]/.exec(body))) key.push({ idx, x: +r[1], y: +r[2] })
     else if (/Robot picked BOX/.test(body)) {
@@ -133,16 +137,25 @@ export function buildRun({ csvText, logText, name }) {
   const meta = parseName(name) || { robot: !!logText, nw: 0, row: 3, act: 'mixed', rp: 0 }
   const { col, rows } = parseCSV(csvText)
   const n = rows.length
+  const dt = n > 1 && rows[1][col.Time_s] > rows[0][col.Time_s] ? rows[1][col.Time_s] - rows[0][col.Time_s] : SIM_TICK
+  meta.duration = rows[n - 1][col.Time_s]
+  meta.robot = meta.robot || !!logText
   let nw = 0
   while (col[`Workload_H${nw + 1}`] !== undefined) nw++
   meta.nw = nw
+  // las corridas de estudio (45 min) usan un punto de entrega por árbol; las antiguas (10 min), uno por trabajador
+  meta.placement = meta.duration > 1000 ? 'tree_point' : 'route_corridor'
+  const lg = logText ? parseLog(logText, n, dt) : null
   const g = (row, c) => row[col[c]]
   const series = { t: new Float32Array(n), cargo: new Float32Array(n), total: new Float32Array(n), robot: new Float32Array(n), work: new Float32Array(n) }
   const workers = Array.from({ length: nw }, (_, k) => {
     const h = k + 1
     const act = meta.act === 'mixed' ? MIX[(h - 1) % 6] : meta.act
     const base = workerBase(h, meta.row, meta.rp)
-    return { h, act, base, box: boxXY(base, meta.row), prod: new Float32Array(n), work: new Float32Array(n), flag: new Uint8Array(n) }
+    // destino de la caja: Human-Only → zona de carga; Human-Robot → punto de entrega (del log si existe, si no, calculado)
+    const logged = lg && lg.boxes.find((b) => b.h === h)
+    const box = meta.robot ? (logged ? [logged.x, logged.y] : boxXY(base, meta.row, meta.placement)) : [CARGO.wp[0], CARGO.wp[1]]
+    return { h, act, base, box, prod: new Float32Array(n), work: new Float32Array(n), flag: new Uint8Array(n) }
   })
   rows.forEach((r, i) => {
     series.t[i] = g(r, 'Time_s'); series.cargo[i] = g(r, 'Total_product_cargo'); series.total[i] = g(r, 'Total_product')
@@ -150,12 +163,12 @@ export function buildRun({ csvText, logText, name }) {
     workers.forEach((w) => { w.prod[i] = g(r, `Production_H${w.h}`); w.work[i] = g(r, `Workload_H${w.h}`); w.flag[i] = g(r, `ActivityFlag_H${w.h}`) })
   })
   // tasa metabólica en ventana de 10 s (kcal/s) y su escala
-  const WIN = 40
+  const WIN = Math.max(1, Math.round(10 / dt))
   const all = []
   workers.forEach((w) => {
     w.rate = new Float32Array(n)
-    for (let i = 0; i < n; i++) { const j = Math.max(0, i - WIN); w.rate[i] = i === j ? 0 : (w.work[i] - w.work[j]) / ((i - j) * DT) }
-    for (let i = WIN; i < n; i += 4) all.push(w.rate[i])
+    for (let i = 0; i < n; i++) { const j = Math.max(0, i - WIN); w.rate[i] = i === j ? 0 : (w.work[i] - w.work[j]) / ((i - j) * dt) }
+    for (let i = WIN; i < n; i += Math.max(1, Math.round(1 / dt))) all.push(w.rate[i])
     w.track = workerTrack(w.flag, w.base, w.box)
     const lh = w.act === 'ladder' ? ladderHeights(w.flag) : null
     if (lh) for (let i = 0; i < n; i++) w.track[i * 4 + 2] = lh[i]
@@ -163,21 +176,24 @@ export function buildRun({ csvText, logText, name }) {
   all.sort((a, b) => a - b)
   const rateMax = all.length ? all[Math.floor(all.length * 0.97)] || 1 : 1
   let robot = null
-  if (logText) {
-    const lg = parseLog(logText, n)
+  if (lg) {
     robot = { pos: robotTrack(lg.key, n), picks: lg.picks, boxes: lg.boxes, unloads: lg.unloads }
+    // contenido a bordo en cada fila (cultivo recogido y aún no descargado)
+    const ev = [
+      ...robot.picks.map((p) => ({ idx: p.idx, d: +p.amount, k: 'p' })),
+      ...robot.unloads.map((u) => ({ idx: u.idx, k: 'u' })),
+    ].sort((a, b) => a.idx - b.idx || (a.k === 'u' ? -1 : 1))
+    robot.onboard = new Float32Array(n)
+    let v = 0, e = 0
+    for (let i = 0; i < n; i++) {
+      while (e < ev.length && ev[e].idx <= i) { if (ev[e].k === 'p') v += ev[e].d; else v = 0; e++ }
+      robot.onboard[i] = v
+    }
   }
-  return { meta, n, series, workers, robot, rateMax, name }
+  return { meta, n, dt, series, workers, robot, rateMax, name, rowAt: (t) => Math.min(n - 1, Math.max(0, Math.floor(t / dt))) }
 }
 
-// Contenido a bordo del robot (cultivo) en el tick i, a partir de picks y descargas
+// Contenido a bordo del robot (cultivo) en la fila i
 export function onboard(run, i) {
-  if (!run.robot) return 0
-  let v = 0
-  const ev = [
-    ...run.robot.picks.map((p) => ({ idx: p.idx, d: +p.amount, k: 'p' })),
-    ...run.robot.unloads.map((u) => ({ idx: u.idx, k: 'u' })),
-  ].sort((a, b) => a.idx - b.idx || (a.k === 'u' ? -1 : 1))
-  for (const e of ev) { if (e.idx > i) break; if (e.k === 'p') v += e.d; else v = 0 }
-  return v
+  return run.robot ? run.robot.onboard[Math.min(i, run.n - 1)] : 0
 }

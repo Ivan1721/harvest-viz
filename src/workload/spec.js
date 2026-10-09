@@ -49,11 +49,13 @@ function nearestOnPolyline(p, pts) {
 }
 
 // Posición de la caja del trabajador: punto más cercano de la ruta + desfase lateral (BOX_ROUTE_OFFSET)
-export function boxXY(base, row) {
-  const { q, d } = nearestOnPolyline([base.x, base.y], routeLoop(row))
+// mode 'tree_point' (estudio 45 min): se parte del centro del árbol, así todos los trabajadores del árbol comparten punto.
+export function boxXY(base, row, mode = 'route_corridor') {
+  const from = mode === 'tree_point' ? [base.tx, base.ty] : [base.x, base.y]
+  const { q, d } = nearestOnPolyline(from, routeLoop(row))
   const off = Math.min(1.2, Math.max(0.35, 0.6 * d))
-  const ux = d > 1e-9 ? (base.x - q[0]) / d : 0
-  const uy = d > 1e-9 ? (base.y - q[1]) / d : 0
+  const ux = d > 1e-9 ? (from[0] - q[0]) / d : 0
+  const uy = d > 1e-9 ? (from[1] - q[1]) / d : 0
   return [q[0] + off * ux, q[1] + off * uy]
 }
 

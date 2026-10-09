@@ -1,22 +1,22 @@
 import React, { useMemo, useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera, OrbitControls, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec'
-import { FLAG, DT, onboard } from './run'
+import { FLAG, onboard } from './run'
 import { ZONES, zoneOf } from './hri'
 import { Person, BigTree, Crate, Ladder } from '../shared/models'
 
 // reloj de reproducción compartido (mutable, fuera de React)
-export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false }
+export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0 }
 
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
 
 function Clock({ run }) {
   useFrame((_, dt) => {
-    if (!play.playing || !run) return
-    play.t = Math.min(run.series.t[run.n - 1], play.t + Math.min(dt, 0.05) * play.speed)
-    if (play.t >= run.series.t[run.n - 1]) play.playing = false
+    if (!play.playing || !run || play.driver !== run.name) return
+    play.t = Math.min(play.tEnd, play.t + Math.min(dt, 0.05) * play.speed)
+    if (play.t >= play.tEnd) play.playing = false
   })
   return null
 }
@@ -25,7 +25,7 @@ function Worker({ w, run, onSelect, selected }) {
   const root = useRef(), ladder = useRef(), picker = useRef(), tag = useRef(), disc = useRef()
   const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef() }
   useFrame(() => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / DT))
+    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const k = i * 4
     const x = w.track[k], y = w.track[k + 1], hz = w.track[k + 2], hd = w.track[k + 3]
     const [px, , pz] = toW(x, y)
@@ -87,7 +87,7 @@ function RobotCarrier({ run, onSelect, selected }) {
   const root = useRef(), fan = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
   const wheels = useRef([])
   useFrame(() => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / DT))
+    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
     const [px, , pz] = toW(p[i * 3], p[i * 3 + 1])
     root.current.position.set(px, 0, pz)
@@ -162,16 +162,17 @@ function RobotCarrier({ run, onSelect, selected }) {
 }
 
 // Ruta anticipada del robot (legibilidad): próximos 8 s; cambia de color si se prevé un conflicto con un humano
-const AHEAD = 32
 function Intent({ run }) {
   const line = useRef(), cone = useRef()
-  const buf = useMemo(() => new Float32Array((AHEAD + 1) * 3), [])
+  const AHEAD = Math.max(4, Math.round(8 / run.dt))
+  const back = Math.min(3, AHEAD - 1)
+  const buf = useMemo(() => new Float32Array((AHEAD + 1) * 3), [AHEAD])
   useFrame(() => {
     const on = play.intent && run.robot && run.robot.pos
     if (line.current) line.current.visible = !!on
     if (cone.current) cone.current.visible = !!on
     if (!on) return
-    const i = Math.min(run.n - 1, Math.floor(play.t / DT))
+    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
     let last = i, minD = 1e9
     for (let k = 0; k <= AHEAD; k++) {
@@ -187,7 +188,7 @@ function Intent({ run }) {
     line.current.material.color.set(col)
     cone.current.material.color.set(col)
     cone.current.position.set(buf[AHEAD * 3], 0.35, buf[AHEAD * 3 + 2])
-    const dx = buf[AHEAD * 3] - buf[(AHEAD - 3) * 3], dz = buf[AHEAD * 3 + 2] - buf[(AHEAD - 3) * 3 + 2]
+    const dx = buf[AHEAD * 3] - buf[(AHEAD - back) * 3], dz = buf[AHEAD * 3 + 2] - buf[(AHEAD - back) * 3 + 2]
     cone.current.rotation.set(Math.PI / 2, 0, 0)
     cone.current.rotation.order = 'YXZ'
     cone.current.rotation.y = Math.atan2(dx, dz)
@@ -209,7 +210,7 @@ function Boxes({ run }) {
   const refs = useRef([])
   const list = run.robot ? run.robot.boxes : []
   useFrame(() => {
-    const i = Math.floor(play.t / DT)
+    const i = Math.floor(play.t / run.dt)
     refs.current.forEach((m, k) => { if (m) m.visible = i >= list[k].idx && i < list[k].picked })
   })
   return (
@@ -234,7 +235,7 @@ function CargoPile({ run }) {
     return out
   }, [])
   useFrame(() => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / DT))
+    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const nBox = Math.min(60, Math.round(run.series.cargo[i] / 15))
     g.current.children.forEach((c, k) => (c.visible = k < nBox))
   })
@@ -295,11 +296,32 @@ function World({ run, selected, onSelect, version }) {
   )
 }
 
-export default function WorkloadScene({ run, selected, onSelect, version }) {
+const PRESETS = {
+  iso: { pos: [10, 24, 22], zoom: 27 },
+  top: { pos: [0, 60, 0.01], zoom: 22 },
+  side: { pos: [0, 8, 40], zoom: 25 },
+}
+
+function CamRig({ preset }) {
+  const { camera, controls, size } = useThree()
+  const fit = Math.min(1.5, size.width / 880, size.height / 600)
+  React.useEffect(() => {
+    const p = PRESETS[preset] || PRESETS.iso
+    camera.position.set(...p.pos)
+    camera.zoom = p.zoom * Math.max(0.3, fit)
+    camera.lookAt(0, 0, 0)
+    camera.updateProjectionMatrix()
+    if (controls) { controls.target.set(0, 0, 0); controls.update() }
+  }, [preset, camera, controls, fit])
+  return null
+}
+
+export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso' }) {
   return (
     <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }} onPointerMissed={() => onSelect(null)}>
-      <OrthographicCamera makeDefault position={[10, 24, 22]} zoom={27} near={-80} far={150} />
-      <OrbitControls target={[0, 0, 0]} enablePan minZoom={14} maxZoom={110} minPolarAngle={0.3} maxPolarAngle={1.25} />
+      <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80} far={150} />
+      <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
+      <CamRig preset={preset} />
       <World run={run} selected={selected} onSelect={onSelect} version={version} />
     </Canvas>
   )

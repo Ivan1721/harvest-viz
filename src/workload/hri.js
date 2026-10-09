@@ -1,6 +1,6 @@
 // Análisis HRI sobre una corrida reproducida (posiciones RECONSTRUIDAS: trabajadores desde sus banderas
 // de actividad, robot interpolado entre eventos del log → distancias aproximadas).
-import { DT, FLAG } from './run'
+import { FLAG } from './run'
 
 // Zonas de proxemia (Hall, 1966; valores usuales en navegación social)
 export const ZONES = [
@@ -18,8 +18,16 @@ const jain = (xs) => {
   return (s * s) / (v.length * s2)
 }
 
+// Traspaso: el trabajador está en estado "colocando/cargando caja" (bandera 3) o lo estuvo hace < 5 s
+function isHandoff(w, i) {
+  const back = Math.max(1, Math.round(5 / w.dt))
+  for (let j = i; j >= Math.max(0, i - back); j--) if (w.flag[j] === 3) return true
+  return false
+}
+
 export function analyzeHRI(run) {
-  const n = run.n, nw = run.workers.length
+  run.workers.forEach((w) => { w.dt = run.dt })
+  const n = run.n, nw = run.workers.length, DT = run.dt
   if (!run.robot || !run.robot.pos) return null
   const rp = run.robot.pos
   const dist = new Float32Array(n * nw)
@@ -27,7 +35,7 @@ export function analyzeHRI(run) {
   const minW = new Uint8Array(n)
   const speed = new Float32Array(n)
   for (let i = 0; i < n; i++) {
-    const j = Math.max(0, i - 4)
+    const j = Math.max(0, i - Math.max(1, Math.round(1 / DT)))
     speed[i] = i === j ? 0 : Math.hypot(rp[i * 3] - rp[j * 3], rp[i * 3 + 1] - rp[j * 3 + 1]) / ((i - j) * DT)
     let m = 1e9, mw = 0
     run.workers.forEach((w, k) => {
@@ -41,15 +49,17 @@ export function analyzeHRI(run) {
   // --- Cortesía: tiempo en cada zona y distancia mínima, por trabajador ---
   const perWorker = run.workers.map((w, k) => {
     const t = [0, 0, 0] // íntima, personal, social (acumulativo: <0.45, <1.2, <3.6)
-    let mn = 1e9
+    let mn = 1e9, tHand = 0
     for (let i = 0; i < n; i++) {
       const d = dist[i * nw + k]
+      // el traspaso de caja (el trabajador sube la caja al robot detenido) es contacto intencional: no cuenta como invasión
+      if (isHandoff(w, i)) { tHand += DT; continue }
       if (d < mn) mn = d
       if (d < ZONES[0].r) t[0] += DT
       if (d < ZONES[1].r) t[1] += DT
       if (d < ZONES[2].r) t[2] += DT
     }
-    return { h: w.h, act: w.act, minD: mn, tIntimate: t[0], tPersonal: t[1], tSocial: t[2] }
+    return { h: w.h, act: w.act, minD: mn, tIntimate: t[0], tPersonal: t[1], tSocial: t[2], tHandoff: tHand }
   })
 
   // --- Cesión de paso: encuentros (distancia < 1.5 m) ---
@@ -63,8 +73,9 @@ export function analyzeHRI(run) {
       const hf = w.flag[best]
       const humanMoving = hf === 2 || hf === 3
       const sp = speed[best]
+      const handoff = isHandoff(w, best)
       // quién "debería ceder": el humano ocupado/quieto en su tarea tiene prioridad; si ambos se mueven → ambiguo
-      const verdict = !humanMoving ? (sp > 0.15 ? 'robot debe ceder' : 'ambos casi quietos') : sp > 0.15 ? 'ambos en movimiento' : 'robot quieto'
+      const verdict = handoff ? 'traspaso de caja' : !humanMoving ? (sp > 0.15 ? 'robot debe ceder' : 'ambos casi quietos') : sp > 0.15 ? 'ambos en movimiento' : 'robot quieto'
       encounters.push({ t0: a * DT, t1: (i - 1) * DT, tMin: best * DT, h: w.h, minD: minD[best], flag: hf, robotSpeed: sp, verdict })
     } else i++
   }
@@ -95,7 +106,8 @@ export function analyzeHRI(run) {
   }
 
   const nIntimate = perWorker.reduce((a, w) => a + (w.tIntimate > 0 ? 1 : 0), 0)
-  return { dist, minD, minW, speed, perWorker, encounters, assign, nIntimate }
+  const nHandoffs = encounters.filter((e) => e.verdict === 'traspaso de caja').length
+  return { dist, minD, minW, speed, perWorker, encounters, assign, nIntimate, nHandoffs }
 }
 
 // Mini-tira de calor: distancia mínima robot–humano a lo largo del tiempo (para la línea de tiempo)

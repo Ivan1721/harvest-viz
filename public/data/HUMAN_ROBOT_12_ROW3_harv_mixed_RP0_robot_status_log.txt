@@ -10,176 +10,1009 @@ idx=185 | Robot reached ROUTE waypoint | k=5/423 | pos=[15.00 2.00]
 idx=185 | Next waypoint selected | k=6/423 | target=[8.00 2.00]
 idx=211 | Robot reached ROUTE waypoint | k=6/423 | pos=[8.00 2.00]
 idx=211 | Next waypoint selected | k=7/423 | target=[8.00 24.00]
-idx=244 | Robot detected BOX from h2 and inserted waypoint | box=[9.20 18.40] | dist=2.99 | inserted before k=7 | total waypoints=424
-idx=244 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 18.40] | dist=2.72 | inserted before k=7 | total waypoints=425
-idx=277 | Robot picked BOX from h1 | box_product=15.00 | Prod_ROBOT before=0.00 | robot=[6.94 17.81]
-idx=277 | Box waypoint removed for h1 | next k=7/424 | next target=[9.20 18.40]
-idx=277 | Robot box reset h1 | Prod_ROBOT=15.00 | num_boxes=0 | Prod_BOX=0.00
-idx=304 | Robot picked BOX from h2 | box_product=15.00 | Prod_ROBOT before=15.00 | robot=[8.59 18.24]
-idx=304 | Box waypoint removed for h2 | next k=7/423 | next target=[8.00 24.00]
-idx=304 | Robot box reset h2 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
-idx=327 | Robot reached ROUTE waypoint | k=7/423 | pos=[8.00 24.00]
-idx=327 | Next waypoint selected | k=8/423 | target=[15.00 24.00]
-idx=353 | Robot reached ROUTE waypoint | k=8/423 | pos=[15.00 24.00]
-idx=353 | Next waypoint selected | k=9/423 | target=[15.00 2.00]
-idx=356 | Robot detected BOX from h11 and inserted waypoint | box=[16.20 20.60] | dist=2.48 | inserted before k=9 | total waypoints=424
-idx=384 | Robot detected BOX from h3 and inserted waypoint | box=[16.20 18.40] | dist=2.83 | inserted before k=9 | total waypoints=425
-idx=388 | Robot picked BOX from h11 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[15.87 21.21]
-idx=388 | Box waypoint removed for h11 | next k=9/424 | next target=[16.20 18.40]
-idx=388 | Robot box reset h11 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
-idx=391 | Robot detected BOX from h6 and inserted waypoint | box=[13.80 18.40] | dist=2.91 | inserted before k=9 | total waypoints=425
-idx=423 | Robot picked BOX from h6 | box_product=15.00 | Prod_ROBOT before=45.00 | robot=[14.21 19.00]
-idx=423 | Box waypoint removed for h6 | next k=9/424 | next target=[16.20 18.40]
-idx=423 | Robot box reset h6 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
-idx=470 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=60.00 | robot=[15.71 18.19]
-idx=470 | Box waypoint removed for h3 | next k=9/423 | next target=[15.00 2.00]
-idx=470 | Robot box reset h3 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
-idx=520 | Robot reached CARGO ZONE | unloading 75.00 crops | Prod_ROBOT_total before=0.00
-idx=520 | Robot reached ROUTE waypoint | k=9/423 | pos=[15.00 2.00]
-idx=520 | Next waypoint selected | k=10/423 | target=[15.00 2.00]
-idx=521 | Robot reached ROUTE waypoint | k=10/423 | pos=[15.00 2.00]
-idx=521 | Next waypoint selected | k=11/423 | target=[22.00 2.00]
-idx=530 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=75.00
-idx=540 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=75.00
-idx=574 | Robot reached ROUTE waypoint | k=11/423 | pos=[22.00 2.00]
-idx=574 | Next waypoint selected | k=12/423 | target=[22.00 24.00]
-idx=607 | Robot detected BOX from h7 and inserted waypoint | box=[20.80 18.40] | dist=2.99 | inserted before k=12 | total waypoints=424
-idx=607 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 18.40] | dist=2.70 | inserted before k=12 | total waypoints=425
-idx=607 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 18.40]
-idx=617 | Robot detected BOX from h12 and inserted waypoint | box=[23.20 20.60] | dist=2.94 | inserted before k=12 | total waypoints=426
-idx=660 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=0.00 | robot=[23.01 17.90]
-idx=660 | Box waypoint removed for h4 | next k=12/425 | next target=[23.20 20.60]
-idx=660 | Robot box reset h4 | Prod_ROBOT=15.00 | num_boxes=0 | Prod_BOX=0.00
-idx=665 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=15.00 | robot=[23.01 17.90]
-idx=665 | Robot box reset h8 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
-idx=711 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[23.14 19.96]
-idx=711 | Box waypoint removed for h12 | next k=12/424 | next target=[20.80 18.40]
-idx=711 | Robot box reset h12 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
-idx=716 | Robot reached ROUTE waypoint | k=12/424 | pos=[20.80 18.40]
-idx=716 | Next waypoint selected | k=13/424 | target=[22.00 24.00]
-idx=753 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[20.73 18.80]
-idx=753 | Box waypoint removed for h7 | next k=12/423 | next target=[22.00 24.00]
-idx=753 | Robot box reset h7 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
-idx=771 | Robot reached ROUTE waypoint | k=12/423 | pos=[22.00 24.00]
-idx=771 | Next waypoint selected | k=13/423 | target=[15.00 24.00]
-idx=796 | Robot reached ROUTE waypoint | k=13/423 | pos=[15.00 24.00]
-idx=796 | Next waypoint selected | k=14/423 | target=[15.00 2.00]
-idx=803 | Robot detected BOX from h6 and inserted waypoint | box=[13.80 18.40] | dist=2.77 | inserted before k=14 | total waypoints=424
-idx=837 | Robot picked BOX from h6 | box_product=15.00 | Prod_ROBOT before=105.00 | robot=[13.98 19.07]
-idx=837 | Box waypoint removed for h6 | next k=14/423 | next target=[15.00 2.00]
-idx=837 | Robot box reset h6 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
-idx=890 | Robot reached CARGO ZONE | unloading 120.00 crops | Prod_ROBOT_total before=75.00
-idx=890 | Robot reached ROUTE waypoint | k=14/423 | pos=[15.00 2.00]
-idx=890 | Next waypoint selected | k=15/423 | target=[8.00 2.00]
-idx=900 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
-idx=910 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
-idx=920 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
-idx=930 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
-idx=961 | Robot reached ROUTE waypoint | k=15/423 | pos=[8.00 2.00]
-idx=961 | Next waypoint selected | k=16/423 | target=[8.00 24.00]
-idx=994 | Robot detected BOX from h2 and inserted waypoint | box=[9.20 18.40] | dist=2.99 | inserted before k=16 | total waypoints=424
-idx=994 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 18.40] | dist=2.71 | inserted before k=16 | total waypoints=425
-idx=994 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 18.40]
-idx=1004 | Robot detected BOX from h9 and inserted waypoint | box=[6.80 20.60] | dist=2.94 | inserted before k=16 | total waypoints=426
-idx=1054 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[7.00 17.90]
-idx=1054 | Box waypoint removed for h1 | next k=16/425 | next target=[6.80 20.60]
-idx=1054 | Robot box reset h1 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1057 | Robot picked BOX from h5 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[7.00 17.90]
-idx=1057 | Robot box reset h5 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1061 | Robot detected BOX from h10 and inserted waypoint | box=[9.20 20.60] | dist=2.90 | inserted before k=16 | total waypoints=426
-idx=1129 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[8.81 20.13]
-idx=1129 | Box waypoint removed for h10 | next k=16/425 | next target=[6.80 20.60]
-idx=1129 | Robot box reset h10 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1202 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=105.00 | robot=[7.18 21.06]
-idx=1202 | Box waypoint removed for h9 | next k=16/424 | next target=[9.20 18.40]
-idx=1202 | Robot box reset h9 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1263 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=135.00 | robot=[8.48 18.38]
-idx=1263 | Box waypoint removed for h2 | next k=16/423 | next target=[8.00 24.00]
-idx=1263 | Robot box reset h2 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1282 | Robot reached ROUTE waypoint | k=16/423 | pos=[8.00 24.00]
-idx=1282 | Next waypoint selected | k=17/423 | target=[15.00 24.00]
-idx=1308 | Robot reached ROUTE waypoint | k=17/423 | pos=[15.00 24.00]
-idx=1308 | Next waypoint selected | k=18/423 | target=[15.00 2.00]
-idx=1311 | Robot detected BOX from h11 and inserted waypoint | box=[16.20 20.60] | dist=2.47 | inserted before k=18 | total waypoints=424
-idx=1319 | Robot detected BOX from h3 and inserted waypoint | box=[16.20 18.40] | dist=2.96 | inserted before k=18 | total waypoints=425
-idx=1372 | Robot picked BOX from h11 | box_product=45.00 | Prod_ROBOT before=180.00 | robot=[15.80 21.08]
-idx=1372 | Box waypoint removed for h11 | next k=18/424 | next target=[16.20 18.40]
-idx=1372 | Robot box reset h11 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1374 | Robot detected BOX from h6 and inserted waypoint | box=[13.80 18.40] | dist=2.98 | inserted before k=18 | total waypoints=425
-idx=1421 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=225.00 | robot=[14.14 18.95]
-idx=1421 | Box waypoint removed for h6 | next k=18/424 | next target=[16.20 18.40]
-idx=1421 | Robot box reset h6 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1482 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=255.00 | robot=[15.66 18.17]
-idx=1482 | Box waypoint removed for h3 | next k=18/423 | next target=[15.00 2.00]
-idx=1482 | Robot box reset h3 | Prod_ROBOT=285.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1532 | Robot reached CARGO ZONE | unloading 285.00 crops | Prod_ROBOT_total before=195.00
-idx=1532 | Robot reached ROUTE waypoint | k=18/423 | pos=[15.00 2.00]
-idx=1532 | Next waypoint selected | k=19/423 | target=[15.00 2.00]
-idx=1533 | Robot reached ROUTE waypoint | k=19/423 | pos=[15.00 2.00]
-idx=1533 | Next waypoint selected | k=20/423 | target=[22.00 2.00]
-idx=1542 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1552 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1562 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1572 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1582 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1592 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1602 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1612 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1622 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1632 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=480.00
-idx=1666 | Robot reached ROUTE waypoint | k=20/423 | pos=[22.00 2.00]
-idx=1666 | Next waypoint selected | k=21/423 | target=[22.00 24.00]
-idx=1699 | Robot detected BOX from h7 and inserted waypoint | box=[20.80 18.40] | dist=2.99 | inserted before k=21 | total waypoints=424
-idx=1699 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 18.40] | dist=2.70 | inserted before k=21 | total waypoints=425
-idx=1699 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 18.40]
-idx=1709 | Robot detected BOX from h12 and inserted waypoint | box=[23.20 20.60] | dist=2.94 | inserted before k=21 | total waypoints=426
-idx=1782 | Robot picked BOX from h8 | box_product=60.00 | Prod_ROBOT before=0.00 | robot=[23.01 17.90]
-idx=1782 | Box waypoint removed for h8 | next k=21/425 | next target=[23.20 20.60]
-idx=1782 | Robot box reset h8 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1792 | Robot picked BOX from h4 | box_product=45.00 | Prod_ROBOT before=60.00 | robot=[23.01 17.90]
-idx=1792 | Robot box reset h4 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1853 | Robot picked BOX from h12 | box_product=45.00 | Prod_ROBOT before=105.00 | robot=[23.14 19.96]
-idx=1853 | Box waypoint removed for h12 | next k=21/424 | next target=[20.80 18.40]
-idx=1853 | Robot box reset h12 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1858 | Robot reached ROUTE waypoint | k=21/424 | pos=[20.80 18.40]
-idx=1858 | Next waypoint selected | k=22/424 | target=[22.00 24.00]
-idx=1938 | Robot picked BOX from h7 | box_product=75.00 | Prod_ROBOT before=150.00 | robot=[20.73 18.80]
-idx=1938 | Box waypoint removed for h7 | next k=21/423 | next target=[22.00 24.00]
-idx=1938 | Robot box reset h7 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
-idx=1956 | Robot reached ROUTE waypoint | k=21/423 | pos=[22.00 24.00]
-idx=1956 | Next waypoint selected | k=22/423 | target=[15.00 24.00]
-idx=1981 | Robot reached ROUTE waypoint | k=22/423 | pos=[15.00 24.00]
-idx=1981 | Next waypoint selected | k=23/423 | target=[15.00 2.00]
-idx=1988 | Robot detected BOX from h6 and inserted waypoint | box=[13.80 18.40] | dist=2.77 | inserted before k=23 | total waypoints=424
-idx=1990 | Robot detected BOX from h3 and inserted waypoint | box=[16.20 18.40] | dist=2.90 | inserted before k=23 | total waypoints=425
-idx=2044 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=225.00 | robot=[15.90 18.96]
-idx=2044 | Box waypoint removed for h3 | next k=23/424 | next target=[13.80 18.40]
-idx=2044 | Robot box reset h3 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
-idx=2084 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=240.00 | robot=[14.41 18.24]
-idx=2084 | Box waypoint removed for h6 | next k=23/423 | next target=[15.00 2.00]
-idx=2084 | Robot box reset h6 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
-idx=2134 | Robot reached CARGO ZONE | unloading 270.00 crops | Prod_ROBOT_total before=480.00
-idx=2134 | Robot reached ROUTE waypoint | k=23/423 | pos=[15.00 2.00]
-idx=2134 | Next waypoint selected | k=24/423 | target=[8.00 2.00]
-idx=2144 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2154 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2164 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2174 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2184 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2194 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2204 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2214 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2224 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2234 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=750.00
-idx=2263 | Robot reached ROUTE waypoint | k=24/423 | pos=[8.00 2.00]
-idx=2263 | Next waypoint selected | k=25/423 | target=[8.00 24.00]
-idx=2296 | Robot detected BOX from h2 and inserted waypoint | box=[9.20 18.40] | dist=2.99 | inserted before k=25 | total waypoints=424
-idx=2296 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 18.40] | dist=2.70 | inserted before k=25 | total waypoints=425
-idx=2296 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 18.40]
-idx=2306 | Robot detected BOX from h9 and inserted waypoint | box=[6.80 20.60] | dist=2.94 | inserted before k=25 | total waypoints=426
-idx=2373 | Robot picked BOX from h5 | box_product=60.00 | Prod_ROBOT before=0.00 | robot=[6.99 17.90]
-idx=2373 | Box waypoint removed for h5 | next k=25/425 | next target=[6.80 20.60]
-idx=2373 | Robot box reset h5 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
-idx=2391 | Robot picked BOX from h1 | box_product=75.00 | Prod_ROBOT before=60.00 | robot=[6.99 17.90]
-idx=2391 | Robot box reset h1 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
-idx=2395 | Robot detected BOX from h10 and inserted waypoint | box=[9.20 20.60] | dist=2.90 | inserted before k=25 | total waypoints=426
+idx=247 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.75 | inserted before k=7 | total waypoints=424
+idx=278 | Robot picked BOX from h1 | box_product=15.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.89]
+idx=278 | Box waypoint removed for h1 | next k=7/423 | next target=[8.00 24.00]
+idx=278 | Robot box reset h1 | Prod_ROBOT=15.00 | num_boxes=0 | Prod_BOX=0.00
+idx=300 | Robot reached ROUTE waypoint | k=7/423 | pos=[8.00 24.00]
+idx=300 | Next waypoint selected | k=8/423 | target=[15.00 24.00]
+idx=327 | Robot reached ROUTE waypoint | k=8/423 | pos=[15.00 24.00]
+idx=327 | Next waypoint selected | k=9/423 | target=[15.00 2.00]
+idx=391 | Robot reached CARGO ZONE | unloading 15.00 crops | Prod_ROBOT_total before=0.00
+idx=391 | Robot reached ROUTE waypoint | k=9/423 | pos=[15.00 2.00]
+idx=391 | Next waypoint selected | k=10/423 | target=[15.00 2.00]
+idx=392 | Robot reached ROUTE waypoint | k=10/423 | pos=[15.00 2.00]
+idx=392 | Next waypoint selected | k=11/423 | target=[22.00 2.00]
+idx=422 | Robot reached ROUTE waypoint | k=11/423 | pos=[22.00 2.00]
+idx=422 | Next waypoint selected | k=12/423 | target=[22.00 24.00]
+idx=458 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=12 | total waypoints=424
+idx=458 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=458 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=458 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=12 | total waypoints=425
+idx=458 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=458 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=493 | Robot picked BOX from h12 | box_product=15.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=493 | Box waypoint removed for h12 | next k=12/424 | next target=[20.80 19.50]
+idx=493 | Robot box reset h12 | Prod_ROBOT=15.00 | num_boxes=0 | Prod_BOX=0.00
+idx=503 | Robot picked BOX from h8 | box_product=15.00 | Prod_ROBOT before=15.00 | robot=[23.05 18.90]
+idx=503 | Robot box reset h8 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=514 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=514 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=554 | Robot picked BOX from h11 | box_product=15.00 | Prod_ROBOT before=45.00 | robot=[21.40 19.34]
+idx=554 | Box waypoint removed for h11 | next k=12/423 | next target=[22.00 24.00]
+idx=554 | Robot box reset h11 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=557 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=60.00 | robot=[21.40 19.34]
+idx=557 | Robot box reset h7 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=575 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=575 | Robot box reset h3 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=594 | Robot reached ROUTE waypoint | k=12/423 | pos=[22.00 24.00]
+idx=594 | Next waypoint selected | k=13/423 | target=[15.00 24.00]
+idx=620 | Robot reached ROUTE waypoint | k=13/423 | pos=[15.00 24.00]
+idx=620 | Next waypoint selected | k=14/423 | target=[15.00 2.00]
+idx=625 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=14 | total waypoints=424
+idx=625 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=625 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=670 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=105.00 | robot=[14.01 20.11]
+idx=670 | Box waypoint removed for h6 | next k=14/423 | next target=[15.00 2.00]
+idx=670 | Robot box reset h6 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=685 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=135.00 | robot=[14.01 20.11]
+idx=685 | Robot box reset h2 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=692 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=165.00 | robot=[14.01 20.11]
+idx=692 | Robot box reset h10 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=747 | Robot reached CARGO ZONE | unloading 180.00 crops | Prod_ROBOT_total before=15.00
+idx=747 | Robot reached ROUTE waypoint | k=14/423 | pos=[15.00 2.00]
+idx=747 | Next waypoint selected | k=15/423 | target=[8.00 2.00]
+idx=757 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=767 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=777 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=787 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=797 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=807 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=195.00
+idx=841 | Robot reached ROUTE waypoint | k=15/423 | pos=[8.00 2.00]
+idx=841 | Next waypoint selected | k=16/423 | target=[8.00 24.00]
+idx=877 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=16 | total waypoints=424
+idx=877 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=877 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=927 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=927 | Box waypoint removed for h5 | next k=16/423 | next target=[8.00 24.00]
+idx=927 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=938 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=938 | Robot box reset h1 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=959 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=60.00 | robot=[6.95 18.90]
+idx=959 | Robot box reset h9 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=981 | Robot reached ROUTE waypoint | k=16/423 | pos=[8.00 24.00]
+idx=981 | Next waypoint selected | k=17/423 | target=[15.00 24.00]
+idx=1008 | Robot reached ROUTE waypoint | k=17/423 | pos=[15.00 24.00]
+idx=1008 | Next waypoint selected | k=18/423 | target=[15.00 2.00]
+idx=1072 | Robot reached CARGO ZONE | unloading 90.00 crops | Prod_ROBOT_total before=195.00
+idx=1072 | Robot reached ROUTE waypoint | k=18/423 | pos=[15.00 2.00]
+idx=1072 | Next waypoint selected | k=19/423 | target=[15.00 2.00]
+idx=1073 | Robot reached ROUTE waypoint | k=19/423 | pos=[15.00 2.00]
+idx=1073 | Next waypoint selected | k=20/423 | target=[22.00 2.00]
+idx=1082 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=285.00
+idx=1092 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=285.00
+idx=1102 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=285.00
+idx=1132 | Robot reached ROUTE waypoint | k=20/423 | pos=[22.00 2.00]
+idx=1132 | Next waypoint selected | k=21/423 | target=[22.00 24.00]
+idx=1168 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=21 | total waypoints=424
+idx=1168 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=1168 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=1168 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=21 | total waypoints=425
+idx=1168 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=1168 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=1217 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=1217 | Box waypoint removed for h12 | next k=21/424 | next target=[20.80 19.50]
+idx=1217 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1224 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=1224 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1242 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=1242 | Robot box reset h8 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1285 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=1285 | Box waypoint removed for h7 | next k=21/423 | next target=[22.00 24.00]
+idx=1285 | Robot box reset h7 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1296 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=1296 | Robot box reset h11 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1303 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=1303 | Robot box reset h3 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1322 | Robot reached ROUTE waypoint | k=21/423 | pos=[22.00 24.00]
+idx=1322 | Next waypoint selected | k=22/423 | target=[15.00 24.00]
+idx=1348 | Robot reached ROUTE waypoint | k=22/423 | pos=[15.00 24.00]
+idx=1348 | Next waypoint selected | k=23/423 | target=[15.00 2.00]
+idx=1353 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=23 | total waypoints=424
+idx=1353 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=1353 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=1402 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=165.00 | robot=[14.01 20.11]
+idx=1402 | Box waypoint removed for h6 | next k=23/423 | next target=[15.00 2.00]
+idx=1402 | Robot box reset h6 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1413 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=1413 | Robot box reset h2 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1416 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=1416 | Robot box reset h10 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1471 | Robot reached CARGO ZONE | unloading 255.00 crops | Prod_ROBOT_total before=285.00
+idx=1471 | Robot reached ROUTE waypoint | k=23/423 | pos=[15.00 2.00]
+idx=1471 | Next waypoint selected | k=24/423 | target=[8.00 2.00]
+idx=1481 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1491 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1501 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1511 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1521 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1531 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1541 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1551 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1561 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=540.00
+idx=1594 | Robot reached ROUTE waypoint | k=24/423 | pos=[8.00 2.00]
+idx=1594 | Next waypoint selected | k=25/423 | target=[8.00 24.00]
+idx=1630 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=25 | total waypoints=424
+idx=1630 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=1630 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=1691 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=1691 | Box waypoint removed for h1 | next k=25/423 | next target=[8.00 24.00]
+idx=1691 | Robot box reset h1 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1693 | Robot picked BOX from h5 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=1693 | Robot box reset h5 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1698 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=1698 | Robot box reset h9 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1720 | Robot reached ROUTE waypoint | k=25/423 | pos=[8.00 24.00]
+idx=1720 | Next waypoint selected | k=26/423 | target=[15.00 24.00]
+idx=1747 | Robot reached ROUTE waypoint | k=26/423 | pos=[15.00 24.00]
+idx=1747 | Next waypoint selected | k=27/423 | target=[15.00 2.00]
+idx=1811 | Robot reached CARGO ZONE | unloading 90.00 crops | Prod_ROBOT_total before=540.00
+idx=1811 | Robot reached ROUTE waypoint | k=27/423 | pos=[15.00 2.00]
+idx=1811 | Next waypoint selected | k=28/423 | target=[15.00 2.00]
+idx=1812 | Robot reached ROUTE waypoint | k=28/423 | pos=[15.00 2.00]
+idx=1812 | Next waypoint selected | k=29/423 | target=[22.00 2.00]
+idx=1821 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=630.00
+idx=1831 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=630.00
+idx=1841 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=630.00
+idx=1871 | Robot reached ROUTE waypoint | k=29/423 | pos=[22.00 2.00]
+idx=1871 | Next waypoint selected | k=30/423 | target=[22.00 24.00]
+idx=1907 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=30 | total waypoints=424
+idx=1907 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=1907 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=1907 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=30 | total waypoints=425
+idx=1907 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=1907 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=1956 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=1956 | Box waypoint removed for h12 | next k=30/424 | next target=[20.80 19.50]
+idx=1956 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1966 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=1966 | Robot box reset h8 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=1977 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=60.00 | robot=[23.05 18.90]
+idx=1977 | Robot box reset h4 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2031 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=2031 | Box waypoint removed for h11 | next k=30/423 | next target=[22.00 24.00]
+idx=2031 | Robot box reset h11 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2035 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=2035 | Robot box reset h7 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2052 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=165.00 | robot=[21.40 19.34]
+idx=2052 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2071 | Robot reached ROUTE waypoint | k=30/423 | pos=[22.00 24.00]
+idx=2071 | Next waypoint selected | k=31/423 | target=[15.00 24.00]
+idx=2097 | Robot reached ROUTE waypoint | k=31/423 | pos=[15.00 24.00]
+idx=2097 | Next waypoint selected | k=32/423 | target=[15.00 2.00]
+idx=2102 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=32 | total waypoints=424
+idx=2102 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=2102 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=2151 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=2151 | Box waypoint removed for h6 | next k=32/423 | next target=[15.00 2.00]
+idx=2151 | Robot box reset h6 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2169 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=2169 | Robot box reset h10 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2177 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=2177 | Robot box reset h2 | Prod_ROBOT=285.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2232 | Robot reached CARGO ZONE | unloading 285.00 crops | Prod_ROBOT_total before=630.00
+idx=2232 | Robot reached ROUTE waypoint | k=32/423 | pos=[15.00 2.00]
+idx=2232 | Next waypoint selected | k=33/423 | target=[8.00 2.00]
+idx=2242 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2252 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2262 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2272 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2282 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2292 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2302 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2312 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2322 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2332 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=915.00
+idx=2366 | Robot reached ROUTE waypoint | k=33/423 | pos=[8.00 2.00]
+idx=2366 | Next waypoint selected | k=34/423 | target=[8.00 24.00]
+idx=2402 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=34 | total waypoints=424
+idx=2402 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=2402 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=2452 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=2452 | Box waypoint removed for h5 | next k=34/423 | next target=[8.00 24.00]
+idx=2452 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2478 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=2478 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2496 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=2496 | Robot box reset h9 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2518 | Robot reached ROUTE waypoint | k=34/423 | pos=[8.00 24.00]
+idx=2518 | Next waypoint selected | k=35/423 | target=[15.00 24.00]
+idx=2545 | Robot reached ROUTE waypoint | k=35/423 | pos=[15.00 24.00]
+idx=2545 | Next waypoint selected | k=36/423 | target=[15.00 2.00]
+idx=2609 | Robot reached CARGO ZONE | unloading 105.00 crops | Prod_ROBOT_total before=915.00
+idx=2609 | Robot reached ROUTE waypoint | k=36/423 | pos=[15.00 2.00]
+idx=2609 | Next waypoint selected | k=37/423 | target=[15.00 2.00]
+idx=2610 | Robot reached ROUTE waypoint | k=37/423 | pos=[15.00 2.00]
+idx=2610 | Next waypoint selected | k=38/423 | target=[22.00 2.00]
+idx=2619 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1020.00
+idx=2629 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1020.00
+idx=2639 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1020.00
+idx=2649 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1020.00
+idx=2674 | Robot reached ROUTE waypoint | k=38/423 | pos=[22.00 2.00]
+idx=2674 | Next waypoint selected | k=39/423 | target=[22.00 24.00]
+idx=2710 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=39 | total waypoints=424
+idx=2710 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=2710 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=2710 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=39 | total waypoints=425
+idx=2710 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=2710 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=2753 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=2753 | Box waypoint removed for h4 | next k=39/424 | next target=[20.80 19.50]
+idx=2753 | Robot box reset h4 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2774 | Robot picked BOX from h12 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=2774 | Robot box reset h12 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2784 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=75.00 | robot=[23.05 18.90]
+idx=2784 | Robot box reset h8 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2838 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=2838 | Box waypoint removed for h11 | next k=39/423 | next target=[22.00 24.00]
+idx=2838 | Robot box reset h11 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2842 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=2842 | Robot box reset h7 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2845 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=195.00 | robot=[21.40 19.34]
+idx=2845 | Robot box reset h3 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2864 | Robot reached ROUTE waypoint | k=39/423 | pos=[22.00 24.00]
+idx=2864 | Next waypoint selected | k=40/423 | target=[15.00 24.00]
+idx=2890 | Robot reached ROUTE waypoint | k=40/423 | pos=[15.00 24.00]
+idx=2890 | Next waypoint selected | k=41/423 | target=[15.00 2.00]
+idx=2895 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=41 | total waypoints=424
+idx=2895 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=2895 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=2944 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=2944 | Box waypoint removed for h6 | next k=41/423 | next target=[15.00 2.00]
+idx=2944 | Robot box reset h6 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2955 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=2955 | Robot box reset h2 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
+idx=2976 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=270.00 | robot=[14.01 20.11]
+idx=2976 | Robot box reset h10 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3031 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=1020.00
+idx=3031 | Robot reached ROUTE waypoint | k=41/423 | pos=[15.00 2.00]
+idx=3031 | Next waypoint selected | k=42/423 | target=[8.00 2.00]
+idx=3041 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3051 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3061 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3071 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3081 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3091 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3101 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3111 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3121 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3131 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3141 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1320.00
+idx=3171 | Robot reached ROUTE waypoint | k=42/423 | pos=[8.00 2.00]
+idx=3171 | Next waypoint selected | k=43/423 | target=[8.00 24.00]
+idx=3207 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=43 | total waypoints=424
+idx=3207 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=3207 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=3257 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=3257 | Box waypoint removed for h5 | next k=43/423 | next target=[8.00 24.00]
+idx=3257 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3268 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=3268 | Robot box reset h1 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3275 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=60.00 | robot=[6.95 18.90]
+idx=3275 | Robot box reset h9 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3297 | Robot reached ROUTE waypoint | k=43/423 | pos=[8.00 24.00]
+idx=3297 | Next waypoint selected | k=44/423 | target=[15.00 24.00]
+idx=3324 | Robot reached ROUTE waypoint | k=44/423 | pos=[15.00 24.00]
+idx=3324 | Next waypoint selected | k=45/423 | target=[15.00 2.00]
+idx=3388 | Robot reached CARGO ZONE | unloading 75.00 crops | Prod_ROBOT_total before=1320.00
+idx=3388 | Robot reached ROUTE waypoint | k=45/423 | pos=[15.00 2.00]
+idx=3388 | Next waypoint selected | k=46/423 | target=[15.00 2.00]
+idx=3389 | Robot reached ROUTE waypoint | k=46/423 | pos=[15.00 2.00]
+idx=3389 | Next waypoint selected | k=47/423 | target=[22.00 2.00]
+idx=3398 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1395.00
+idx=3408 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1395.00
+idx=3442 | Robot reached ROUTE waypoint | k=47/423 | pos=[22.00 2.00]
+idx=3442 | Next waypoint selected | k=48/423 | target=[22.00 24.00]
+idx=3478 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=48 | total waypoints=424
+idx=3478 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=3478 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=3478 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=48 | total waypoints=425
+idx=3478 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=3478 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=3527 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=3527 | Box waypoint removed for h12 | next k=48/424 | next target=[20.80 19.50]
+idx=3527 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3534 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=3534 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3537 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=3537 | Robot box reset h8 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3580 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[21.40 19.34]
+idx=3580 | Box waypoint removed for h7 | next k=48/423 | next target=[22.00 24.00]
+idx=3580 | Robot box reset h7 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3591 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=105.00 | robot=[21.40 19.34]
+idx=3591 | Robot box reset h11 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3612 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=135.00 | robot=[21.40 19.34]
+idx=3612 | Robot box reset h3 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3631 | Robot reached ROUTE waypoint | k=48/423 | pos=[22.00 24.00]
+idx=3631 | Next waypoint selected | k=49/423 | target=[15.00 24.00]
+idx=3657 | Robot reached ROUTE waypoint | k=49/423 | pos=[15.00 24.00]
+idx=3657 | Next waypoint selected | k=50/423 | target=[15.00 2.00]
+idx=3662 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=50 | total waypoints=424
+idx=3662 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=3662 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=3726 | Robot picked BOX from h6 | box_product=45.00 | Prod_ROBOT before=165.00 | robot=[14.01 20.11]
+idx=3726 | Box waypoint removed for h6 | next k=50/423 | next target=[15.00 2.00]
+idx=3726 | Robot box reset h6 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3729 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=3729 | Robot box reset h10 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3737 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=3737 | Robot box reset h2 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
+idx=3792 | Robot reached CARGO ZONE | unloading 270.00 crops | Prod_ROBOT_total before=1395.00
+idx=3792 | Robot reached ROUTE waypoint | k=50/423 | pos=[15.00 2.00]
+idx=3792 | Next waypoint selected | k=51/423 | target=[8.00 2.00]
+idx=3802 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3812 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3822 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3832 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3842 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3852 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3862 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3872 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3882 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3892 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1665.00
+idx=3921 | Robot reached ROUTE waypoint | k=51/423 | pos=[8.00 2.00]
+idx=3921 | Next waypoint selected | k=52/423 | target=[8.00 24.00]
+idx=3957 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=52 | total waypoints=424
+idx=3957 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=3957 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=4007 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=4007 | Box waypoint removed for h5 | next k=52/423 | next target=[8.00 24.00]
+idx=4007 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4033 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=4033 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4039 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=4039 | Robot box reset h9 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4061 | Robot reached ROUTE waypoint | k=52/423 | pos=[8.00 24.00]
+idx=4061 | Next waypoint selected | k=53/423 | target=[15.00 24.00]
+idx=4088 | Robot reached ROUTE waypoint | k=53/423 | pos=[15.00 24.00]
+idx=4088 | Next waypoint selected | k=54/423 | target=[15.00 2.00]
+idx=4152 | Robot reached CARGO ZONE | unloading 105.00 crops | Prod_ROBOT_total before=1665.00
+idx=4152 | Robot reached ROUTE waypoint | k=54/423 | pos=[15.00 2.00]
+idx=4152 | Next waypoint selected | k=55/423 | target=[15.00 2.00]
+idx=4153 | Robot reached ROUTE waypoint | k=55/423 | pos=[15.00 2.00]
+idx=4153 | Next waypoint selected | k=56/423 | target=[22.00 2.00]
+idx=4162 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1770.00
+idx=4172 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1770.00
+idx=4182 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1770.00
+idx=4192 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=1770.00
+idx=4217 | Robot reached ROUTE waypoint | k=56/423 | pos=[22.00 2.00]
+idx=4217 | Next waypoint selected | k=57/423 | target=[22.00 24.00]
+idx=4253 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=57 | total waypoints=424
+idx=4253 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=4253 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=4253 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=57 | total waypoints=425
+idx=4253 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=4253 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=4302 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=4302 | Box waypoint removed for h12 | next k=57/424 | next target=[20.80 19.50]
+idx=4302 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4323 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=4323 | Robot box reset h4 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4327 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=60.00 | robot=[23.05 18.90]
+idx=4327 | Robot box reset h8 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4381 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=105.00 | robot=[21.40 19.34]
+idx=4381 | Box waypoint removed for h11 | next k=57/423 | next target=[22.00 24.00]
+idx=4381 | Robot box reset h11 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4385 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=135.00 | robot=[21.40 19.34]
+idx=4385 | Robot box reset h7 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4388 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=180.00 | robot=[21.40 19.34]
+idx=4388 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4407 | Robot reached ROUTE waypoint | k=57/423 | pos=[22.00 24.00]
+idx=4407 | Next waypoint selected | k=58/423 | target=[15.00 24.00]
+idx=4433 | Robot reached ROUTE waypoint | k=58/423 | pos=[15.00 24.00]
+idx=4433 | Next waypoint selected | k=59/423 | target=[15.00 2.00]
+idx=4438 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=59 | total waypoints=424
+idx=4438 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=4438 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=4487 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=4487 | Box waypoint removed for h6 | next k=59/423 | next target=[15.00 2.00]
+idx=4487 | Robot box reset h6 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4498 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=4498 | Robot box reset h2 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4519 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=255.00 | robot=[14.01 20.11]
+idx=4519 | Robot box reset h10 | Prod_ROBOT=285.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4574 | Robot reached CARGO ZONE | unloading 285.00 crops | Prod_ROBOT_total before=1770.00
+idx=4574 | Robot reached ROUTE waypoint | k=59/423 | pos=[15.00 2.00]
+idx=4574 | Next waypoint selected | k=60/423 | target=[8.00 2.00]
+idx=4584 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4594 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4604 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4614 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4624 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4634 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4644 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4654 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4664 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4674 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2055.00
+idx=4708 | Robot reached ROUTE waypoint | k=60/423 | pos=[8.00 2.00]
+idx=4708 | Next waypoint selected | k=61/423 | target=[8.00 24.00]
+idx=4744 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=61 | total waypoints=424
+idx=4744 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=4744 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=4805 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=4805 | Box waypoint removed for h1 | next k=61/423 | next target=[8.00 24.00]
+idx=4805 | Robot box reset h1 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4809 | Robot picked BOX from h5 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=4809 | Robot box reset h5 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4812 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=4812 | Robot box reset h9 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=4834 | Robot reached ROUTE waypoint | k=61/423 | pos=[8.00 24.00]
+idx=4834 | Next waypoint selected | k=62/423 | target=[15.00 24.00]
+idx=4861 | Robot reached ROUTE waypoint | k=62/423 | pos=[15.00 24.00]
+idx=4861 | Next waypoint selected | k=63/423 | target=[15.00 2.00]
+idx=4925 | Robot reached CARGO ZONE | unloading 90.00 crops | Prod_ROBOT_total before=2055.00
+idx=4925 | Robot reached ROUTE waypoint | k=63/423 | pos=[15.00 2.00]
+idx=4925 | Next waypoint selected | k=64/423 | target=[15.00 2.00]
+idx=4926 | Robot reached ROUTE waypoint | k=64/423 | pos=[15.00 2.00]
+idx=4926 | Next waypoint selected | k=65/423 | target=[22.00 2.00]
+idx=4935 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2145.00
+idx=4945 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2145.00
+idx=4955 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2145.00
+idx=4985 | Robot reached ROUTE waypoint | k=65/423 | pos=[22.00 2.00]
+idx=4985 | Next waypoint selected | k=66/423 | target=[22.00 24.00]
+idx=5021 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=66 | total waypoints=424
+idx=5021 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=5021 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=5021 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=66 | total waypoints=425
+idx=5021 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=5021 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=5080 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=5080 | Box waypoint removed for h8 | next k=66/424 | next target=[20.80 19.50]
+idx=5080 | Robot box reset h8 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5085 | Robot picked BOX from h12 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=5085 | Robot box reset h12 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5096 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[23.05 18.90]
+idx=5096 | Robot box reset h4 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5150 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=105.00 | robot=[21.40 19.34]
+idx=5150 | Box waypoint removed for h11 | next k=66/423 | next target=[22.00 24.00]
+idx=5150 | Robot box reset h11 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5154 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=135.00 | robot=[21.40 19.34]
+idx=5154 | Robot box reset h7 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5171 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=180.00 | robot=[21.40 19.34]
+idx=5171 | Robot box reset h3 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5190 | Robot reached ROUTE waypoint | k=66/423 | pos=[22.00 24.00]
+idx=5190 | Next waypoint selected | k=67/423 | target=[15.00 24.00]
+idx=5216 | Robot reached ROUTE waypoint | k=67/423 | pos=[15.00 24.00]
+idx=5216 | Next waypoint selected | k=68/423 | target=[15.00 2.00]
+idx=5221 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=68 | total waypoints=424
+idx=5221 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=5221 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=5270 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=5270 | Box waypoint removed for h6 | next k=68/423 | next target=[15.00 2.00]
+idx=5270 | Robot box reset h6 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5288 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=5288 | Robot box reset h10 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5296 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=255.00 | robot=[14.01 20.11]
+idx=5296 | Robot box reset h2 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5351 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=2145.00
+idx=5351 | Robot reached ROUTE waypoint | k=68/423 | pos=[15.00 2.00]
+idx=5351 | Next waypoint selected | k=69/423 | target=[8.00 2.00]
+idx=5361 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5371 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5381 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5391 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5401 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5411 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5421 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5431 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5441 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5451 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5461 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2445.00
+idx=5491 | Robot reached ROUTE waypoint | k=69/423 | pos=[8.00 2.00]
+idx=5491 | Next waypoint selected | k=70/423 | target=[8.00 24.00]
+idx=5527 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=70 | total waypoints=424
+idx=5527 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=5527 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=5577 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=5577 | Box waypoint removed for h5 | next k=70/423 | next target=[8.00 24.00]
+idx=5577 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5603 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=5603 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5609 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=5609 | Robot box reset h9 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5631 | Robot reached ROUTE waypoint | k=70/423 | pos=[8.00 24.00]
+idx=5631 | Next waypoint selected | k=71/423 | target=[15.00 24.00]
+idx=5658 | Robot reached ROUTE waypoint | k=71/423 | pos=[15.00 24.00]
+idx=5658 | Next waypoint selected | k=72/423 | target=[15.00 2.00]
+idx=5722 | Robot reached CARGO ZONE | unloading 105.00 crops | Prod_ROBOT_total before=2445.00
+idx=5722 | Robot reached ROUTE waypoint | k=72/423 | pos=[15.00 2.00]
+idx=5722 | Next waypoint selected | k=73/423 | target=[15.00 2.00]
+idx=5723 | Robot reached ROUTE waypoint | k=73/423 | pos=[15.00 2.00]
+idx=5723 | Next waypoint selected | k=74/423 | target=[22.00 2.00]
+idx=5732 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2550.00
+idx=5742 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2550.00
+idx=5752 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2550.00
+idx=5762 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2550.00
+idx=5787 | Robot reached ROUTE waypoint | k=74/423 | pos=[22.00 2.00]
+idx=5787 | Next waypoint selected | k=75/423 | target=[22.00 24.00]
+idx=5823 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=75 | total waypoints=424
+idx=5823 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=5823 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=5823 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=75 | total waypoints=425
+idx=5823 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=5823 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=5872 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=5872 | Box waypoint removed for h12 | next k=75/424 | next target=[20.80 19.50]
+idx=5872 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5879 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=5879 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5897 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=5897 | Robot box reset h8 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5951 | Robot picked BOX from h11 | box_product=45.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=5951 | Box waypoint removed for h11 | next k=75/423 | next target=[22.00 24.00]
+idx=5951 | Robot box reset h11 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5955 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=135.00 | robot=[21.40 19.34]
+idx=5955 | Robot box reset h7 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5958 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=180.00 | robot=[21.40 19.34]
+idx=5958 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=5977 | Robot reached ROUTE waypoint | k=75/423 | pos=[22.00 24.00]
+idx=5977 | Next waypoint selected | k=76/423 | target=[15.00 24.00]
+idx=6003 | Robot reached ROUTE waypoint | k=76/423 | pos=[15.00 24.00]
+idx=6003 | Next waypoint selected | k=77/423 | target=[15.00 2.00]
+idx=6008 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=77 | total waypoints=424
+idx=6008 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=6008 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=6057 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=6057 | Box waypoint removed for h6 | next k=77/423 | next target=[15.00 2.00]
+idx=6057 | Robot box reset h6 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6068 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=6068 | Robot box reset h2 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6089 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=255.00 | robot=[14.01 20.11]
+idx=6089 | Robot box reset h10 | Prod_ROBOT=285.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6144 | Robot reached CARGO ZONE | unloading 285.00 crops | Prod_ROBOT_total before=2550.00
+idx=6144 | Robot reached ROUTE waypoint | k=77/423 | pos=[15.00 2.00]
+idx=6144 | Next waypoint selected | k=78/423 | target=[8.00 2.00]
+idx=6154 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6164 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6174 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6184 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6194 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6204 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6214 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6224 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6234 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6244 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2835.00
+idx=6278 | Robot reached ROUTE waypoint | k=78/423 | pos=[8.00 2.00]
+idx=6278 | Next waypoint selected | k=79/423 | target=[8.00 24.00]
+idx=6314 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=79 | total waypoints=424
+idx=6314 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=6314 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=6364 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=6364 | Box waypoint removed for h5 | next k=79/423 | next target=[8.00 24.00]
+idx=6364 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6375 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=6375 | Robot box reset h1 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6382 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=60.00 | robot=[6.95 18.90]
+idx=6382 | Robot box reset h9 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6404 | Robot reached ROUTE waypoint | k=79/423 | pos=[8.00 24.00]
+idx=6404 | Next waypoint selected | k=80/423 | target=[15.00 24.00]
+idx=6431 | Robot reached ROUTE waypoint | k=80/423 | pos=[15.00 24.00]
+idx=6431 | Next waypoint selected | k=81/423 | target=[15.00 2.00]
+idx=6495 | Robot reached CARGO ZONE | unloading 75.00 crops | Prod_ROBOT_total before=2835.00
+idx=6495 | Robot reached ROUTE waypoint | k=81/423 | pos=[15.00 2.00]
+idx=6495 | Next waypoint selected | k=82/423 | target=[15.00 2.00]
+idx=6496 | Robot reached ROUTE waypoint | k=82/423 | pos=[15.00 2.00]
+idx=6496 | Next waypoint selected | k=83/423 | target=[22.00 2.00]
+idx=6505 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2910.00
+idx=6515 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=2910.00
+idx=6549 | Robot reached ROUTE waypoint | k=83/423 | pos=[22.00 2.00]
+idx=6549 | Next waypoint selected | k=84/423 | target=[22.00 24.00]
+idx=6585 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=84 | total waypoints=424
+idx=6585 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=6585 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=6585 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=84 | total waypoints=425
+idx=6585 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=6585 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=6634 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=6634 | Box waypoint removed for h12 | next k=84/424 | next target=[20.80 19.50]
+idx=6634 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6644 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=6644 | Robot box reset h8 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6655 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=60.00 | robot=[23.05 18.90]
+idx=6655 | Robot box reset h4 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6706 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=6706 | Box waypoint removed for h7 | next k=84/423 | next target=[22.00 24.00]
+idx=6706 | Robot box reset h7 | Prod_ROBOT=135.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6709 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=135.00 | robot=[21.40 19.34]
+idx=6709 | Robot box reset h11 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6730 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=165.00 | robot=[21.40 19.34]
+idx=6730 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6749 | Robot reached ROUTE waypoint | k=84/423 | pos=[22.00 24.00]
+idx=6749 | Next waypoint selected | k=85/423 | target=[15.00 24.00]
+idx=6775 | Robot reached ROUTE waypoint | k=85/423 | pos=[15.00 24.00]
+idx=6775 | Next waypoint selected | k=86/423 | target=[15.00 2.00]
+idx=6780 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=86 | total waypoints=424
+idx=6780 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=6780 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=6844 | Robot picked BOX from h6 | box_product=45.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=6844 | Box waypoint removed for h6 | next k=86/423 | next target=[15.00 2.00]
+idx=6844 | Robot box reset h6 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6847 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=6847 | Robot box reset h10 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6855 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=255.00 | robot=[14.01 20.11]
+idx=6855 | Robot box reset h2 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=6910 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=2910.00
+idx=6910 | Robot reached ROUTE waypoint | k=86/423 | pos=[15.00 2.00]
+idx=6910 | Next waypoint selected | k=87/423 | target=[8.00 2.00]
+idx=6920 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6930 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6940 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6950 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6960 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6970 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6980 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=6990 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=7000 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=7010 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=7020 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3210.00
+idx=7050 | Robot reached ROUTE waypoint | k=87/423 | pos=[8.00 2.00]
+idx=7050 | Next waypoint selected | k=88/423 | target=[8.00 24.00]
+idx=7086 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=88 | total waypoints=424
+idx=7086 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=7086 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=7146 | Robot picked BOX from h5 | box_product=45.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=7146 | Box waypoint removed for h5 | next k=88/423 | next target=[8.00 24.00]
+idx=7146 | Robot box reset h5 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7162 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=45.00 | robot=[6.95 18.90]
+idx=7162 | Robot box reset h1 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7168 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=90.00 | robot=[6.95 18.90]
+idx=7168 | Robot box reset h9 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7190 | Robot reached ROUTE waypoint | k=88/423 | pos=[8.00 24.00]
+idx=7190 | Next waypoint selected | k=89/423 | target=[15.00 24.00]
+idx=7217 | Robot reached ROUTE waypoint | k=89/423 | pos=[15.00 24.00]
+idx=7217 | Next waypoint selected | k=90/423 | target=[15.00 2.00]
+idx=7281 | Robot reached CARGO ZONE | unloading 120.00 crops | Prod_ROBOT_total before=3210.00
+idx=7281 | Robot reached ROUTE waypoint | k=90/423 | pos=[15.00 2.00]
+idx=7281 | Next waypoint selected | k=91/423 | target=[15.00 2.00]
+idx=7282 | Robot reached ROUTE waypoint | k=91/423 | pos=[15.00 2.00]
+idx=7282 | Next waypoint selected | k=92/423 | target=[22.00 2.00]
+idx=7291 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3330.00
+idx=7301 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3330.00
+idx=7311 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3330.00
+idx=7321 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3330.00
+idx=7352 | Robot reached ROUTE waypoint | k=92/423 | pos=[22.00 2.00]
+idx=7352 | Next waypoint selected | k=93/423 | target=[22.00 24.00]
+idx=7388 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=93 | total waypoints=424
+idx=7388 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=7388 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=7388 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=93 | total waypoints=425
+idx=7388 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=7388 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=7452 | Robot picked BOX from h12 | box_product=45.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=7452 | Box waypoint removed for h12 | next k=93/424 | next target=[20.80 19.50]
+idx=7452 | Robot box reset h12 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7458 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=7458 | Robot box reset h4 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7462 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=75.00 | robot=[23.05 18.90]
+idx=7462 | Robot box reset h8 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7505 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=7505 | Box waypoint removed for h7 | next k=93/423 | next target=[22.00 24.00]
+idx=7505 | Robot box reset h7 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7516 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=7516 | Robot box reset h11 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7521 | Robot detected BOX from h7 and inserted waypoint | box=[20.80 19.50] | dist=0.62 | inserted before k=93 | total waypoints=424
+idx=7523 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=180.00 | robot=[21.40 19.34]
+idx=7523 | Box waypoint removed for h3 | next k=93/423 | next target=[22.00 24.00]
+idx=7523 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7545 | Robot picked BOX from h7 | box_product=15.00 | Prod_ROBOT before=195.00 | robot=[21.40 19.34]
+idx=7545 | Robot box reset h7 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7564 | Robot reached ROUTE waypoint | k=93/423 | pos=[22.00 24.00]
+idx=7564 | Next waypoint selected | k=94/423 | target=[15.00 24.00]
+idx=7590 | Robot reached ROUTE waypoint | k=94/423 | pos=[15.00 24.00]
+idx=7590 | Next waypoint selected | k=95/423 | target=[15.00 2.00]
+idx=7595 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=95 | total waypoints=424
+idx=7595 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=7595 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=7644 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=7644 | Box waypoint removed for h6 | next k=95/423 | next target=[15.00 2.00]
+idx=7644 | Robot box reset h6 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7655 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=7655 | Robot box reset h2 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7676 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=270.00 | robot=[14.01 20.11]
+idx=7676 | Robot box reset h10 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7731 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=3330.00
+idx=7731 | Robot reached ROUTE waypoint | k=95/423 | pos=[15.00 2.00]
+idx=7731 | Next waypoint selected | k=96/423 | target=[8.00 2.00]
+idx=7741 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7751 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7761 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7771 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7781 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7791 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7801 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7811 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7821 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7831 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7841 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3630.00
+idx=7871 | Robot reached ROUTE waypoint | k=96/423 | pos=[8.00 2.00]
+idx=7871 | Next waypoint selected | k=97/423 | target=[8.00 24.00]
+idx=7907 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=97 | total waypoints=424
+idx=7907 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=7907 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=7957 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=7957 | Box waypoint removed for h5 | next k=97/423 | next target=[8.00 24.00]
+idx=7957 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7968 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=7968 | Robot box reset h1 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7975 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=60.00 | robot=[6.95 18.90]
+idx=7975 | Robot box reset h9 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=7997 | Robot reached ROUTE waypoint | k=97/423 | pos=[8.00 24.00]
+idx=7997 | Next waypoint selected | k=98/423 | target=[15.00 24.00]
+idx=8024 | Robot reached ROUTE waypoint | k=98/423 | pos=[15.00 24.00]
+idx=8024 | Next waypoint selected | k=99/423 | target=[15.00 2.00]
+idx=8088 | Robot reached CARGO ZONE | unloading 75.00 crops | Prod_ROBOT_total before=3630.00
+idx=8088 | Robot reached ROUTE waypoint | k=99/423 | pos=[15.00 2.00]
+idx=8088 | Next waypoint selected | k=100/423 | target=[15.00 2.00]
+idx=8089 | Robot reached ROUTE waypoint | k=100/423 | pos=[15.00 2.00]
+idx=8089 | Next waypoint selected | k=101/423 | target=[22.00 2.00]
+idx=8098 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3705.00
+idx=8108 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3705.00
+idx=8142 | Robot reached ROUTE waypoint | k=101/423 | pos=[22.00 2.00]
+idx=8142 | Next waypoint selected | k=102/423 | target=[22.00 24.00]
+idx=8178 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=102 | total waypoints=424
+idx=8178 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=8178 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=8178 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=102 | total waypoints=425
+idx=8178 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=8178 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=8227 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=8227 | Box waypoint removed for h12 | next k=102/424 | next target=[20.80 19.50]
+idx=8227 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8234 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=8234 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8250 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=8250 | Robot box reset h8 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8293 | Robot picked BOX from h7 | box_product=30.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=8293 | Box waypoint removed for h7 | next k=102/423 | next target=[22.00 24.00]
+idx=8293 | Robot box reset h7 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8304 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=8304 | Robot box reset h11 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8325 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=8325 | Robot box reset h3 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8344 | Robot reached ROUTE waypoint | k=102/423 | pos=[22.00 24.00]
+idx=8344 | Next waypoint selected | k=103/423 | target=[15.00 24.00]
+idx=8370 | Robot reached ROUTE waypoint | k=103/423 | pos=[15.00 24.00]
+idx=8370 | Next waypoint selected | k=104/423 | target=[15.00 2.00]
+idx=8375 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=104 | total waypoints=424
+idx=8375 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=8375 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=8424 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=180.00 | robot=[14.01 20.11]
+idx=8424 | Box waypoint removed for h6 | next k=104/423 | next target=[15.00 2.00]
+idx=8424 | Robot box reset h6 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8442 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=8442 | Robot box reset h10 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8450 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=8450 | Robot box reset h2 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8505 | Robot reached CARGO ZONE | unloading 270.00 crops | Prod_ROBOT_total before=3705.00
+idx=8505 | Robot reached ROUTE waypoint | k=104/423 | pos=[15.00 2.00]
+idx=8505 | Next waypoint selected | k=105/423 | target=[8.00 2.00]
+idx=8515 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8525 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8535 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8545 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8555 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8565 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8575 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8585 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8595 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8605 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=3975.00
+idx=8634 | Robot reached ROUTE waypoint | k=105/423 | pos=[8.00 2.00]
+idx=8634 | Next waypoint selected | k=106/423 | target=[8.00 24.00]
+idx=8670 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=106 | total waypoints=424
+idx=8670 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=8670 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=8720 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=8720 | Box waypoint removed for h5 | next k=106/423 | next target=[8.00 24.00]
+idx=8720 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8746 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=8746 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8752 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=8752 | Robot box reset h9 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=8774 | Robot reached ROUTE waypoint | k=106/423 | pos=[8.00 24.00]
+idx=8774 | Next waypoint selected | k=107/423 | target=[15.00 24.00]
+idx=8801 | Robot reached ROUTE waypoint | k=107/423 | pos=[15.00 24.00]
+idx=8801 | Next waypoint selected | k=108/423 | target=[15.00 2.00]
+idx=8865 | Robot reached CARGO ZONE | unloading 105.00 crops | Prod_ROBOT_total before=3975.00
+idx=8865 | Robot reached ROUTE waypoint | k=108/423 | pos=[15.00 2.00]
+idx=8865 | Next waypoint selected | k=109/423 | target=[15.00 2.00]
+idx=8866 | Robot reached ROUTE waypoint | k=109/423 | pos=[15.00 2.00]
+idx=8866 | Next waypoint selected | k=110/423 | target=[22.00 2.00]
+idx=8875 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4080.00
+idx=8885 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4080.00
+idx=8895 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4080.00
+idx=8905 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4080.00
+idx=8930 | Robot reached ROUTE waypoint | k=110/423 | pos=[22.00 2.00]
+idx=8930 | Next waypoint selected | k=111/423 | target=[22.00 24.00]
+idx=8966 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=111 | total waypoints=424
+idx=8966 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=8966 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=8966 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=111 | total waypoints=425
+idx=8966 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=8966 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=9015 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=9015 | Box waypoint removed for h12 | next k=111/424 | next target=[20.80 19.50]
+idx=9015 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9025 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=9025 | Robot box reset h8 | Prod_ROBOT=60.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9036 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=60.00 | robot=[23.05 18.90]
+idx=9036 | Robot box reset h4 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9090 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=90.00 | robot=[21.40 19.34]
+idx=9090 | Box waypoint removed for h11 | next k=111/423 | next target=[22.00 24.00]
+idx=9090 | Robot box reset h11 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9094 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=9094 | Robot box reset h7 | Prod_ROBOT=165.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9101 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=165.00 | robot=[21.40 19.34]
+idx=9101 | Robot box reset h3 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9120 | Robot reached ROUTE waypoint | k=111/423 | pos=[22.00 24.00]
+idx=9120 | Next waypoint selected | k=112/423 | target=[15.00 24.00]
+idx=9146 | Robot reached ROUTE waypoint | k=112/423 | pos=[15.00 24.00]
+idx=9146 | Next waypoint selected | k=113/423 | target=[15.00 2.00]
+idx=9151 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=113 | total waypoints=424
+idx=9151 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=9151 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=9211 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=195.00 | robot=[14.01 20.11]
+idx=9211 | Box waypoint removed for h2 | next k=113/423 | next target=[15.00 2.00]
+idx=9211 | Robot box reset h2 | Prod_ROBOT=225.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9215 | Robot picked BOX from h6 | box_product=45.00 | Prod_ROBOT before=225.00 | robot=[14.01 20.11]
+idx=9215 | Robot box reset h6 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9232 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=270.00 | robot=[14.01 20.11]
+idx=9232 | Robot box reset h10 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9287 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=4080.00
+idx=9287 | Robot reached ROUTE waypoint | k=113/423 | pos=[15.00 2.00]
+idx=9287 | Next waypoint selected | k=114/423 | target=[8.00 2.00]
+idx=9297 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9307 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9317 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9327 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9337 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9347 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9357 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9367 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9377 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9387 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9397 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4380.00
+idx=9427 | Robot reached ROUTE waypoint | k=114/423 | pos=[8.00 2.00]
+idx=9427 | Next waypoint selected | k=115/423 | target=[8.00 24.00]
+idx=9463 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=115 | total waypoints=424
+idx=9463 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=9463 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=9521 | Robot picked BOX from h5 | box_product=45.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=9521 | Box waypoint removed for h5 | next k=115/423 | next target=[8.00 24.00]
+idx=9521 | Robot box reset h5 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9524 | Robot picked BOX from h1 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[6.95 18.90]
+idx=9524 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9531 | Robot picked BOX from h9 | box_product=15.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=9531 | Robot box reset h9 | Prod_ROBOT=90.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9553 | Robot reached ROUTE waypoint | k=115/423 | pos=[8.00 24.00]
+idx=9553 | Next waypoint selected | k=116/423 | target=[15.00 24.00]
+idx=9580 | Robot reached ROUTE waypoint | k=116/423 | pos=[15.00 24.00]
+idx=9580 | Next waypoint selected | k=117/423 | target=[15.00 2.00]
+idx=9644 | Robot reached CARGO ZONE | unloading 90.00 crops | Prod_ROBOT_total before=4380.00
+idx=9644 | Robot reached ROUTE waypoint | k=117/423 | pos=[15.00 2.00]
+idx=9644 | Next waypoint selected | k=118/423 | target=[15.00 2.00]
+idx=9645 | Robot reached ROUTE waypoint | k=118/423 | pos=[15.00 2.00]
+idx=9645 | Next waypoint selected | k=119/423 | target=[22.00 2.00]
+idx=9654 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4470.00
+idx=9664 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4470.00
+idx=9674 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4470.00
+idx=9704 | Robot reached ROUTE waypoint | k=119/423 | pos=[22.00 2.00]
+idx=9704 | Next waypoint selected | k=120/423 | target=[22.00 24.00]
+idx=9740 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=120 | total waypoints=424
+idx=9740 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=9740 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=9740 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=120 | total waypoints=425
+idx=9740 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=9740 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=9802 | Robot picked BOX from h12 | box_product=45.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=9802 | Box waypoint removed for h12 | next k=120/424 | next target=[20.80 19.50]
+idx=9802 | Robot box reset h12 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9810 | Robot picked BOX from h4 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=9810 | Robot box reset h4 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9814 | Robot picked BOX from h8 | box_product=45.00 | Prod_ROBOT before=75.00 | robot=[23.05 18.90]
+idx=9814 | Robot box reset h8 | Prod_ROBOT=120.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9868 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=120.00 | robot=[21.40 19.34]
+idx=9868 | Box waypoint removed for h11 | next k=120/423 | next target=[22.00 24.00]
+idx=9868 | Robot box reset h11 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9872 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=9872 | Robot box reset h7 | Prod_ROBOT=195.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9875 | Robot picked BOX from h3 | box_product=15.00 | Prod_ROBOT before=195.00 | robot=[21.40 19.34]
+idx=9875 | Robot box reset h3 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9894 | Robot reached ROUTE waypoint | k=120/423 | pos=[22.00 24.00]
+idx=9894 | Next waypoint selected | k=121/423 | target=[15.00 24.00]
+idx=9920 | Robot reached ROUTE waypoint | k=121/423 | pos=[15.00 24.00]
+idx=9920 | Next waypoint selected | k=122/423 | target=[15.00 2.00]
+idx=9925 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=122 | total waypoints=424
+idx=9925 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=9925 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=9974 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=9974 | Box waypoint removed for h6 | next k=122/423 | next target=[15.00 2.00]
+idx=9974 | Robot box reset h6 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=9992 | Robot picked BOX from h10 | box_product=15.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=9992 | Robot box reset h10 | Prod_ROBOT=255.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10000 | Robot picked BOX from h2 | box_product=45.00 | Prod_ROBOT before=255.00 | robot=[14.01 20.11]
+idx=10000 | Robot box reset h2 | Prod_ROBOT=300.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10055 | Robot reached CARGO ZONE | unloading 300.00 crops | Prod_ROBOT_total before=4470.00
+idx=10055 | Robot reached ROUTE waypoint | k=122/423 | pos=[15.00 2.00]
+idx=10055 | Next waypoint selected | k=123/423 | target=[8.00 2.00]
+idx=10065 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10075 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10085 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10095 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10105 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10115 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10125 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10135 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10145 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10155 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10165 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4770.00
+idx=10195 | Robot reached ROUTE waypoint | k=123/423 | pos=[8.00 2.00]
+idx=10195 | Next waypoint selected | k=124/423 | target=[8.00 24.00]
+idx=10231 | Robot detected BOX from h1 and inserted waypoint | box=[6.80 19.50] | dist=2.74 | inserted before k=124 | total waypoints=424
+idx=10231 | Robot detected BOX from h5 | box already existed as waypoint at [6.80 19.50]
+idx=10231 | Robot detected BOX from h9 | box already existed as waypoint at [6.80 19.50]
+idx=10281 | Robot picked BOX from h5 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[6.95 18.90]
+idx=10281 | Box waypoint removed for h5 | next k=124/423 | next target=[8.00 24.00]
+idx=10281 | Robot box reset h5 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10307 | Robot picked BOX from h1 | box_product=45.00 | Prod_ROBOT before=30.00 | robot=[6.95 18.90]
+idx=10307 | Robot box reset h1 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10313 | Robot picked BOX from h9 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[6.95 18.90]
+idx=10313 | Robot box reset h9 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10335 | Robot reached ROUTE waypoint | k=124/423 | pos=[8.00 24.00]
+idx=10335 | Next waypoint selected | k=125/423 | target=[15.00 24.00]
+idx=10362 | Robot reached ROUTE waypoint | k=125/423 | pos=[15.00 24.00]
+idx=10362 | Next waypoint selected | k=126/423 | target=[15.00 2.00]
+idx=10426 | Robot reached CARGO ZONE | unloading 105.00 crops | Prod_ROBOT_total before=4770.00
+idx=10426 | Robot reached ROUTE waypoint | k=126/423 | pos=[15.00 2.00]
+idx=10426 | Next waypoint selected | k=127/423 | target=[15.00 2.00]
+idx=10427 | Robot reached ROUTE waypoint | k=127/423 | pos=[15.00 2.00]
+idx=10427 | Next waypoint selected | k=128/423 | target=[22.00 2.00]
+idx=10436 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4875.00
+idx=10446 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4875.00
+idx=10456 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4875.00
+idx=10466 | Robot reached CARGO ZONE | unloading 0.00 crops | Prod_ROBOT_total before=4875.00
+idx=10491 | Robot reached ROUTE waypoint | k=128/423 | pos=[22.00 2.00]
+idx=10491 | Next waypoint selected | k=129/423 | target=[22.00 24.00]
+idx=10527 | Robot detected BOX from h3 and inserted waypoint | box=[20.80 19.50] | dist=2.98 | inserted before k=129 | total waypoints=424
+idx=10527 | Robot detected BOX from h7 | box already existed as waypoint at [20.80 19.50]
+idx=10527 | Robot detected BOX from h11 | box already existed as waypoint at [20.80 19.50]
+idx=10527 | Robot detected BOX from h4 and inserted waypoint | box=[23.20 19.50] | dist=2.74 | inserted before k=129 | total waypoints=425
+idx=10527 | Robot detected BOX from h8 | box already existed as waypoint at [23.20 19.50]
+idx=10527 | Robot detected BOX from h12 | box already existed as waypoint at [23.20 19.50]
+idx=10576 | Robot picked BOX from h12 | box_product=30.00 | Prod_ROBOT before=0.00 | robot=[23.05 18.90]
+idx=10576 | Box waypoint removed for h12 | next k=129/424 | next target=[20.80 19.50]
+idx=10576 | Robot box reset h12 | Prod_ROBOT=30.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10583 | Robot picked BOX from h4 | box_product=15.00 | Prod_ROBOT before=30.00 | robot=[23.05 18.90]
+idx=10583 | Robot box reset h4 | Prod_ROBOT=45.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10586 | Robot picked BOX from h8 | box_product=30.00 | Prod_ROBOT before=45.00 | robot=[23.05 18.90]
+idx=10586 | Robot box reset h8 | Prod_ROBOT=75.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10640 | Robot picked BOX from h11 | box_product=30.00 | Prod_ROBOT before=75.00 | robot=[21.40 19.34]
+idx=10640 | Box waypoint removed for h11 | next k=129/423 | next target=[22.00 24.00]
+idx=10640 | Robot box reset h11 | Prod_ROBOT=105.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10644 | Robot picked BOX from h7 | box_product=45.00 | Prod_ROBOT before=105.00 | robot=[21.40 19.34]
+idx=10644 | Robot box reset h7 | Prod_ROBOT=150.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10661 | Robot picked BOX from h3 | box_product=30.00 | Prod_ROBOT before=150.00 | robot=[21.40 19.34]
+idx=10661 | Robot box reset h3 | Prod_ROBOT=180.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10680 | Robot reached ROUTE waypoint | k=129/423 | pos=[22.00 24.00]
+idx=10680 | Next waypoint selected | k=130/423 | target=[15.00 24.00]
+idx=10706 | Robot reached ROUTE waypoint | k=130/423 | pos=[15.00 24.00]
+idx=10706 | Next waypoint selected | k=131/423 | target=[15.00 2.00]
+idx=10711 | Robot detected BOX from h2 and inserted waypoint | box=[13.80 19.50] | dist=2.52 | inserted before k=131 | total waypoints=424
+idx=10711 | Robot detected BOX from h6 | box already existed as waypoint at [13.80 19.50]
+idx=10711 | Robot detected BOX from h10 | box already existed as waypoint at [13.80 19.50]
+idx=10760 | Robot picked BOX from h6 | box_product=30.00 | Prod_ROBOT before=180.00 | robot=[14.01 20.11]
+idx=10760 | Box waypoint removed for h6 | next k=131/423 | next target=[15.00 2.00]
+idx=10760 | Robot box reset h6 | Prod_ROBOT=210.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10771 | Robot picked BOX from h2 | box_product=30.00 | Prod_ROBOT before=210.00 | robot=[14.01 20.11]
+idx=10771 | Robot box reset h2 | Prod_ROBOT=240.00 | num_boxes=0 | Prod_BOX=0.00
+idx=10792 | Robot picked BOX from h10 | box_product=30.00 | Prod_ROBOT before=240.00 | robot=[14.01 20.11]
+idx=10792 | Robot box reset h10 | Prod_ROBOT=270.00 | num_boxes=0 | Prod_BOX=0.00
