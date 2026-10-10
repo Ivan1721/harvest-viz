@@ -82,13 +82,17 @@ function Worker({ w, run, onSelect, selected }) {
   )
 }
 
-// Vehículo 4WS (Warthog-like). Geometría según HumanRobot_Sim.m: radio de rueda 0,5 m,
-// CG a 1,2 m del eje delantero y 1,7 m del trasero (distancia entre ejes 2,9 m), capacidad 68 cajas × 15 u.
-const ROBOT = { r: 0.5, front: 1.2, rear: 1.7, track: 0.8, capacity: 68 * 15 }
+// Robot transportador con dimensiones reales del Clearpath Warthog (manual del fabricante):
+// 1,52 × 1,38 × 0,83 m, neumático de 0,61 m de diámetro, holgura al suelo 0,254 m. Dirección diferencial (skid-steer):
+// las ruedas no se orientan; al girar, las de un lado ruedan más rápido que las del otro.
+// Capacidad de carga: 68 cajas × 15 u (parámetro del estudio, no físico del Warthog).
+const ROBOT = { L: 1.52, W: 1.38, H: 0.83, r: 0.305, clear: 0.254, tireW: 0.25, capacity: 68 * 15 }
+const WX = ROBOT.L / 2 - ROBOT.r            // centro de rueda a lo largo (±0,455 m)
+const WZ = ROBOT.W / 2 - ROBOT.tireW / 2    // centro de rueda a lo ancho (±0,565 m)
 function RobotCarrier({ run, onSelect, selected }) {
   const root = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
-  const wheels = useRef([]), steer = useRef([])
-  const st = useRef({ x: null, y: 0, h: 0, ang: 0, delta: 0 })
+  const wheels = useRef([])
+  const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
   useFrame(() => {
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
@@ -96,23 +100,19 @@ function RobotCarrier({ run, onSelect, selected }) {
     const h = p[i * 3 + 2]
     root.current.position.set(px, 0, pz)
     root.current.rotation.y = h
-    // Rodadura: el giro de las ruedas sigue la distancia realmente recorrida en este cuadro
+    // Rodadura diferencial: distancia de cada lado = d ∓ dθ·(ancho de vía/2); el lado derecho es +z local
     const s = st.current
     if (s.x !== null) {
       const d = Math.hypot(px - s.x, pz - s.y)
       if (d < 3) {
-        s.ang += d / ROBOT.r
         let dh = h - s.h
         dh = Math.atan2(Math.sin(dh), Math.cos(dh))
-        // 4WS contrafase: curvatura κ = dθ/ds, ángulo de giro δ = atan(κ·L/2)
-        const L = ROBOT.front + ROBOT.rear
-        const target = d > 0.002 ? Math.max(-0.5, Math.min(0.5, Math.atan((dh / d) * L / 2))) : s.delta
-        s.delta += (target - s.delta) * 0.15
+        s.angL += (d - dh * WZ) / ROBOT.r
+        s.angR += (d + dh * WZ) / ROBOT.r
       }
     }
     s.x = px; s.y = pz; s.h = h
-    wheels.current.forEach((m) => m && (m.rotation.y = -s.ang))
-    steer.current.forEach((g, k) => g && (g.rotation.y = k < 2 ? s.delta : -s.delta))
+    wheels.current.forEach((m, k) => m && (m.rotation.y = -(k % 2 === 0 ? s.angR : s.angL)))
     zr.current.forEach((m) => m && (m.visible = play.zones))
     const ob = onboard(run, i)
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, ob / ROBOT.capacity))
@@ -141,26 +141,27 @@ function RobotCarrier({ run, onSelect, selected }) {
         <circleGeometry args={[1.5, 24, -Math.PI / 2, Math.PI]} />
         <meshBasicMaterial color="#2f6bff" transparent opacity={0.1} depthWrite={false} />
       </mesh>
-      <mesh position={[-0.25, 0.78, 0]} castShadow>
-        <boxGeometry args={[3.0, 0.5, 1.4]} />
+      {/* chasis entre las ruedas: de la holgura (0,254 m) a la altura total (0,83 m) */}
+      <mesh position={[0, (ROBOT.clear + ROBOT.H) / 2, 0]} castShadow>
+        <boxGeometry args={[ROBOT.L - 0.2, ROBOT.H - ROBOT.clear, ROBOT.W - 2 * ROBOT.tireW - 0.04]} />
         <meshStandardMaterial color="#f4f6fb" roughness={0.4} />
       </mesh>
-      <mesh position={[-0.05, 1.05, 0]}>
-        <boxGeometry args={[3.04, 0.08, 1.44]} />
+      <mesh position={[0, ROBOT.H + 0.02, 0]}>
+        <boxGeometry args={[ROBOT.L - 0.16, 0.04, ROBOT.W - 2 * ROBOT.tireW + 0.1]} />
         <meshStandardMaterial color="#2f6bff" />
       </mesh>
-      {[[ROBOT.front, ROBOT.track], [ROBOT.front, -ROBOT.track], [-ROBOT.rear, ROBOT.track], [-ROBOT.rear, -ROBOT.track]].map(([x, z], i) => (
-        <group key={i} position={[x, ROBOT.r, z]} ref={(g) => (steer.current[i] = g)}>
-          {/* eje del cilindro (y local) alineado con z del vehículo; el giro de rodadura es sobre ese eje */}
+      {[[WX, WZ], [WX, -WZ], [-WX, WZ], [-WX, -WZ]].map(([x, z], i) => (
+        <group key={i} position={[x, ROBOT.r, z]}>
+          {/* eje del cilindro (y local) alineado con z del vehículo; la rodadura gira sobre ese eje */}
           <group rotation={[Math.PI / 2, 0, 0]}>
             <group ref={(m) => (wheels.current[i] = m)}>
               <mesh>
-                <cylinderGeometry args={[ROBOT.r, ROBOT.r, 0.35, 20]} />
+                <cylinderGeometry args={[ROBOT.r, ROBOT.r, ROBOT.tireW, 24]} />
                 <meshStandardMaterial color="#2b3447" roughness={0.9} />
               </mesh>
-              {[0.18, -0.18].map((y) => (
-                <mesh key={y} position={[0.3, y, 0]}>
-                  <boxGeometry args={[0.3, 0.03, 0.1]} />
+              {[ROBOT.tireW / 2 + 0.005, -ROBOT.tireW / 2 - 0.005].map((y) => (
+                <mesh key={y} position={[0.17, y, 0]}>
+                  <boxGeometry args={[0.18, 0.02, 0.07]} />
                   <meshStandardMaterial color="#9aa6bf" />
                 </mesh>
               ))}
@@ -168,23 +169,23 @@ function RobotCarrier({ run, onSelect, selected }) {
           </group>
         </group>
       ))}
-      {/* carga a bordo: crece desde la plataforma hasta la capacidad (68 cajas = 1020 u) */}
-      <group ref={load} position={[-0.45, 1.09, 0]} scale={[1, 0.001, 1]}>
-        <mesh position={[0, 0.45, 0]}>
-          <boxGeometry args={[2.0, 0.9, 1.2]} />
+      {/* carga a bordo: crece sobre la cubierta hasta la capacidad (68 cajas = 1020 u) */}
+      <group ref={load} position={[0, ROBOT.H + 0.04, 0]} scale={[1, 0.001, 1]}>
+        <mesh position={[0, 0.25, 0]}>
+          <boxGeometry args={[0.9, 0.5, 0.75]} />
           <meshStandardMaterial color="#c8a36a" />
         </mesh>
       </group>
-      <mesh position={[1.1, 1.35, 0.4]}>
-        <cylinderGeometry args={[0.08, 0.08, 0.5, 10]} />
+      <mesh position={[0.55, ROBOT.H + 0.3, 0.3]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.5, 10]} />
         <meshStandardMaterial color="#2b3447" />
       </mesh>
-      <Html position={[0, 2.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 1.7, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div className="tag" style={{ borderColor: '#2f6bff' }}><span ref={lab} style={{ color: 'inherit', fontWeight: 700 }}>RB-01</span></div>
       </Html>
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
-          <ringGeometry args={[2.0, 2.15, 40]} />
+          <ringGeometry args={[1.0, 1.1, 40]} />
           <meshBasicMaterial color="#2f6bff" />
         </mesh>
       )}
