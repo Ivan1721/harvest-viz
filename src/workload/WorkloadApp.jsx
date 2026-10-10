@@ -74,7 +74,7 @@ function Compare({ ho, hr, t, mode, setMode }) {
   const M = [
     ['Cosecha total', 'u', (r, i) => r.series.total[i]],
     ['Entrega a zona de carga', 'u', (r, i) => r.series.cargo[i]],
-    ['Cosechado por el robot', 'u', (r, i) => (r.robot ? r.series.robot[i] : null), true],
+    ['Entregado por el robot', 'u', (r, i) => (r.robot ? r.robot.unloads.reduce((a, u) => (u.idx <= i ? a + (+u.amount || 0) : a), 0) : null), true],
     ['Carga de trabajo total', 'kcal', (r, i) => r.series.work[i]],
     ['Carga por trabajador', 'kcal', (r, i) => r.series.work[i] / r.workers.length, false, 1],
     ['Energía por unidad entregada', 'kcal/u', (r, i) => (r.series.cargo[i] > 0 ? r.series.work[i] / r.series.cargo[i] : null), false, 2],
@@ -273,7 +273,7 @@ function Analysis({ run, i, seek, select }) {
           <div className="row"><span>Espera media · máxima</span><b>{a.assign.mean.toFixed(0)} s · {a.assign.max.toFixed(0)} s</b></div>
           <div className="row"><span>Equidad entre trabajadores (Jain)</span><b className={a.assign.jain < 0.8 ? 'warn' : ''}>{a.assign.jain.toFixed(2)}</b></div>
           <div className="row"><span>Atención fuera de orden de detección</span><b>{a.assign.inversions} de {a.assign.pairs}</b></div>
-          <div className="hint">El robot atiende por cercanía (<code>distance_sorted</code>), no por orden de llegada: el desorden es esperado.</div>
+          <div className="hint">{a.assign.inversions === 0 ? 'El robot atendió las cajas en el mismo orden en que las detectó.' : 'El robot inserta las cajas por cercanía (distance_sorted), no por orden de detección; cierto desorden es esperable.'}</div>
           <div className="muted small" style={{ marginTop: 6 }}>Espera media por trabajador (detección → recogida)</div>
           <div className="wl short">
             {a.assign.byWorker.map((w) => (
