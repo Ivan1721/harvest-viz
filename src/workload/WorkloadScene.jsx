@@ -111,7 +111,7 @@ function RobotCarrier({ run, onSelect, selected }) {
       }
     }
     s.x = px; s.y = pz; s.h = h
-    wheels.current.forEach((m) => m && (m.rotation.z = -s.ang))
+    wheels.current.forEach((m) => m && (m.rotation.y = -s.ang))
     steer.current.forEach((g, k) => g && (g.rotation.y = k < 2 ? s.delta : -s.delta))
     zr.current.forEach((m) => m && (m.visible = play.zones))
     const ob = onboard(run, i)
@@ -151,14 +151,21 @@ function RobotCarrier({ run, onSelect, selected }) {
       </mesh>
       {[[ROBOT.front, ROBOT.track], [ROBOT.front, -ROBOT.track], [-ROBOT.rear, ROBOT.track], [-ROBOT.rear, -ROBOT.track]].map(([x, z], i) => (
         <group key={i} position={[x, ROBOT.r, z]} ref={(g) => (steer.current[i] = g)}>
-          <mesh ref={(m) => (wheels.current[i] = m)} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[ROBOT.r, ROBOT.r, 0.35, 20]} />
-            <meshStandardMaterial color="#2b3447" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, 0, z > 0 ? 0.19 : -0.19]}>
-            <boxGeometry args={[0.5, 0.08, 0.02]} />
-            <meshStandardMaterial color="#9aa6bf" />
-          </mesh>
+          {/* eje del cilindro (y local) alineado con z del vehículo; el giro de rodadura es sobre ese eje */}
+          <group rotation={[Math.PI / 2, 0, 0]}>
+            <group ref={(m) => (wheels.current[i] = m)}>
+              <mesh>
+                <cylinderGeometry args={[ROBOT.r, ROBOT.r, 0.35, 20]} />
+                <meshStandardMaterial color="#2b3447" roughness={0.9} />
+              </mesh>
+              {[0.18, -0.18].map((y) => (
+                <mesh key={y} position={[0.3, y, 0]}>
+                  <boxGeometry args={[0.3, 0.03, 0.1]} />
+                  <meshStandardMaterial color="#9aa6bf" />
+                </mesh>
+              ))}
+            </group>
+          </group>
         </group>
       ))}
       {/* carga a bordo: crece desde la plataforma hasta la capacidad (68 cajas = 1020 u) */}
