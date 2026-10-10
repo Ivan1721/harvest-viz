@@ -82,21 +82,41 @@ function Worker({ w, run, onSelect, selected }) {
   )
 }
 
-// Vehículo 4WS (Warthog-like): 3.2 m de largo visual, ruedas r=0.5 m
+// Vehículo 4WS (Warthog-like). Geometría según HumanRobot_Sim.m: radio de rueda 0,5 m,
+// CG a 1,2 m del eje delantero y 1,7 m del trasero (distancia entre ejes 2,9 m), capacidad 68 cajas × 15 u.
+const ROBOT = { r: 0.5, front: 1.2, rear: 1.7, track: 0.8, capacity: 68 * 15 }
 function RobotCarrier({ run, onSelect, selected }) {
-  const root = useRef(), fan = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
-  const wheels = useRef([])
+  const root = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
+  const wheels = useRef([]), steer = useRef([])
+  const st = useRef({ x: null, y: 0, h: 0, ang: 0, delta: 0 })
   useFrame(() => {
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
     const [px, , pz] = toW(p[i * 3], p[i * 3 + 1])
+    const h = p[i * 3 + 2]
     root.current.position.set(px, 0, pz)
-    root.current.rotation.y = p[i * 3 + 2]
-    wheels.current.forEach((m) => m && (m.rotation.z -= 0.15))
+    root.current.rotation.y = h
+    // Rodadura: el giro de las ruedas sigue la distancia realmente recorrida en este cuadro
+    const s = st.current
+    if (s.x !== null) {
+      const d = Math.hypot(px - s.x, pz - s.y)
+      if (d < 3) {
+        s.ang += d / ROBOT.r
+        let dh = h - s.h
+        dh = Math.atan2(Math.sin(dh), Math.cos(dh))
+        // 4WS contrafase: curvatura κ = dθ/ds, ángulo de giro δ = atan(κ·L/2)
+        const L = ROBOT.front + ROBOT.rear
+        const target = d > 0.002 ? Math.max(-0.5, Math.min(0.5, Math.atan((dh / d) * L / 2))) : s.delta
+        s.delta += (target - s.delta) * 0.15
+      }
+    }
+    s.x = px; s.y = pz; s.h = h
+    wheels.current.forEach((m) => m && (m.rotation.z = -s.ang))
+    steer.current.forEach((g, k) => g && (g.rotation.y = k < 2 ? s.delta : -s.delta))
     zr.current.forEach((m) => m && (m.visible = play.zones))
     const ob = onboard(run, i)
-    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, ob / 600))
-    if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(ob)}`
+    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, ob / ROBOT.capacity))
+    if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(ob)} / ${ROBOT.capacity}`
   })
   return (
     <group ref={root} onClick={(e) => { e.stopPropagation(); onSelect('robot') }}>
@@ -121,26 +141,30 @@ function RobotCarrier({ run, onSelect, selected }) {
         <circleGeometry args={[1.5, 24, -Math.PI / 2, Math.PI]} />
         <meshBasicMaterial color="#2f6bff" transparent opacity={0.1} depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.78, 0]} castShadow>
+      <mesh position={[-0.25, 0.78, 0]} castShadow>
         <boxGeometry args={[3.0, 0.5, 1.4]} />
         <meshStandardMaterial color="#f4f6fb" roughness={0.4} />
       </mesh>
-      <mesh position={[0.2, 1.05, 0]}>
+      <mesh position={[-0.05, 1.05, 0]}>
         <boxGeometry args={[3.04, 0.08, 1.44]} />
         <meshStandardMaterial color="#2f6bff" />
       </mesh>
-      {[[1.2, 0.8], [1.2, -0.8], [-1.7, 0.8], [-1.7, -0.8]].map(([x, z], i) => (
-        <group key={i} position={[x * 0.85, 0.5, z]}>
+      {[[ROBOT.front, ROBOT.track], [ROBOT.front, -ROBOT.track], [-ROBOT.rear, ROBOT.track], [-ROBOT.rear, -ROBOT.track]].map(([x, z], i) => (
+        <group key={i} position={[x, ROBOT.r, z]} ref={(g) => (steer.current[i] = g)}>
           <mesh ref={(m) => (wheels.current[i] = m)} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.5, 0.5, 0.35, 20]} />
+            <cylinderGeometry args={[ROBOT.r, ROBOT.r, 0.35, 20]} />
             <meshStandardMaterial color="#2b3447" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0, z > 0 ? 0.19 : -0.19]}>
+            <boxGeometry args={[0.5, 0.08, 0.02]} />
+            <meshStandardMaterial color="#9aa6bf" />
           </mesh>
         </group>
       ))}
-      {/* carga a bordo */}
-      <group position={[-0.6, 1.1, 0]}>
-        <mesh ref={load} position={[0, 0.0, 0]} scale={[1, 0.001, 1]}>
-          <boxGeometry args={[1.3, 1.0, 1.1]} />
+      {/* carga a bordo: crece desde la plataforma hasta la capacidad (68 cajas = 1020 u) */}
+      <group ref={load} position={[-0.45, 1.09, 0]} scale={[1, 0.001, 1]}>
+        <mesh position={[0, 0.45, 0]}>
+          <boxGeometry args={[2.0, 0.9, 1.2]} />
           <meshStandardMaterial color="#c8a36a" />
         </mesh>
       </group>
