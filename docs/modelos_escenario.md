@@ -30,8 +30,8 @@ Diferencia conocida con el simulador: el MATLAB dibuja un vehículo de 3,2 m con
 | Entidad | Acción (bandera / evento) | Hoy | Falta |
 |---|---|---|---|
 | Trabajador | Cosecha (1) | Ciclo de alcance (brazo sube, recolecta, baja a la bolsa); bolsa que se llena con la producción | Fruta cayendo a la bolsa |
-| Trabajador | Caminata (2) | Piernas y brazos oscilan; cajón en las manos al transportar; reloj propio, independiente de la velocidad de reproducción | Pasos sincronizados con la velocidad real |
-| Trabajador | Colocar caja (3) | La caja baja desde las manos hacia el suelo | Agacharse; traspaso al robot |
+| Trabajador | Caminata (2) | Piernas y brazos oscilan con manos vacías (protocolo `worker_loads` del estudio: va a la caja, no la lleva); reloj propio, independiente de la velocidad de reproducción | Pasos sincronizados con la velocidad real |
+| Trabajador | Cargar caja al robot (3) | De pie junto al robot, levanta cada caja del suelo a la cubierta (3,6 s por caja) | Agacharse; caja visible en la cubierta |
 | Trabajador | Bajar y subir escalera (4, 5) | Cambia la altura | Piernas por peldaño |
 | Robot | Desplazarse | Posición, rumbo, rodadura diferencial | Velocidad real (hoy interpolada) |
 | Robot | Recoger caja | Carga a bordo gradual (15 u en 3,6 s) | Espera detenido 3,6 s |

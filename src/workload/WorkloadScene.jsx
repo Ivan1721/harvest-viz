@@ -29,23 +29,16 @@ function Clock({ run }) {
 function Worker({ w, run, onSelect, selected, real }) {
   const root = useRef(), ladder = useRef(), picker = useRef(), tag = useRef(), disc = useRef()
   const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef(), fill: useRef() }
-  // acarreo de caja: tramo de ida del viaje (antes de la bandera 3) y progreso del depósito durante la bandera 3
+  // protocolo worker_loads (el del estudio): camina con las manos vacias hasta la caja, la carga al robot
+  // de pie durante 3,6 s por caja (bandera 3) y vuelve. place = progreso del levantamiento de cada caja.
   const trip = useMemo(() => {
-    const n = w.flag.length, carry = new Uint8Array(n), place = new Float32Array(n)
-    let i = 0
-    while (i < n) {
-      if (w.flag[i] === 2 || w.flag[i] === 3) {
-        const a = i
-        while (i < n && (w.flag[i] === 2 || w.flag[i] === 3)) i++
-        const b = i - 1
-        let f3 = -1, l3 = -1
-        for (let k = a; k <= b; k++) if (w.flag[k] === 3) { if (f3 < 0) f3 = k; l3 = k }
-        const end = f3 >= 0 ? f3 - 1 : Math.floor((a + b) / 2)
-        for (let k = a; k <= end; k++) carry[k] = 1
-        if (f3 >= 0) for (let k = f3; k <= l3; k++) { carry[k] = 2; place[k] = (k - f3 + 1) / (l3 - f3 + 1) }
-      } else i++
+    const n = w.flag.length, place = new Float32Array(n)
+    let run0 = -1
+    for (let k = 0; k < n; k++) {
+      if (w.flag[k] === 3) { if (run0 < 0) run0 = k; place[k] = (((k - run0) + 1) / 3.6) % 1 || 1 }
+      else run0 = -1
     }
-    return { carry, place }
+    return { place }
   }, [w])
   const carryRef = useRef(), st = useRef({ aL: 0, aR: 0 })
   const prodMax = useMemo(() => { let m = 1; for (let k = 0; k < w.prod.length; k++) if (w.prod[k] > m) m = w.prod[k]; return m }, [w])
@@ -59,7 +52,7 @@ function Worker({ w, run, onSelect, selected, real }) {
     const phase = anim.t * 7
     root.current.position.set(px, hz, pz)
     root.current.rotation.y = hd
-    const cs = trip.carry[i]                    // 0 sin caja, 1 llevando, 2 depositando
+    const cs = flag === 3 ? 2 : 0                // 2 = cargando una caja al robot
     const s = flag === 2 ? Math.sin(phase) : 0
     refs.legL.current.rotation.z = s * 0.6
     refs.legR.current.rotation.z = -s * 0.6
@@ -69,8 +62,7 @@ function Worker({ w, run, onSelect, selected, real }) {
       const u = (anim.t * 0.42 + w.h * 0.173) % 1
       tL = 2.3
       tR = u < 0.5 ? lerp(1.2, 2.55, ease(u / 0.5)) : u < 0.78 ? lerp(2.55, 0.8, ease((u - 0.5) / 0.28)) : 0.8
-    } else if (cs) { tL = tR = 1.35 }
-    else if (flag === 3) { tL = tR = 1.2 }
+    } else if (flag === 3) { tL = tR = lerp(0.9, 2.0, ease(trip.place[i])) }
     else { tL = s * 0.5; tR = -s * 0.5 }
     const a = st.current, kk = Math.min(1, dtReal * 12)
     a.aL += (tL - a.aL) * kk; a.aR += (tR - a.aR) * kk
@@ -79,8 +71,8 @@ function Worker({ w, run, onSelect, selected, real }) {
     refs.body.current.position.y = 0.95 + (flag === 2 ? Math.abs(Math.cos(phase)) * 0.03 : 0)
     if (carryRef.current) {
       carryRef.current.visible = cs > 0
-      carryRef.current.position.y = cs === 2 ? lerp(0.82, 0.18, ease(trip.place[i])) : 0.82
-      carryRef.current.position.x = cs === 2 ? lerp(0.36, 0.5, ease(trip.place[i])) : 0.36
+      carryRef.current.position.y = lerp(0.3, 1.15, ease(trip.place[i]))
+      carryRef.current.position.x = lerp(0.4, 0.75, ease(trip.place[i]))
     }
     // color del chaleco
     const c = play.colorBy === 'rate' ? ramp(w.rate[i] / run.rateMax) : new THREE.Color(FLAG[flag]?.color || '#9aa6bf')
