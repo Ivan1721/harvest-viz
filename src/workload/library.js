@@ -1,7 +1,7 @@
 // Biblioteca de corridas: manifiesto (public/data/manifest.json) + archivos cargados por el usuario.
 // Una "configuración" es (nw, row, act, rp); cada una puede tener una corrida Solo-humano (HO) y otra Humano-Robot (HR).
-import { buildRun, parseName } from './run'
-import { analyzeHRI } from './hri'
+import { buildRun, parseName } from './run.js'
+import { analyzeHRI } from './hri.js'
 
 const cache = new Map()
 
@@ -19,15 +19,20 @@ export async function loadManifest(base) {
     if (!r.ok) return []
     const j = await r.json()
     return (j.runs || []).map((e) => ({ ...e, source: 'manifest' }))
-  } catch { return [] }
+  } catch {
+    return []
+  }
 }
 
 // Construye (y guarda en caché) la corrida de una entrada del catálogo
 export async function realize(entry, base) {
   if (cache.has(entry.id)) return cache.get(entry.id)
-  let csvText, logText = null
-  if (entry.text) { csvText = entry.text.csv; logText = entry.text.log }
-  else {
+  let csvText,
+    logText = null
+  if (entry.text) {
+    csvText = entry.text.csv
+    logText = entry.text.log
+  } else {
     const get = (f) => fetch(`${base}data/${f}`).then((r) => (r.ok ? r.text() : ''))
     ;[csvText, logText] = await Promise.all([get(entry.csv), entry.log ? get(entry.log) : Promise.resolve('')])
     if (!csvText.startsWith('Time_s')) throw new Error(`No se pudo leer ${entry.csv}`)

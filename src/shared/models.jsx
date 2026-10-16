@@ -29,9 +29,18 @@ export function Person({ refs, vest = '#ff8a1f', scale = 1, real = false }) {
         </mesh>
         {real ? (
           <group position={[0, 0.58, 0]}>
-            <mesh><cylinderGeometry args={[0.3, 0.3, 0.015, 24]} /><meshStandardMaterial color="#d8b878" roughness={0.95} /></mesh>
-            <mesh position={[0, 0.06, 0]}><cylinderGeometry args={[0.15, 0.17, 0.12, 20]} /><meshStandardMaterial color="#cfa968" roughness={0.95} /></mesh>
-            <mesh position={[0, 0.025, 0]}><cylinderGeometry args={[0.172, 0.172, 0.03, 20]} /><meshStandardMaterial color="#5b4630" /></mesh>
+            <mesh>
+              <cylinderGeometry args={[0.3, 0.3, 0.015, 24]} />
+              <meshStandardMaterial color="#d8b878" roughness={0.95} />
+            </mesh>
+            <mesh position={[0, 0.06, 0]}>
+              <cylinderGeometry args={[0.15, 0.17, 0.12, 20]} />
+              <meshStandardMaterial color="#cfa968" roughness={0.95} />
+            </mesh>
+            <mesh position={[0, 0.025, 0]}>
+              <cylinderGeometry args={[0.172, 0.172, 0.03, 20]} />
+              <meshStandardMaterial color="#5b4630" />
+            </mesh>
           </group>
         ) : (
           <mesh position={[0, 0.57, 0]}>
@@ -42,20 +51,44 @@ export function Person({ refs, vest = '#ff8a1f', scale = 1, real = false }) {
         {real && (
           <group position={[0.2, -0.02, 0]}>
             {/* bolsa de cosecha de lona sobre el pecho; el relleno crece con la fruta recolectada */}
-            <mesh castShadow><boxGeometry args={[0.16, 0.3, 0.34]} /><meshStandardMaterial color="#7d6f45" roughness={1} /></mesh>
-            <mesh ref={refs.fill} position={[0.01, 0.14, 0]}><sphereGeometry args={[0.15, 12, 10]} /><meshStandardMaterial color="#35502a" roughness={0.7} /></mesh>
+            <mesh castShadow>
+              <boxGeometry args={[0.16, 0.3, 0.34]} />
+              <meshStandardMaterial color="#7d6f45" roughness={1} />
+            </mesh>
+            <mesh ref={refs.fill} position={[0.01, 0.14, 0]}>
+              <sphereGeometry args={[0.15, 12, 10]} />
+              <meshStandardMaterial color="#35502a" roughness={0.7} />
+            </mesh>
           </group>
         )}
-        {[[refs.armL, -0.27], [refs.armR, 0.27]].map(([ref, z], i) => (
+        {[
+          [refs.armL, -0.27],
+          [refs.armR, 0.27],
+        ].map(([ref, z], i) => (
           <group key={i} ref={ref} position={[0, 0.2, z]}>
-            <mesh position={[0, -0.22, 0]}><capsuleGeometry args={[0.06, 0.3, 4, 8]} /><meshStandardMaterial color="#334155" /></mesh>
-            <mesh position={[0, -0.48, 0]}><sphereGeometry args={[0.065, 10, 10]} /><meshStandardMaterial color="#e2e8f0" /></mesh>
+            <mesh position={[0, -0.22, 0]}>
+              <capsuleGeometry args={[0.06, 0.3, 4, 8]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0, -0.48, 0]}>
+              <sphereGeometry args={[0.065, 10, 10]} />
+              <meshStandardMaterial color="#e2e8f0" />
+            </mesh>
           </group>
         ))}
-        {[[refs.legL, -0.1], [refs.legR, 0.1]].map(([ref, z], i) => (
+        {[
+          [refs.legL, -0.1],
+          [refs.legR, 0.1],
+        ].map(([ref, z], i) => (
           <group key={i} ref={ref} position={[0, -0.35, z]}>
-            <mesh position={[0, -0.28, 0]}><capsuleGeometry args={[0.075, 0.4, 4, 8]} /><meshStandardMaterial color="#334155" /></mesh>
-            <mesh position={[0.05, -0.58, 0]}><boxGeometry args={[0.22, 0.08, 0.13]} /><meshStandardMaterial color="#3f2d1e" /></mesh>
+            <mesh position={[0, -0.28, 0]}>
+              <capsuleGeometry args={[0.075, 0.4, 4, 8]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0.05, -0.58, 0]}>
+              <boxGeometry args={[0.22, 0.08, 0.13]} />
+              <meshStandardMaterial color="#3f2d1e" />
+            </mesh>
           </group>
         ))}
       </group>
@@ -68,9 +101,10 @@ export function BigTree({ R = 3.25, seed = 0, opacity = 0.62 }) {
   const blobs = React.useMemo(() => {
     const out = []
     let s = seed * 9301 + 49297
-    const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280)
+    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280
     for (let i = 0; i < 9; i++) {
-      const a = rnd() * Math.PI * 2, d = rnd() * R * 0.55
+      const a = rnd() * Math.PI * 2,
+        d = rnd() * R * 0.55
       out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, y: 3.1 + (rnd() - 0.5) * 1.4, r: R * (0.5 + rnd() * 0.22) })
     }
     return out
@@ -125,7 +159,6 @@ export function Ladder({ height = 2.2 }) {
   )
 }
 
-
 // Caja de campo plástica ventilada (modo realista): ranuras en las caras largas
 export function CrateReal({ position = [0, 0, 0], size = [0.6, 0.3, 0.4], color = '#d99a2b' }) {
   const [lx, ly, lz] = size
@@ -134,12 +167,14 @@ export function CrateReal({ position = [0, 0, 0], size = [0.6, 0.3, 0.4], color 
       <RoundedBox args={size} radius={0.015} position={[0, ly / 2, 0]} castShadow receiveShadow>
         <meshStandardMaterial color={color} roughness={0.55} />
       </RoundedBox>
-      {[0.3, 0.55, 0.8].map((f) => [-1, 1].map((sg) => (
-        <mesh key={`${f}${sg}`} position={[0, ly * f, sg * (lz / 2 + 0.001)]}>
-          <boxGeometry args={[lx * 0.8, ly * 0.07, 0.004]} />
-          <meshStandardMaterial color="#3a2a10" />
-        </mesh>
-      )))}
+      {[0.3, 0.55, 0.8].map((f) =>
+        [-1, 1].map((sg) => (
+          <mesh key={`${f}${sg}`} position={[0, ly * f, sg * (lz / 2 + 0.001)]}>
+            <boxGeometry args={[lx * 0.8, ly * 0.07, 0.004]} />
+            <meshStandardMaterial color="#3a2a10" />
+          </mesh>
+        )),
+      )}
       <mesh position={[0, ly + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[lx * 0.9, lz * 0.9]} />
         <meshStandardMaterial color="#2c4a22" roughness={0.9} />

@@ -3,6 +3,7 @@
 Dos modos sobre un núcleo común (`src/shared`): **Workload** (reproduce y compara corridas del simulador MATLAB sobre el huerto real) y **Oclusión** (selección de punto de vista, nivel 2).
 
 ## Modo Workload
+
 **Simulador integrado:** además de reproducir corridas, `Fuente → Simulador` ejecuta en el navegador una réplica del modelo MATLAB con parámetros editables (ver `docs/simulador.md`).
 
 Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (huerto de 3 filas × 4 árboles, copa 3,25 m, mapa 29,7 × 25,8 m) y las compara.
@@ -12,28 +13,57 @@ Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (
 **Datos.** `public/data/manifest.json` lista las corridas incluidas (hoy: 12 trabajadores, fila 3, mixta, RP0, sesión de 45 min, solo humano y humano-robot). Desde la interfaz se pueden cargar otras: el `*_timeseries.csv` y, con robot, su `*_robot_status_log.txt`; el nombre debe seguir el patrón `HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_…`. Todo se procesa en el navegador.
 Se leen el paso de muestreo del CSV (1 s) y el índice de tick del log (0,25 s). Las entregas siguen el protocolo del estudio (`tree_point`: un punto de caja por árbol; el robot se detiene y el trabajador carga la caja).
 
-**Posiciones reconstruidas.** Los CSV no guardan trayectorias. Los trabajadores se ubican en su posición base y viajan a su caja según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola linealmente entre eventos del log. Producción y carga de trabajo son datos exactos del simulador; las distancias y el rumbo no. Registrar la pose por tick en MATLAB las haría exactas.
+**Posiciones reconstruidas (corridas de MATLAB).** Los CSV no guardan trayectorias. Los trabajadores se ubican en su posición base y viajan a su caja según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola linealmente entre eventos del log. Producción y carga de trabajo son datos exactos del simulador; las distancias y el rumbo no. Con el simulador integrado las trayectorias son exactas por tick; MATLAB las exporta con `EXPORT_POSE_LOG` (`*_poses.csv`) junto con `*_meta.json` (versión del script y parámetros).
 
 **Estilo visual.** Por defecto "Realista": palto Hass con fruta, suelo con textura, cielo, sombras y trabajadores con sombrero y bolsa de cosecha; el follaje es semitransparente y regulable. "Esquemático" conserva el aspecto sobrio para figuras. Medidas y fuentes en `docs/modelos_escenario.md`.
 
 **Robot.** Dimensiones reales del Clearpath Warthog (1,52 × 1,38 × 0,83 m, neumático de 0,61 m, holgura 0,254 m) y dirección diferencial: al girar, las ruedas de un lado ruedan más que las del otro. El simulador MATLAB usa un vehículo más grande (icono de 3,2 m, ruedas de 1 m, dirección 4WS); el visor prioriza el robot real porque el modelo se está reformulando. La capacidad (68 cajas × 15 u) es un parámetro del estudio.
 
 ### Análisis HRI (paso 2, etapa A)
+
 Pestaña Interacción, con dos capas 3D opcionales (zonas de cortesía y ruta anticipada):
+
 - **Cortesía**: zonas de proxemia (íntima < 0,45 m, personal < 1,2 m, social < 3,6 m) alrededor del robot; distancia mínima y tiempo en zona personal por trabajador. Los traspasos de caja no cuentan como invasión.
 - **Encuentros**: robot–humano a menos de 1,5 m, con instante, trabajador, distancia mínima y veredicto (traspaso de caja, ambos en movimiento, robot debe ceder…); clic para saltar al instante.
 - **Asignación**: espera de cada caja (detección → recogida), equidad entre trabajadores (índice de Jain) y atención fuera de orden de detección.
 - **Ruta anticipada**: próximos 8 s del robot, verde / naranja / roja si se prevé conflicto; la barra de proximidad va sobre la línea de tiempo.
 
-Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); el controlador del robot es el del simulador (sin evitación social); una réplica determinista por celda, por lo que las diferencias entre escenarios son descriptivas. La etapa B (simulador propio en JS para probar reglas) queda pendiente.
+Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); el controlador del robot es el del simulador (sin evitación social); una réplica determinista por celda, por lo que las diferencias entre escenarios son descriptivas. La etapa B ya existe: el simulador propio en JS (`src/hrsim/`, `docs/simulador.md`) permite probar reglas y parámetros.
+
+## Desarrollo
+
+    npm install --include=dev
+    npm run dev           # servidor local
+    npm test              # pruebas rápidas (muestra de la regresión contra MATLAB, ~20 s)
+    npm run test:full     # regresión completa: 720 configuraciones de MATLAB (~2 min)
+    npm run lint          # ESLint
+    npm run format        # Prettier
+    npm run build         # sitio estático en dist/
+
+**Estructura.**
+
+| Carpeta         | Contenido                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/hrsim/`    | Simulador (motor HR/HO, FIS, Web Worker, exportación) — sin dependencias de React                            |
+| `src/workload/` | Modo Workload: app, escena 3D, lectura de CSV MATLAB, análisis HRI; `panels/` con los paneles de la interfaz |
+| `src/shared/`   | Modelos 3D comunes y ErrorBoundary                                                                           |
+| `tests/`        | Pruebas `node:test` (regresión vs MATLAB, FIS, motor, exportación)                                           |
+| `scripts/`      | Comparaciones y benchmark contra salidas de MATLAB fuera del repo                                            |
+| `public/data/`  | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión)                                     |
+
+**Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas y build. Al fusionar en `main`, `Deploy a GitHub Pages` vuelve a correr lint y pruebas antes de publicar. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
+
+**Copias del visor.** Este repositorio es la única fuente. `WorkloadProductionSim` lo incluye como submódulo en `viz/` (`git submodule update --remote viz` para actualizarlo).
 
 # Modo Oclusión (nivel 2)
 
 ## Ejecutar
+
     npm install --include=dev
     npm run dev        # http://localhost:5173
 
 ## Qué hay
+
 - Huerto 3D con robot (brazo 2 eslabones + cámara + pinza) y operario.
 - Oclusión por punto de vista (25 candidatos en hemisferio) con trazado de rayos.
 - **Selector de vista parametrizable**: costo = w1·oclusión + w2·movimiento + w3·extensión.
@@ -42,6 +72,7 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 - **Datos propios**: botón "Cargar JSON" (o arrastrar el archivo) y "Exportar".
 
 ## Formato JSON
+
     { "fruits": [ { "id": "F1", "x": 0.5, "y": 1.8, "z": -1.4, "occ": 0.35 } ] }
 
 Por fruto (opcionales): `r` (radio, m), `side` (+1/-1, lado del carril), `tree`,
@@ -52,9 +83,10 @@ Globales (opcionales): `trees`: [{id,cx,cz,cy,R}], `leaves`: [{tree,x,y,z,r}].
 - Con solo `occ` y sin `leaves`: se sintetizan 25 vistas alrededor de ese valor (aproximado).
 - Con `leaves`: la oclusión se calcula por trazado de rayos.
 - Coordenadas en metros; el robot avanza por el carril z=0 a lo largo de x.
-Usa "Exportar" para obtener un ejemplo completo.
+  Usa "Exportar" para obtener un ejemplo completo.
 
 ## Archivos
-- src/data.js  generación, carga/exportación JSON, oclusión
-- src/sim.js   estados robot/humano, estrategias de vista
+
+- src/data.js generación, carga/exportación JSON, oclusión
+- src/sim.js estados robot/humano, estrategias de vista
 - src/Scene.jsx escena 3D · src/App.jsx paneles

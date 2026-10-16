@@ -11,8 +11,34 @@ export const CARGO = { wp: [15, 2], x: [12.5, 17.5], y: [0, 1.5] }
 
 // Desplazamientos de los trabajadores respecto del árbol (layout 0 y su reflejo, layout 1)
 export const OFFSETS = [
-  [[-1.15, -1.1], [1.15, -1.1], [-1.15, 1.1], [1.15, 1.1], [0, -1.45], [0, 1.45], [-1.45, 0], [1.45, 0], [-0.85, -1.35], [0.85, -1.35], [-0.85, 1.35], [0.85, 1.35]],
-  [[1.15, 1.1], [-1.15, 1.1], [1.15, -1.1], [-1.15, -1.1], [0, 1.45], [0, -1.45], [1.45, 0], [-1.45, 0], [0.85, 1.35], [-0.85, 1.35], [0.85, -1.35], [-0.85, -1.35]],
+  [
+    [-1.15, -1.1],
+    [1.15, -1.1],
+    [-1.15, 1.1],
+    [1.15, 1.1],
+    [0, -1.45],
+    [0, 1.45],
+    [-1.45, 0],
+    [1.45, 0],
+    [-0.85, -1.35],
+    [0.85, -1.35],
+    [-0.85, 1.35],
+    [0.85, 1.35],
+  ],
+  [
+    [1.15, 1.1],
+    [-1.15, 1.1],
+    [1.15, -1.1],
+    [-1.15, -1.1],
+    [0, 1.45],
+    [0, -1.45],
+    [1.45, 0],
+    [-1.45, 0],
+    [0.85, 1.35],
+    [-0.85, 1.35],
+    [0.85, -1.35],
+    [-0.85, -1.35],
+  ],
 ]
 
 export const MIX = ['ground', 'ground', 'ladder', 'ladder', 'picker', 'picker']
@@ -21,24 +47,38 @@ export const ACT_LABEL = { ground: 'Suelo', ladder: 'Escalera', picker: 'Gancho'
 // Ruta del robot en una vuelta (HumanRobot_Sim.m:1039-1118)
 export function routeLoop(row) {
   const Y = ROWS[row].goalY
-  return [[15, 2], [22, 2], [22, Y], [15, Y], [15, 2], [8, 2], [8, Y], [15, Y], [15, 2]]
+  return [
+    [15, 2],
+    [22, 2],
+    [22, Y],
+    [15, Y],
+    [15, 2],
+    [8, 2],
+    [8, Y],
+    [15, Y],
+    [15, 2],
+  ]
 }
 
 export function workerBase(h, row, rp) {
   const R = ROWS[row]
   const ti = (h - 1) % 4
   const oi = Math.floor((h - 1) / 4) % 12
-  const tx = R.x[ti], ty = R.y
+  const tx = R.x[ti],
+    ty = R.y
   const o = OFFSETS[rp ? 1 : 0][oi]
-  const x = tx + o[0], y = ty + o[1]
+  const x = tx + o[0],
+    y = ty + o[1]
   return { x, y, tx, ty, heading: Math.atan2(ty - y, tx - x) }
 }
 
 function nearestOnPolyline(p, pts) {
   let best = null
   for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, ay] = pts[i], [bx, by] = pts[i + 1]
-    const dx = bx - ax, dy = by - ay
+    const [ax, ay] = pts[i],
+      [bx, by] = pts[i + 1]
+    const dx = bx - ax,
+      dy = by - ay
     const L2 = dx * dx + dy * dy || 1
     const t = Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / L2))
     const q = [ax + t * dx, ay + t * dy]
