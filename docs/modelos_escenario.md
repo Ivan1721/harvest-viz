@@ -29,23 +29,14 @@ Diferencia conocida con el simulador: el MATLAB dibuja un vehículo de 3,2 m con
 
 | Entidad | Acción (bandera / evento) | Hoy | Falta |
 |---|---|---|---|
-| Trabajador | Cosecha (1) | Brazos arriba fijos; vara en "Gancho" | Alcance, recolección, bolsa que se llena |
-| Trabajador | Caminata (2) | Piernas y brazos oscilan | Cajón en las manos al transportar; reloj propio (no depende de la velocidad de reproducción) |
-| Trabajador | Colocar caja (3) | Brazos al frente fijos | Agacharse, dejar la caja, traspaso al robot |
+| Trabajador | Cosecha (1) | Ciclo de alcance (brazo sube, recolecta, baja a la bolsa); bolsa que se llena con la producción | Fruta cayendo a la bolsa |
+| Trabajador | Caminata (2) | Piernas y brazos oscilan; cajón en las manos al transportar; reloj propio, independiente de la velocidad de reproducción | Pasos sincronizados con la velocidad real |
+| Trabajador | Colocar caja (3) | La caja baja desde las manos hacia el suelo | Agacharse; traspaso al robot |
 | Trabajador | Bajar y subir escalera (4, 5) | Cambia la altura | Piernas por peldaño |
 | Robot | Desplazarse | Posición, rumbo, rodadura diferencial | Velocidad real (hoy interpolada) |
-| Robot | Recoger caja | Sube la carga a bordo | Espera detenido 3,6 s; carga visible |
-| Robot | Descargar | La carga vuelve a cero | Descarga progresiva (1,44 s por caja) |
+| Robot | Recoger caja | Carga a bordo gradual (15 u en 3,6 s) | Espera detenido 3,6 s |
+| Robot | Descargar | Descarga gradual (15 u en 1,44 s por caja) | Cajas apilándose una a una |
 | Escena | Cajas | Aparecen y desaparecen | Trayectoria trabajador → robot → pila |
-
-## 3. Plan de perfeccionamiento
-
-1. **Tabla de dimensiones con fuente**: cerrar los "estimado" de la sección 1, empezando por trabajador, caja y escalera.
-2. **Robot**: modelo `.glb` con jerarquía de chasis y 4 ruedas; animar por nodos.
-3. **Trabajador**: personaje articulado con clips (cosechar, caminar con caja, depositar, escalera) y mezcla entre clips.
-4. **Árbol**: copa generada por ramas con las medidas reales; tope y altura de copa medidos.
-5. **Caja y traspaso**: una sola medida de caja y animación del traspaso.
-6. **Verificación**: capturas lateral y cenital con regla de escala tras cada cambio.
 
 Las animaciones dependen de la pose por tick: mientras las posiciones estén reconstruidas, el traspaso y la velocidad del robot serán aproximados.
 

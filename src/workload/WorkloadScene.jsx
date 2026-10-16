@@ -11,11 +11,15 @@ import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic'
 // reloj de reproducción compartido (mutable, fuera de React)
 export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0, canopy: { v: 0.42 } }
 
+export const anim = { t: 0 }
+const ease = (u) => u * u * (3 - 2 * u)
+const lerp = (a, b, u) => a + (b - a) * u
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
 
 function Clock({ run }) {
   useFrame((_, dt) => {
     if (!play.playing || !run || play.driver !== run.name) return
+    anim.t += Math.min(dt, 0.05)
     play.t = Math.min(play.tEnd, play.t + Math.min(dt, 0.05) * play.speed)
     if (play.t >= play.tEnd) play.playing = false
   })
@@ -25,25 +29,59 @@ function Clock({ run }) {
 function Worker({ w, run, onSelect, selected, real }) {
   const root = useRef(), ladder = useRef(), picker = useRef(), tag = useRef(), disc = useRef()
   const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef(), fill: useRef() }
+  // acarreo de caja: tramo de ida del viaje (antes de la bandera 3) y progreso del depósito durante la bandera 3
+  const trip = useMemo(() => {
+    const n = w.flag.length, carry = new Uint8Array(n), place = new Float32Array(n)
+    let i = 0
+    while (i < n) {
+      if (w.flag[i] === 2 || w.flag[i] === 3) {
+        const a = i
+        while (i < n && (w.flag[i] === 2 || w.flag[i] === 3)) i++
+        const b = i - 1
+        let f3 = -1, l3 = -1
+        for (let k = a; k <= b; k++) if (w.flag[k] === 3) { if (f3 < 0) f3 = k; l3 = k }
+        const end = f3 >= 0 ? f3 - 1 : Math.floor((a + b) / 2)
+        for (let k = a; k <= end; k++) carry[k] = 1
+        if (f3 >= 0) for (let k = f3; k <= l3; k++) { carry[k] = 2; place[k] = (k - f3 + 1) / (l3 - f3 + 1) }
+      } else i++
+    }
+    return { carry, place }
+  }, [w])
+  const carryRef = useRef(), st = useRef({ aL: 0, aR: 0 })
   const prodMax = useMemo(() => { let m = 1; for (let k = 0; k < w.prod.length; k++) if (w.prod[k] > m) m = w.prod[k]; return m }, [w])
-  useFrame(() => {
+  useFrame((_, dtReal) => {
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const k = i * 4
     const x = w.track[k], y = w.track[k + 1], hz = w.track[k + 2], hd = w.track[k + 3]
     const [px, , pz] = toW(x, y)
     const flag = w.flag[i]
     const walking = flag === 2 || flag === 3
-    const phase = play.t * 7
+    const phase = anim.t * 7
     root.current.position.set(px, hz, pz)
     root.current.rotation.y = hd
+    const cs = trip.carry[i]                    // 0 sin caja, 1 llevando, 2 depositando
     const s = flag === 2 ? Math.sin(phase) : 0
     refs.legL.current.rotation.z = s * 0.6
     refs.legR.current.rotation.z = -s * 0.6
-    // brazos: levantados al cosechar; balanceo al caminar; al frente al colocar caja
-    const reach = flag === 1 || flag === 5 ? 2.4 : flag === 3 ? 1.2 : 0
-    refs.armL.current.rotation.z = reach + s * 0.5
-    refs.armR.current.rotation.z = reach - s * 0.5
+    // brazos: ciclo de cosecha (alcanzar, arrancar, llevar a la bolsa), balanceo al caminar, caja al frente al acarrear
+    let tL = 0, tR = 0
+    if (flag === 1 || flag === 5) {
+      const u = (anim.t * 0.42 + w.h * 0.173) % 1
+      tL = 2.3
+      tR = u < 0.5 ? lerp(1.2, 2.55, ease(u / 0.5)) : u < 0.78 ? lerp(2.55, 0.8, ease((u - 0.5) / 0.28)) : 0.8
+    } else if (cs) { tL = tR = 1.35 }
+    else if (flag === 3) { tL = tR = 1.2 }
+    else { tL = s * 0.5; tR = -s * 0.5 }
+    const a = st.current, kk = Math.min(1, dtReal * 12)
+    a.aL += (tL - a.aL) * kk; a.aR += (tR - a.aR) * kk
+    refs.armL.current.rotation.z = a.aL
+    refs.armR.current.rotation.z = a.aR
     refs.body.current.position.y = 0.95 + (flag === 2 ? Math.abs(Math.cos(phase)) * 0.03 : 0)
+    if (carryRef.current) {
+      carryRef.current.visible = cs > 0
+      carryRef.current.position.y = cs === 2 ? lerp(0.82, 0.18, ease(trip.place[i])) : 0.82
+      carryRef.current.position.x = cs === 2 ? lerp(0.36, 0.5, ease(trip.place[i])) : 0.36
+    }
     // color del chaleco
     const c = play.colorBy === 'rate' ? ramp(w.rate[i] / run.rateMax) : new THREE.Color(FLAG[flag]?.color || '#9aa6bf')
     refs.vest.current.color.copy(c)
@@ -65,6 +103,9 @@ function Worker({ w, run, onSelect, selected, real }) {
         <meshBasicMaterial color="#16a34a" depthTest={false} transparent opacity={0.95} />
       </mesh>
       <Person refs={refs} real={real} />
+      <group ref={carryRef} position={[0.36, 0.82, 0]} visible={false}>
+        {real ? <CrateReal size={[0.4, 0.3, 0.6]} /> : <Crate size={[0.4, 0.3, 0.6]} color="#e0b04f" />}
+      </group>
       {w.act === 'ladder' && <group ref={ladder} position={[-0.15, 0, 0]}><Ladder /></group>}
       {w.act === 'picker' && (
         <group ref={picker} position={[0.25, 1.2, 0.27]} rotation={[0, 0, -1.1]}>
@@ -96,6 +137,7 @@ function RobotCarrier({ run, onSelect, selected }) {
   const root = useRef(), load = useRef(), lab = useRef(), zr = useRef([])
   const wheels = useRef([])
   const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
+  const shown = useRef({ v: 0, t: 0 })
   useFrame(() => {
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
@@ -117,9 +159,14 @@ function RobotCarrier({ run, onSelect, selected }) {
     s.x = px; s.y = pz; s.h = h
     wheels.current.forEach((m, k) => m && (m.rotation.y = -(k % 2 === 0 ? s.angR : s.angL)))
     zr.current.forEach((m) => m && (m.visible = play.zones))
-    const ob = onboard(run, i)
-    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, ob / ROBOT.capacity))
-    if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(ob)} / ${ROBOT.capacity}`
+    // la carga a bordo cambia con la tasa de carga (3,6 s por caja) y de descarga (1,44 s por caja), no de golpe
+    const target = onboard(run, i), sh = shown.current, dts = play.t - sh.t
+    if (dts < 0 || dts > 4) sh.v = target
+    else if (target > sh.v) sh.v = Math.min(target, sh.v + (15 / 3.6) * dts)
+    else sh.v = Math.max(target, sh.v - (15 / 1.44) * dts)
+    sh.t = play.t
+    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / ROBOT.capacity))
+    if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(sh.v)} / ${ROBOT.capacity}`
   })
   return (
     <group ref={root} onClick={(e) => { e.stopPropagation(); onSelect('robot') }}>
