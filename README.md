@@ -12,7 +12,7 @@ Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (
 **Datos.** `public/data/manifest.json` lista las corridas incluidas (hoy: 12 trabajadores, fila 3, mixta, RP0, sesión de 45 min, solo humano y humano-robot). Desde la interfaz se pueden cargar otras: el `*_timeseries.csv` y, con robot, su `*_robot_status_log.txt`; el nombre debe seguir el patrón `HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_…`. Todo se procesa en el navegador.
 Se leen el paso de muestreo del CSV (1 s) y el índice de tick del log (0,25 s). Las entregas siguen el protocolo del estudio (`tree_point`: un punto de caja por árbol; el robot se detiene y el trabajador carga la caja).
 
-**Posiciones reconstruidas.** Los CSV no guardan trayectorias. Los trabajadores se ubican en su posición base y viajan a su caja según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola linealmente entre eventos del log. Producción y carga de trabajo son datos exactos del simulador; las distancias y el rumbo no. Registrar la pose por tick en MATLAB las haría exactas.
+**Posiciones reconstruidas (corridas de MATLAB).** Los CSV no guardan trayectorias. Los trabajadores se ubican en su posición base y viajan a su caja según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola linealmente entre eventos del log. Producción y carga de trabajo son datos exactos del simulador; las distancias y el rumbo no. Con el simulador integrado las trayectorias son exactas por tick; MATLAB las exporta con `EXPORT_POSE_LOG` (`*_poses.csv`) junto con `*_meta.json` (versión del script y parámetros).
 
 **Estilo visual.** Por defecto "Realista": palto Hass con fruta, suelo con textura, cielo, sombras y trabajadores con sombrero y bolsa de cosecha; el follaje es semitransparente y regulable. "Esquemático" conserva el aspecto sobrio para figuras. Medidas y fuentes en `docs/modelos_escenario.md`.
 
@@ -25,7 +25,32 @@ Pestaña Interacción, con dos capas 3D opcionales (zonas de cortesía y ruta an
 - **Asignación**: espera de cada caja (detección → recogida), equidad entre trabajadores (índice de Jain) y atención fuera de orden de detección.
 - **Ruta anticipada**: próximos 8 s del robot, verde / naranja / roja si se prevé conflicto; la barra de proximidad va sobre la línea de tiempo.
 
-Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); el controlador del robot es el del simulador (sin evitación social); una réplica determinista por celda, por lo que las diferencias entre escenarios son descriptivas. La etapa B (simulador propio en JS para probar reglas) queda pendiente.
+Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); el controlador del robot es el del simulador (sin evitación social); una réplica determinista por celda, por lo que las diferencias entre escenarios son descriptivas. La etapa B ya existe: el simulador propio en JS (`src/hrsim/`, `docs/simulador.md`) permite probar reglas y parámetros.
+
+## Desarrollo
+
+    npm install --include=dev
+    npm run dev           # servidor local
+    npm test              # pruebas rápidas (muestra de la regresión contra MATLAB, ~20 s)
+    npm run test:full     # regresión completa: 720 configuraciones de MATLAB (~2 min)
+    npm run lint          # ESLint
+    npm run format        # Prettier
+    npm run build         # sitio estático en dist/
+
+**Estructura.**
+
+| Carpeta | Contenido |
+|---|---|
+| `src/hrsim/` | Simulador (motor HR/HO, FIS, Web Worker, exportación) — sin dependencias de React |
+| `src/workload/` | Modo Workload: app, escena 3D, lectura de CSV MATLAB, análisis HRI; `panels/` con los paneles de la interfaz |
+| `src/shared/` | Modelos 3D comunes y ErrorBoundary |
+| `tests/` | Pruebas `node:test` (regresión vs MATLAB, FIS, motor, exportación) |
+| `scripts/` | Comparaciones y benchmark contra salidas de MATLAB fuera del repo |
+| `public/data/` | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión) |
+
+**Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas y build. Al fusionar en `main`, `Deploy a GitHub Pages` vuelve a correr lint y pruebas antes de publicar. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
+
+**Copias del visor.** Este repositorio es la única fuente. `WorkloadProductionSim` lo incluye como submódulo en `viz/` (`git submodule update --remote viz` para actualizarlo).
 
 # Modo Oclusión (nivel 2)
 

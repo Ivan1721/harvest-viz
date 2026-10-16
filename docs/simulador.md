@@ -15,12 +15,18 @@ dirección delantera (FourWheelSteering). Código: `common.js` (parámetros), `e
 ## Validación (métricas agregadas)
 | Prueba | Resultado |
 |---|---|
-| Solo humano, resúmenes de MATLAB (`scripts/sim_batch_compare.mjs`) | 366/366 configuraciones idénticas |
-| Humano-robot, resúmenes de MATLAB | 352/360 idénticas; 8 con desfase de 1 tick en un traspaso raro (p. ej. 6-3-mixta: 1319,0298 vs 1319,0250 kcal) |
+| Solo humano, resúmenes de MATLAB (`npm run test:full`, `scripts/bench_compare.mjs`) | 366/366 configuraciones idénticas |
+| Humano-robot, resúmenes de MATLAB | 358/366 idénticas; 8 con desfase de 1 tick en un traspaso raro (carga ≤ 0,03 %; solo 7-3-mixta-RP0 cambia lo entregado: 3075 vs 3045 u) |
 | Corrida de ejemplo (series por tick) | 0 discrepancias en trabajo, producción, bandera, a bordo y entregado |
 
 La pestaña **Validación** compara en vivo el simulador con `public/data/matlab_summary.json` (generado con
 `scripts/build_matlab_summary.mjs` desde los CSV resumen de MATLAB, 720 configuraciones).
+
+## Pruebas
+`npm test` corre una muestra fija de la regresión (1 de cada 12 configuraciones + las 8 desviaciones conocidas) más pruebas del FIS, determinismo y exportación; `npm run test:full` corre las 720. El despliegue a GitHub Pages se bloquea si fallan. Las desviaciones conocidas están en `tests/helpers.mjs` con tolerancia propia: si se corrige la causa, hay que sacarlas de la lista.
+
+## Rendimiento
+Node 22, 1 hilo: HO ≈ 20 ms y HR ≈ 240 ms por sesión de 45 min (máx. 410 ms con 24 trabajadores); las 732 configuraciones en 97 s con ≈ 310 MB de memoria pico.
 
 ## Hallazgo de reproducibilidad
 El `*_timeseries.csv` de ejemplo (`public/data`) se generó con costo de **bajar escalera = 0,106145 kcal/s** (=0,0923×1,15),
