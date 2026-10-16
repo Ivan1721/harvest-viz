@@ -8,15 +8,32 @@ const WorkloadApp = lazy(() => import('./workload/WorkloadApp.jsx'))
 function ModeSwitch({ mode, setMode }) {
   return (
     <div className="seg modes">
-      <button className={mode === 'workload' ? 'on' : ''} onClick={() => setMode('workload')}>Workload</button>
-      <button className={mode === 'occlusion' ? 'on' : ''} onClick={() => setMode('occlusion')}>Oclusión</button>
+      <button className={mode === 'workload' ? 'on' : ''} onClick={() => setMode('workload')}>
+        Workload
+      </button>
+      <button className={mode === 'occlusion' ? 'on' : ''} onClick={() => setMode('occlusion')}>
+        Oclusión
+      </button>
     </div>
   )
 }
 
 export default function App() {
-  const [mode, setMode] = useState(() => { try { return localStorage.getItem('hv-mode') || 'workload' } catch { return 'workload' } })
-  const change = (m) => { setMode(m); try { localStorage.setItem('hv-mode', m) } catch { /* sin almacenamiento: se usa el modo por defecto */ } }
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('hv-mode') || 'workload'
+    } catch {
+      return 'workload'
+    }
+  })
+  const change = (m) => {
+    setMode(m)
+    try {
+      localStorage.setItem('hv-mode', m)
+    } catch {
+      /* sin almacenamiento: se usa el modo por defecto */
+    }
+  }
   const sw = <ModeSwitch mode={mode} setMode={change} />
   return (
     <ErrorBoundary label="la aplicación" resetKey={mode}>

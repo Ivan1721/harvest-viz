@@ -19,15 +19,20 @@ export async function loadManifest(base) {
     if (!r.ok) return []
     const j = await r.json()
     return (j.runs || []).map((e) => ({ ...e, source: 'manifest' }))
-  } catch { return [] }
+  } catch {
+    return []
+  }
 }
 
 // Construye (y guarda en caché) la corrida de una entrada del catálogo
 export async function realize(entry, base) {
   if (cache.has(entry.id)) return cache.get(entry.id)
-  let csvText, logText = null
-  if (entry.text) { csvText = entry.text.csv; logText = entry.text.log }
-  else {
+  let csvText,
+    logText = null
+  if (entry.text) {
+    csvText = entry.text.csv
+    logText = entry.text.log
+  } else {
     const get = (f) => fetch(`${base}data/${f}`).then((r) => (r.ok ? r.text() : ''))
     ;[csvText, logText] = await Promise.all([get(entry.csv), entry.log ? get(entry.log) : Promise.resolve('')])
     if (!csvText.startsWith('Time_s')) throw new Error(`No se pudo leer ${entry.csv}`)

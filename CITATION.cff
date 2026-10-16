@@ -1,11 +1,11 @@
 cff-version: 1.2.0
-message: "Si usas este software, por favor cítalo así."
-title: "HarvestView (harvest-viz): visor 3D y simulador de cosecha colaborativa humano-robot"
+message: 'Si usas este software, por favor cítalo así.'
+title: 'HarvestView (harvest-viz): visor 3D y simulador de cosecha colaborativa humano-robot'
 version: 0.2.0
 date-released: 2026-10-16
-repository-code: "https://github.com/Ivan1721/harvest-viz"
+repository-code: 'https://github.com/Ivan1721/harvest-viz'
 authors:
-  - family-names: "García Fernández"
-    given-names: "Ivan"
-    affiliation: "Universidad Andrés Bello"
-    orcid: "https://orcid.org/0009-0005-4235-9913"
+  - family-names: 'García Fernández'
+    given-names: 'Ivan'
+    affiliation: 'Universidad Andrés Bello'
+    orcid: 'https://orcid.org/0009-0005-4235-9913'

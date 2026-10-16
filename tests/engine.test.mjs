@@ -8,7 +8,8 @@ import { FIS } from './helpers.mjs'
 const cfg = { nw: 6, row: 2, act: 'mixed', rp: 1, duration: 600 }
 
 test('el simulador es determinista', () => {
-  const a = new HRSim(cfg, FIS).run().summary(), b = new HRSim(cfg, FIS).run().summary()
+  const a = new HRSim(cfg, FIS).run().summary(),
+    b = new HRSim(cfg, FIS).run().summary()
   assert.deepEqual(a, b)
 })
 

@@ -10,8 +10,12 @@ export const VIEW_DIST = 0.75
 export const orchard = { trees: [], leaves: [], fruits: [], source: 'sintético' }
 
 function segBlocked(a, b, s) {
-  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2]
-  const fx = a[0] - s.x, fy = a[1] - s.y, fz = a[2] - s.z
+  const dx = b[0] - a[0],
+    dy = b[1] - a[1],
+    dz = b[2] - a[2]
+  const fx = a[0] - s.x,
+    fy = a[1] - s.y,
+    fz = a[2] - s.z
   const A = dx * dx + dy * dy + dz * dz
   const B = 2 * (fx * dx + fy * dy + fz * dz)
   const C = fx * fx + fy * fy + fz * fz - s.r * s.r
@@ -23,7 +27,10 @@ function segBlocked(a, b, s) {
   return t1 < 1 && t2 > 0
 }
 
-const norm = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l] }
+const norm = (v) => {
+  const l = Math.hypot(v[0], v[1], v[2]) || 1
+  return [v[0] / l, v[1] / l, v[2] / l]
+}
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 
 // 25 direcciones candidatas en un hemisferio alrededor del eje 'axis'
@@ -33,12 +40,17 @@ function hemisphere(axis) {
   const u = norm(cross(a, helper))
   const w = cross(a, u)
   const dirs = [{ dir: a, theta: 0, phi: 0 }]
-  ;[[25, 8], [50, 8], [70, 8]].forEach(([deg, n]) => {
+  ;[
+    [25, 8],
+    [50, 8],
+    [70, 8],
+  ].forEach(([deg, n]) => {
     const th = (deg * Math.PI) / 180
     for (let i = 0; i < n; i++) {
       const ph = (i / n) * Math.PI * 2
       dirs.push({
-        theta: th, phi: ph,
+        theta: th,
+        phi: ph,
         dir: [0, 1, 2].map((k) => a[k] * Math.cos(th) + (u[k] * Math.cos(ph) + w[k] * Math.sin(ph)) * Math.sin(th)),
       })
     }
@@ -47,7 +59,10 @@ function hemisphere(axis) {
 }
 
 const clamp01 = (x) => Math.max(0, Math.min(1, x))
-const hash = (i, j) => { const x = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return x - Math.floor(x) }
+const hash = (i, j) => {
+  const x = Math.sin(i * 127.1 + j * 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
 
 // Calcula vistas y oclusión de un fruto. Usa trazado de rayos contra hojas y otros frutos,
 // o bien valores aportados por el usuario (views / occ).
@@ -69,7 +84,8 @@ function computeFruit(f, leaves, fruits, idx) {
     f.views = dirs.map((d, i) => ({
       pos: [f.x + d.dir[0] * VIEW_DIST, f.y + d.dir[1] * VIEW_DIST, f.z + d.dir[2] * VIEW_DIST],
       occ: clamp01(f.occ + (hash(idx + 1, i) - 0.5) * 0.9 + d.theta * 0.15 - 0.05),
-      theta: d.theta, phi: d.phi,
+      theta: d.theta,
+      phi: d.phi,
     }))
   } else {
     const blockers = [
@@ -81,7 +97,13 @@ function computeFruit(f, leaves, fruits, idx) {
       const toV = norm(d.dir)
       const p1 = norm(cross(toV, [0, 1, 0]))
       const p2 = cross(toV, p1)
-      const offs = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]
+      const offs = [
+        [0, 0],
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]
       let blocked = 0
       offs.forEach(([a, b]) => {
         const tgt = [0, 1, 2].map((k) => (k === 0 ? f.x : k === 1 ? f.y : f.z) + toV[k] * f.r * 0.8 + (p1[k] * a + p2[k] * b) * f.r * 0.7)
@@ -112,7 +134,9 @@ function assign(fruits) {
 
 export function generateOrchard() {
   const r = rng(11)
-  const trees = [], leaves = [], fruits = []
+  const trees = [],
+    leaves = [],
+    fruits = []
   ;[-1, 1].forEach((side) => {
     for (let i = 0; i < 4; i++) {
       const cx = -4.8 + i * 3.2 + (r() - 0.5) * 0.3
@@ -125,7 +149,9 @@ export function generateOrchard() {
         while (p[0] ** 2 + p[1] ** 2 + p[2] ** 2 > 1)
         leaves.push({
           tree: tree.id,
-          x: cx + p[0] * tree.R * 0.95, y: tree.cy + p[1] * tree.R * 0.95, z: cz + p[2] * tree.R * 0.95,
+          x: cx + p[0] * tree.R * 0.95,
+          y: tree.cy + p[1] * tree.R * 0.95,
+          z: cz + p[2] * tree.R * 0.95,
           r: 0.36 + r() * 0.24,
         })
       }
@@ -149,8 +175,11 @@ export function generateOrchard() {
         const dir = [Math.sin(az) * Math.cos(el), Math.sin(el), -side * Math.cos(az) * Math.cos(el)]
         fruits.push({
           id: `FR-${String(fruits.length + 1).padStart(2, '0')}`,
-          tree: tree.id, side,
-          x: cx + dir[0] * rad, y: tree.cy + dir[1] * rad, z: cz + dir[2] * rad,
+          tree: tree.id,
+          side,
+          x: cx + dir[0] * rad,
+          y: tree.cy + dir[1] * rad,
+          z: cz + dir[2] * rad,
           r: 0.13,
         })
       }
@@ -184,14 +213,22 @@ export function loadOrchard(json) {
       id: String(s.id ?? `FR-${String(i + 1).padStart(2, '0')}`),
       tree: s.tree ?? 0,
       side: s.side ? Math.sign(s.side) : s.z > 0 ? 1 : -1,
-      x: s.x, y: s.y, z: s.z, r: Number.isFinite(s.r) ? s.r : 0.13,
+      x: s.x,
+      y: s.y,
+      z: s.z,
+      r: Number.isFinite(s.r) ? s.r : 0.13,
     }
     if (Number.isFinite(s.occ)) f.occ = clamp01(s.occ)
     if (s.views) f.views = s.views
-    if (s.assignee === 'robot' || s.assignee === 'human') { f.assignee = s.assignee; f.assigneeFixed = true }
+    if (s.assignee === 'robot' || s.assignee === 'human') {
+      f.assignee = s.assignee
+      f.assigneeFixed = true
+    }
     fruits.push(f)
   }
-  const trees = Array.isArray(json.trees) ? json.trees.map((t, i) => ({ id: t.id ?? i, cx: t.cx, cz: t.cz, cy: t.cy ?? 1.9, R: t.R ?? 1.25, side: t.side ?? (t.cz > 0 ? 1 : -1) })) : []
+  const trees = Array.isArray(json.trees)
+    ? json.trees.map((t, i) => ({ id: t.id ?? i, cx: t.cx, cz: t.cz, cy: t.cy ?? 1.9, R: t.R ?? 1.25, side: t.side ?? (t.cz > 0 ? 1 : -1) }))
+    : []
   const leaves = Array.isArray(json.leaves) ? json.leaves : []
   fruits.forEach((f, i) => computeFruit(f, leaves, fruits, i))
   assign(fruits)
@@ -206,7 +243,15 @@ export function exportOrchard() {
     trees: orchard.trees.map((t) => ({ id: t.id, cx: r3(t.cx), cz: r3(t.cz), cy: t.cy, R: t.R, side: t.side })),
     leaves: orchard.leaves.map((l) => ({ tree: l.tree, x: r3(l.x), y: r3(l.y), z: r3(l.z), r: r3(l.r) })),
     fruits: orchard.fruits.map((f) => ({
-      id: f.id, tree: f.tree, side: f.side, x: r3(f.x), y: r3(f.y), z: r3(f.z), r: f.r, occ: r3(f.occ), assignee: f.assignee,
+      id: f.id,
+      tree: f.tree,
+      side: f.side,
+      x: r3(f.x),
+      y: r3(f.y),
+      z: r3(f.z),
+      r: f.r,
+      occ: r3(f.occ),
+      assignee: f.assignee,
       views: f.views.map((v) => ({ pos: v.pos.map(r3), occ: r3(v.occ) })),
     })),
   }

@@ -91,9 +91,19 @@ function Fruit({ f, state, selected, onSelect }) {
         scale={s * 1.8}
         rotation={tilt}
         castShadow
-        onClick={(e) => { e.stopPropagation(); onSelect({ type: 'fruit', id: f.id }) }}
-        onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = 'pointer' }}
-        onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto' }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onSelect({ type: 'fruit', id: f.id })
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHover(true)
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          setHover(false)
+          document.body.style.cursor = 'auto'
+        }}
       >
         <meshStandardMaterial color={col} emissive={col} emissiveIntensity={active || selected ? 0.9 : 0.3} roughness={0.5} />
       </mesh>
@@ -133,17 +143,26 @@ function Viewpoints({ f }) {
 }
 
 // ---------- Robot ----------
-const L1 = 1.3, L2 = 1.3
+const L1 = 1.3,
+  L2 = 1.3
 const DARK = '#2b3447'
 
 function Robot({ selected, onSelect }) {
-  const root = useRef(), arm = useRef(), l1 = useRef(), l2 = useRef(), wrist = useRef(), ring = useRef(), lidar = useRef()
+  const root = useRef(),
+    arm = useRef(),
+    l1 = useRef(),
+    l2 = useRef(),
+    wrist = useRef(),
+    ring = useRef(),
+    lidar = useRef()
   const fingers = useRef([])
   const wheelRefs = useRef([])
   useFrame(() => {
     const R = sim.robot
     root.current.position.x = R.x
-    const dx = R.tip[0] - R.x, dy = R.tip[1] - SHOULDER_Y, dz = R.tip[2] - R.z
+    const dx = R.tip[0] - R.x,
+      dy = R.tip[1] - SHOULDER_Y,
+      dz = R.tip[2] - R.z
     const yaw = Math.atan2(dz, dx)
     const r = Math.hypot(dx, dz)
     let d = Math.hypot(r, dy)
@@ -163,7 +182,13 @@ function Robot({ selected, onSelect }) {
     ring.current.material.color.set(R.paused ? '#f59e0b' : C.robot)
   })
   return (
-    <group ref={root} onClick={(e) => { e.stopPropagation(); onSelect({ type: 'robot', id: 'RB-01' }) }}>
+    <group
+      ref={root}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect({ type: 'robot', id: 'RB-01' })
+      }}
+    >
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <circleGeometry args={[YIELD_DIST, 48]} />
         <meshBasicMaterial color={C.robot} transparent opacity={0.12} />
@@ -182,7 +207,12 @@ function Robot({ selected, onSelect }) {
           <meshStandardMaterial color="#fde68a" emissive="#fde68a" emissiveIntensity={0.8} />
         </mesh>
       ))}
-      {[[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]].map(([x, z], i) => (
+      {[
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [-0.5, 0.5],
+        [0.5, 0.5],
+      ].map(([x, z], i) => (
         <group key={i} position={[x, 0.2, z]}>
           <mesh ref={(m) => (wheelRefs.current[i] = m)} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.2, 0.2, 0.14, 18]} />
@@ -260,7 +290,9 @@ function Robot({ selected, onSelect }) {
         </group>
       </group>
       <Html position={[0, 1.5, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="tag" style={{ borderColor: C.robot }}>RB-01<span> · {sim.robot.state === 'idle' ? 'En espera' : 'Cosechando'}</span></div>
+        <div className="tag" style={{ borderColor: C.robot }}>
+          RB-01<span> · {sim.robot.state === 'idle' ? 'En espera' : 'Cosechando'}</span>
+        </div>
       </Html>
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
@@ -274,7 +306,13 @@ function Robot({ selected, onSelect }) {
 
 // ---------- Humano ----------
 function Human({ selected, onSelect }) {
-  const root = useRef(), body = useRef(), legL = useRef(), legR = useRef(), armL = useRef(), armR = useRef(), zone = useRef()
+  const root = useRef(),
+    body = useRef(),
+    legL = useRef(),
+    legR = useRef(),
+    armL = useRef(),
+    armR = useRef(),
+    zone = useRef()
   useFrame(() => {
     const H = sim.human
     root.current.position.set(H.x, 0, H.z)
@@ -290,7 +328,13 @@ function Human({ selected, onSelect }) {
   })
   const skin = '#f1c9a5'
   return (
-    <group ref={root} onClick={(e) => { e.stopPropagation(); onSelect({ type: 'human', id: 'HU-01' }) }}>
+    <group
+      ref={root}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect({ type: 'human', id: 'HU-01' })
+      }}
+    >
       <mesh ref={zone} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <circleGeometry args={[YIELD_DIST * 0.6, 40]} />
         <meshBasicMaterial color={C.human} transparent opacity={0.12} />
@@ -325,17 +369,35 @@ function Human({ selected, onSelect }) {
           <meshStandardMaterial color="#fde047" />
         </mesh>
         {/* brazos */}
-        {[[armL, -0.27], [armR, 0.27]].map(([ref, x], i) => (
+        {[
+          [armL, -0.27],
+          [armR, 0.27],
+        ].map(([ref, x], i) => (
           <group key={i} ref={ref} position={[x, 0.2, 0]}>
-            <mesh position={[0, -0.22, 0]}><capsuleGeometry args={[0.06, 0.3, 4, 8]} /><meshStandardMaterial color={C.human} /></mesh>
-            <mesh position={[0, -0.48, 0]}><sphereGeometry args={[0.065, 10, 10]} /><meshStandardMaterial color="#e2e8f0" /></mesh>
+            <mesh position={[0, -0.22, 0]}>
+              <capsuleGeometry args={[0.06, 0.3, 4, 8]} />
+              <meshStandardMaterial color={C.human} />
+            </mesh>
+            <mesh position={[0, -0.48, 0]}>
+              <sphereGeometry args={[0.065, 10, 10]} />
+              <meshStandardMaterial color="#e2e8f0" />
+            </mesh>
           </group>
         ))}
         {/* piernas + botas */}
-        {[[legL, -0.1], [legR, 0.1]].map(([ref, x], i) => (
+        {[
+          [legL, -0.1],
+          [legR, 0.1],
+        ].map(([ref, x], i) => (
           <group key={i} ref={ref} position={[x, -0.35, 0]}>
-            <mesh position={[0, -0.28, 0]}><capsuleGeometry args={[0.075, 0.4, 4, 8]} /><meshStandardMaterial color="#334155" /></mesh>
-            <mesh position={[0, -0.58, 0.04]}><boxGeometry args={[0.13, 0.08, 0.22]} /><meshStandardMaterial color="#3f2d1e" /></mesh>
+            <mesh position={[0, -0.28, 0]}>
+              <capsuleGeometry args={[0.075, 0.4, 4, 8]} />
+              <meshStandardMaterial color="#334155" />
+            </mesh>
+            <mesh position={[0, -0.58, 0.04]}>
+              <boxGeometry args={[0.13, 0.08, 0.22]} />
+              <meshStandardMaterial color="#3f2d1e" />
+            </mesh>
           </group>
         ))}
         {/* canasto de cosecha */}
@@ -345,7 +407,9 @@ function Human({ selected, onSelect }) {
         </mesh>
       </group>
       <Html position={[0, 2.05, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="tag" style={{ borderColor: C.human }}>HU-01<span> · Operario</span></div>
+        <div className="tag" style={{ borderColor: C.human }}>
+          HU-01<span> · Operario</span>
+        </div>
       </Html>
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
@@ -365,7 +429,13 @@ function Sim() {
 function Ground() {
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={() => { sim.selected = null }}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onClick={() => {
+          sim.selected = null
+        }}
+      >
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color={C.ground} />
       </mesh>
@@ -396,7 +466,9 @@ function World({ snap, onSelect, version }) {
   const stMap = useMemo(() => Object.fromEntries(snap.fruits.map((f) => [f.id, f])), [snap.fruits])
   const leavesByTree = useMemo(() => {
     const m = {}
-    orchard.leaves.forEach((l) => { (m[l.tree] ||= []).push(l) })
+    orchard.leaves.forEach((l) => {
+      ;(m[l.tree] ||= []).push(l)
+    })
     return m
   }, [version])
   return (
@@ -415,10 +487,10 @@ function World({ snap, onSelect, version }) {
       />
       <Sim />
       <Ground />
-      {orchard.trees.map((t) => <Tree key={`${version}-${t.id}`} t={t} leaves={leavesByTree[t.id] || []} />)}
-      {orchard.fruits.map((f) => stMap[f.id] && (
-        <Fruit key={`${version}-${f.id}`} f={f} state={stMap[f.id]} selected={sel?.id === f.id} onSelect={onSelect} />
+      {orchard.trees.map((t) => (
+        <Tree key={`${version}-${t.id}`} t={t} leaves={leavesByTree[t.id] || []} />
       ))}
+      {orchard.fruits.map((f) => stMap[f.id] && <Fruit key={`${version}-${f.id}`} f={f} state={stMap[f.id]} selected={sel?.id === f.id} onSelect={onSelect} />)}
       <Viewpoints f={focus && stMap[focus.id] && stMap[focus.id].state !== 'done' ? focus : null} />
       <Robot selected={sel?.type === 'robot'} onSelect={onSelect} />
       <Human selected={sel?.type === 'human'} onSelect={onSelect} />

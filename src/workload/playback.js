@@ -9,7 +9,8 @@ export const anim = { t: 0 }
 
 const listeners = new Set()
 const snapshot = () => ({ t: play.t, playing: play.playing, speed: play.speed, colorBy: play.colorBy, sel: play.selected })
-let last = snapshot(), lastEmit = 0
+let last = snapshot(),
+  lastEmit = 0
 
 function emit(force) {
   const s = snapshot()
@@ -19,7 +20,10 @@ function emit(force) {
 }
 
 /** Cambia el estado de reproducción y avisa a la interfaz de inmediato. */
-export function setPlay(patch) { Object.assign(play, patch); emit(true) }
+export function setPlay(patch) {
+  Object.assign(play, patch)
+  emit(true)
+}
 
 /** Avance de un frame (lo llama la escena). Devuelve true si el reloj avanzó. */
 export function advance(run, dtReal) {
@@ -29,11 +33,17 @@ export function advance(run, dtReal) {
   play.t = Math.min(play.tEnd, play.t + d * play.speed)
   if (play.t >= play.tEnd) play.playing = false
   const now = performance.now()
-  if (now - lastEmit > 200 || !play.playing) { lastEmit = now; emit(false) }
+  if (now - lastEmit > 200 || !play.playing) {
+    lastEmit = now
+    emit(false)
+  }
   return true
 }
 
-export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn) }
+export function subscribe(fn) {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
 
 /** Instantánea del reloj para componentes de React. */
 export function usePlayback() {

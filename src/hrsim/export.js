@@ -10,9 +10,11 @@ const r6 = (v) => Math.round(v * 1e6) / 1e6
 export function timeseriesCSV(run, every = 1) {
   const head = ['Time_s', 'Total_product_cargo', 'Total_product', 'Total_product_robot', 'Total_workload']
   run.workers.forEach((w) => head.push(`Production_H${w.h}`, `Workload_H${w.h}`, `ActivityFlag_H${w.h}`))
-  const step = Math.max(1, Math.round(every / run.dt)), lines = [head.join(',')]
+  const step = Math.max(1, Math.round(every / run.dt)),
+    lines = [head.join(',')]
   for (let i = 0; i < run.n; i += step) {
-    const s = run.series, row = [r6(s.t[i]), r6(s.cargo[i]), r6(s.total[i]), r6(s.robot[i]), r6(s.work[i])]
+    const s = run.series,
+      row = [r6(s.t[i]), r6(s.cargo[i]), r6(s.total[i]), r6(s.robot[i]), r6(s.work[i])]
     run.workers.forEach((w) => row.push(r6(w.prod[i]), r6(w.work[i]), w.flag[i]))
     lines.push(row.join(','))
   }
@@ -36,17 +38,27 @@ export function posesCSV(run) {
 
 export function metaJSON(run) {
   const { engineVersion, params, paramsHash } = run.meta
-  return JSON.stringify({ engine: 'harvest-viz/hrsim', engineVersion, paramsHash, params, summary: run.summary || null, exportedAt: new Date().toISOString() }, null, 2)
+  return JSON.stringify(
+    { engine: 'harvest-viz/hrsim', engineVersion, paramsHash, params, summary: run.summary || null, exportedAt: new Date().toISOString() },
+    null,
+    2,
+  )
 }
 
 /** Descarga los tres archivos de una corrida en el navegador. */
 export function downloadRun(run) {
   const base = stem(run)
-  const files = [[`${base}_timeseries.csv`, timeseriesCSV(run), 'text/csv'], [`${base}_poses.csv`, posesCSV(run), 'text/csv'], [`${base}_meta.json`, metaJSON(run), 'application/json']]
+  const files = [
+    [`${base}_timeseries.csv`, timeseriesCSV(run), 'text/csv'],
+    [`${base}_poses.csv`, posesCSV(run), 'text/csv'],
+    [`${base}_meta.json`, metaJSON(run), 'application/json'],
+  ]
   for (const [name, text, type] of files) {
     const url = URL.createObjectURL(new Blob([text], { type }))
     const a = Object.assign(document.createElement('a'), { href: url, download: name })
-    document.body.appendChild(a); a.click(); a.remove()
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 }

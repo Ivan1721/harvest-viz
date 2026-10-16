@@ -11,7 +11,12 @@ test('el FIS goal-seeking se parsea con 21 reglas y 2 salidas', () => {
 
 test('evalFis devuelve salidas finitas dentro de su rango', () => {
   const sys = parseFis(FIS)
-  for (const inp of [[0, 0], [5, 30], [10, -60], [2, 90]]) {
+  for (const inp of [
+    [0, 0],
+    [5, 30],
+    [10, -60],
+    [2, 90],
+  ]) {
     const out = evalFis(sys, inp.slice(0, sys.inputs.length))
     out.forEach((v, k) => {
       assert.ok(Number.isFinite(v))

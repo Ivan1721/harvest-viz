@@ -29,9 +29,22 @@ export const sim = {
 }
 
 const newRobot = () => ({
-  x: -6, z: 0, state: 'idle', targetId: null, timer: 0, picked: 0,
-  tip: homeFor(-6), goal: homeFor(-6), status: 'Esperando tarea', step: -1,
-  paused: false, pausedTime: 0, chosen: null, travel: 0, occSum: 0, occN: 0,
+  x: -6,
+  z: 0,
+  state: 'idle',
+  targetId: null,
+  timer: 0,
+  picked: 0,
+  tip: homeFor(-6),
+  goal: homeFor(-6),
+  status: 'Esperando tarea',
+  step: -1,
+  paused: false,
+  pausedTime: 0,
+  chosen: null,
+  travel: 0,
+  occSum: 0,
+  occN: 0,
 })
 const newHuman = () => ({ x: 5.5, z: 0.95, state: 'idle', targetId: null, timer: 0, picked: 0, heading: Math.PI / 2, status: 'Esperando tarea', walk: 0 })
 
@@ -56,8 +69,13 @@ export function scoreViews(f, w, fromTip) {
 export function evaluate(w) {
   const rf = orchard.fruits.filter((f) => f.assignee === 'robot')
   if (!rf.length) return { occ: 0, move: 0, n: 0 }
-  let o = 0, m = 0
-  rf.forEach((f) => { const s = scoreViews(f, w, homeFor(f.x - 0.1)); o += s.occ; m += s.move })
+  let o = 0,
+    m = 0
+  rf.forEach((f) => {
+    const s = scoreViews(f, w, homeFor(f.x - 0.1))
+    o += s.occ
+    m += s.move
+  })
   return { occ: o / rf.length, move: m / rf.length, n: rf.length }
 }
 
@@ -82,9 +100,7 @@ export function resetSim() {
 resetSim()
 
 function nextFor(who, fromX) {
-  return orchard.fruits
-    .filter((f) => f.assignee === who && st(f.id).state === 'pending')
-    .sort((a, b) => Math.abs(a.x - fromX) - Math.abs(b.x - fromX))[0]
+  return orchard.fruits.filter((f) => f.assignee === who && st(f.id).state === 'pending').sort((a, b) => Math.abs(a.x - fromX) - Math.abs(b.x - fromX))[0]
 }
 const move = (v, target, maxStep) => (Math.abs(target - v) <= maxStep ? target : v + Math.sign(target - v) * maxStep)
 const smooth = (cur, goal, k) => cur + (goal - cur) * k
@@ -93,15 +109,25 @@ export function step(rawDt) {
   if (!sim.playing) return
   const dt = Math.min(rawDt, 0.05) * sim.speed
   sim.t += dt
-  const R = sim.robot, H = sim.human
+  const R = sim.robot,
+    H = sim.human
   const humanNear = Math.hypot(R.x - H.x, R.z - H.z) < YIELD_DIST
 
   // ---------- Robot ----------
   R.paused = false
   if (R.state === 'idle') {
     const f = nextFor('robot', R.x)
-    if (f) { R.targetId = f.id; R.state = 'view'; R.timer = 0; R.chosen = null; st(f.id).state = 'claimed' }
-    else { R.status = 'Sin frutos asignados'; R.step = -1; R.goal = homeFor(R.x) }
+    if (f) {
+      R.targetId = f.id
+      R.state = 'view'
+      R.timer = 0
+      R.chosen = null
+      st(f.id).state = 'claimed'
+    } else {
+      R.status = 'Sin frutos asignados'
+      R.step = -1
+      R.goal = homeFor(R.x)
+    }
   } else if (humanNear) {
     R.paused = true
     R.pausedTime += dt
@@ -110,29 +136,44 @@ export function step(rawDt) {
     const f = byId(R.targetId)
     R.timer += dt
     if (R.state === 'view') {
-      R.step = 1; R.status = `Seleccionando mejor vista · ${f.id}`
+      R.step = 1
+      R.status = `Seleccionando mejor vista · ${f.id}`
       R.x = move(R.x, f.x - 0.1, 0.9 * dt)
       R.goal = homeFor(R.x)
       if (Math.abs(R.x - (f.x - 0.1)) < 0.02) {
         R.chosen = scoreViews(f, sim.strategy.w, R.tip)
-        R.state = 'approach'; R.timer = 0
+        R.state = 'approach'
+        R.timer = 0
       }
     } else if (R.state === 'approach') {
-      R.step = 2; R.status = `Aproximando cámara a la vista ${R.chosen.idx + 1}/${f.views.length} · ${f.id}`
+      R.step = 2
+      R.status = `Aproximando cámara a la vista ${R.chosen.idx + 1}/${f.views.length} · ${f.id}`
       R.goal = R.chosen.view.pos
-      if (R.timer > 1.6) { R.state = 'grasp'; R.timer = 0 }
+      if (R.timer > 1.6) {
+        R.state = 'grasp'
+        R.timer = 0
+      }
     } else if (R.state === 'grasp') {
-      R.step = 3; R.status = `Agarrando ${f.id}`
+      R.step = 3
+      R.status = `Agarrando ${f.id}`
       R.goal = [f.x, f.y, f.z]
       if (R.timer > 1.4) {
-        st(f.id).state = 'done'; st(f.id).doneBy = 'robot'
-        R.picked++; R.occSum += R.chosen.occ; R.occN++
-        R.state = 'deliver'; R.timer = 0
+        st(f.id).state = 'done'
+        st(f.id).doneBy = 'robot'
+        R.picked++
+        R.occSum += R.chosen.occ
+        R.occN++
+        R.state = 'deliver'
+        R.timer = 0
       }
     } else if (R.state === 'deliver') {
-      R.step = 4; R.status = 'Entregando a la caja'
+      R.step = 4
+      R.status = 'Entregando a la caja'
       R.goal = homeFor(R.x)
-      if (R.timer > 0.9) { R.state = 'idle'; R.targetId = null }
+      if (R.timer > 0.9) {
+        R.state = 'idle'
+        R.targetId = null
+      }
     }
   }
   const k = 1 - Math.exp(-dt * 4)
@@ -143,10 +184,17 @@ export function step(rawDt) {
   // ---------- Humano ----------
   if (H.state === 'idle') {
     const f = nextFor('human', H.x)
-    if (f) { H.targetId = f.id; H.state = 'walk'; st(f.id).state = 'claimed' }
-    else {
+    if (f) {
+      H.targetId = f.id
+      H.state = 'walk'
+      st(f.id).state = 'claimed'
+    } else {
       H.status = 'Sin frutos asignados · espera fuera del carril'
-      if (Math.abs(7.5 - H.x) > 0.02) { H.x = move(H.x, 7.5, dt); H.heading = Math.PI / 2; H.walk += dt * 6 } else H.walk = 0
+      if (Math.abs(7.5 - H.x) > 0.02) {
+        H.x = move(H.x, 7.5, dt)
+        H.heading = Math.PI / 2
+        H.walk += dt * 6
+      } else H.walk = 0
       H.z = move(H.z, 1.3, dt)
     }
   } else if (H.state === 'walk') {
@@ -157,13 +205,22 @@ export function step(rawDt) {
     H.x = move(H.x, f.x, dt)
     H.z = move(H.z, tz, dt)
     H.walk += dt * 6
-    if (Math.abs(H.x - f.x) < 0.02 && Math.abs(H.z - tz) < 0.02) { H.state = 'pick'; H.timer = 0 }
+    if (Math.abs(H.x - f.x) < 0.02 && Math.abs(H.z - tz) < 0.02) {
+      H.state = 'pick'
+      H.timer = 0
+    }
   } else if (H.state === 'pick') {
     const f = byId(H.targetId)
     H.status = `Cosechando ${f.id} (muy ocluido)`
     H.heading = f.side > 0 ? Math.PI : 0
     H.timer += dt
-    if (H.timer > 1.8) { st(f.id).state = 'done'; st(f.id).doneBy = 'human'; H.picked++; H.state = 'idle'; H.targetId = null }
+    if (H.timer > 1.8) {
+      st(f.id).state = 'done'
+      st(f.id).doneBy = 'human'
+      H.picked++
+      H.state = 'idle'
+      H.targetId = null
+    }
   }
 
   // ---------- Reinicio automático ----------
@@ -172,7 +229,8 @@ export function step(rawDt) {
     R.status = H.status = 'Huerto completado'
     if (sim.resetTimer > 4) {
       const keep = { selected: sim.selected, mode: sim.strategy }
-      resetSim(); sim.selected = keep.selected
+      resetSim()
+      sim.selected = keep.selected
     }
   }
 }
@@ -184,11 +242,21 @@ export function snapshot() {
   const pending = orchard.fruits.filter((f) => st(f.id)?.state !== 'done')
   const meanOcc = pending.length ? pending.reduce((s, f) => s + f.occ, 0) / pending.length : 0
   return {
-    t: sim.t, total, done, rp: R.picked, hp: sim.human.picked, meanOcc,
-    pausedTime: R.pausedTime, travel: R.travel, pickOcc: R.occN ? R.occSum / R.occN : null,
-    robot: { ...R, tip: [...R.tip] }, human: { ...sim.human },
+    t: sim.t,
+    total,
+    done,
+    rp: R.picked,
+    hp: sim.human.picked,
+    meanOcc,
+    pausedTime: R.pausedTime,
+    travel: R.travel,
+    pickOcc: R.occN ? R.occSum / R.occN : null,
+    robot: { ...R, tip: [...R.tip] },
+    human: { ...sim.human },
     fruits: sim.fruits.map((f) => ({ ...f })),
-    selected: sim.selected, playing: sim.playing, speed: sim.speed,
+    selected: sim.selected,
+    playing: sim.playing,
+    speed: sim.speed,
     strategy: { mode: sim.strategy.mode, w: [...sim.strategy.w] },
   }
 }

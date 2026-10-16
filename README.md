@@ -3,6 +3,7 @@
 Dos modos sobre un núcleo común (`src/shared`): **Workload** (reproduce y compara corridas del simulador MATLAB sobre el huerto real) y **Oclusión** (selección de punto de vista, nivel 2).
 
 ## Modo Workload
+
 **Simulador integrado:** además de reproducir corridas, `Fuente → Simulador` ejecuta en el navegador una réplica del modelo MATLAB con parámetros editables (ver `docs/simulador.md`).
 
 Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (huerto de 3 filas × 4 árboles, copa 3,25 m, mapa 29,7 × 25,8 m) y las compara.
@@ -19,7 +20,9 @@ Se leen el paso de muestreo del CSV (1 s) y el índice de tick del log (0,25 s).
 **Robot.** Dimensiones reales del Clearpath Warthog (1,52 × 1,38 × 0,83 m, neumático de 0,61 m, holgura 0,254 m) y dirección diferencial: al girar, las ruedas de un lado ruedan más que las del otro. El simulador MATLAB usa un vehículo más grande (icono de 3,2 m, ruedas de 1 m, dirección 4WS); el visor prioriza el robot real porque el modelo se está reformulando. La capacidad (68 cajas × 15 u) es un parámetro del estudio.
 
 ### Análisis HRI (paso 2, etapa A)
+
 Pestaña Interacción, con dos capas 3D opcionales (zonas de cortesía y ruta anticipada):
+
 - **Cortesía**: zonas de proxemia (íntima < 0,45 m, personal < 1,2 m, social < 3,6 m) alrededor del robot; distancia mínima y tiempo en zona personal por trabajador. Los traspasos de caja no cuentan como invasión.
 - **Encuentros**: robot–humano a menos de 1,5 m, con instante, trabajador, distancia mínima y veredicto (traspaso de caja, ambos en movimiento, robot debe ceder…); clic para saltar al instante.
 - **Asignación**: espera de cada caja (detección → recogida), equidad entre trabajadores (índice de Jain) y atención fuera de orden de detección.
@@ -39,14 +42,14 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 
 **Estructura.**
 
-| Carpeta | Contenido |
-|---|---|
-| `src/hrsim/` | Simulador (motor HR/HO, FIS, Web Worker, exportación) — sin dependencias de React |
+| Carpeta         | Contenido                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/hrsim/`    | Simulador (motor HR/HO, FIS, Web Worker, exportación) — sin dependencias de React                            |
 | `src/workload/` | Modo Workload: app, escena 3D, lectura de CSV MATLAB, análisis HRI; `panels/` con los paneles de la interfaz |
-| `src/shared/` | Modelos 3D comunes y ErrorBoundary |
-| `tests/` | Pruebas `node:test` (regresión vs MATLAB, FIS, motor, exportación) |
-| `scripts/` | Comparaciones y benchmark contra salidas de MATLAB fuera del repo |
-| `public/data/` | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión) |
+| `src/shared/`   | Modelos 3D comunes y ErrorBoundary                                                                           |
+| `tests/`        | Pruebas `node:test` (regresión vs MATLAB, FIS, motor, exportación)                                           |
+| `scripts/`      | Comparaciones y benchmark contra salidas de MATLAB fuera del repo                                            |
+| `public/data/`  | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión)                                     |
 
 **Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas y build. Al fusionar en `main`, `Deploy a GitHub Pages` vuelve a correr lint y pruebas antes de publicar. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
 
@@ -55,10 +58,12 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 # Modo Oclusión (nivel 2)
 
 ## Ejecutar
+
     npm install --include=dev
     npm run dev        # http://localhost:5173
 
 ## Qué hay
+
 - Huerto 3D con robot (brazo 2 eslabones + cámara + pinza) y operario.
 - Oclusión por punto de vista (25 candidatos en hemisferio) con trazado de rayos.
 - **Selector de vista parametrizable**: costo = w1·oclusión + w2·movimiento + w3·extensión.
@@ -67,6 +72,7 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 - **Datos propios**: botón "Cargar JSON" (o arrastrar el archivo) y "Exportar".
 
 ## Formato JSON
+
     { "fruits": [ { "id": "F1", "x": 0.5, "y": 1.8, "z": -1.4, "occ": 0.35 } ] }
 
 Por fruto (opcionales): `r` (radio, m), `side` (+1/-1, lado del carril), `tree`,
@@ -77,9 +83,10 @@ Globales (opcionales): `trees`: [{id,cx,cz,cy,R}], `leaves`: [{tree,x,y,z,r}].
 - Con solo `occ` y sin `leaves`: se sintetizan 25 vistas alrededor de ese valor (aproximado).
 - Con `leaves`: la oclusión se calcula por trazado de rayos.
 - Coordenadas en metros; el robot avanza por el carril z=0 a lo largo de x.
-Usa "Exportar" para obtener un ejemplo completo.
+  Usa "Exportar" para obtener un ejemplo completo.
 
 ## Archivos
-- src/data.js  generación, carga/exportación JSON, oclusión
-- src/sim.js   estados robot/humano, estrategias de vista
+
+- src/data.js generación, carga/exportación JSON, oclusión
+- src/sim.js estados robot/humano, estrategias de vista
 - src/Scene.jsx escena 3D · src/App.jsx paneles
