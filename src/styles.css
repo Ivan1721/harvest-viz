@@ -191,3 +191,9 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; col
 .wb .heatwrap2 { cursor: pointer; display: flex; align-items: center; gap: 10px; } .wb .heat { flex: 1; height: 8px; border-radius: 4px; }
 .wb .timeline2 { display: flex; align-items: center; gap: 12px; } .wb .timeline2 input[type=range] { flex: 1; } .wb .tl-t { width: 92px; text-align: right; }
 @media (max-width: 1100px) { .wb { grid-template-columns: 210px 1fr 320px; } }
+
+/* panel de parámetros del simulador */
+.params { display: grid; gap: 6px; margin-top: 8px; }
+.params label { display: grid; grid-template-columns: 1fr 78px; gap: 8px; align-items: center; font-size: 12px; }
+.params input { width: 100%; padding: 3px 6px; border: 1px solid var(--line, #d0d7e6); border-radius: 6px; background: transparent; color: inherit; font: inherit; }
+details > summary { cursor: pointer; font-size: 12px; margin-top: 8px; }

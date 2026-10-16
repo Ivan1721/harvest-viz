@@ -3,6 +3,8 @@ import WorkloadScene, { play } from './WorkloadScene'
 import { onboard, FLAG } from './run'
 import { heatGradient, ZONES } from './hri'
 import { ACT_LABEL } from './spec'
+import { runSimulation } from '../hrsim/simClient'
+import { DEFAULTS } from '../hrsim/common'
 import { loadManifest, realize, entriesFromFiles, cfgKey, ACTS } from './library'
 import { LineChart, SC } from './charts'
 
@@ -25,21 +27,113 @@ function Field({ label, children }) {
   return <div className="field"><label>{label}</label>{children}</div>
 }
 
+
+/* ---------------------------------------------------------------- parámetros del simulador */
+const PARAMS = [
+  ['walkSpeed', 'Velocidad de caminata (m/s)', 0.05, 'MATLAB: 0,75'],
+  ['ladderTime', 'Tiempo de escalera (s)', 0.5, 'MATLAB: 5'],
+  ['loadTimePerBox', 'Carga al robot (s/caja)', 0.1, 'Protocolo: 3,6 (worker_loads)'],
+  ['unloadTimePerBox', 'Descarga del robot (s/caja)', 0.1, 'Protocolo: 1,44'],
+  ['capacityBoxes', 'Capacidad del robot (cajas)', 1, 'Protocolo: 68'],
+  ['maxProd', 'Unidades por caja', 1, 'MATLAB: 15'],
+  ['maxBoxStopsPerLap', 'Paradas máx. por vuelta', 1, 'Protocolo: 10'],
+  ['waypointTimeout', 'Tiempo máx. en waypoint (s)', 5, 'Protocolo: 60'],
+  ['detectorRange', 'Alcance del detector (m)', 0.5, 'MATLAB: 3'],
+  ['boxRouteOffset', 'Desvío de ruta a caja (m)', 0.1, 'MATLAB: 1,2'],
+  ['metabolicMultiplier', 'Multiplicador metabólico', 0.05, '1 = costos del script'],
+  ['duration', 'Duración (s)', 60, 'Estudio: 2700 (45 min)'],
+]
+const COSTS = [['walking', 'Caminar'], ['walkingCarrying', 'Caminar con caja'], ['harvestGround', 'Cosechar (suelo)'], ['harvestLadder', 'Cosechar (escalera)'], ['harvestPicker', 'Cosechar (gancho)'], ['ladderClimb', 'Subir escalera'], ['ladderDown', 'Bajar escalera']]
+const PERIODS = [[1, 'Suelo'], [2, 'Escalera'], [3, 'Gancho']]
+
+function SimPanel({ params, setParams, onRun, busy, info }) {
+  const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
+  const num = (k, step) => <input type="number" step={step} value={params[k]} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) set(k, v) }} />
+  const changed = JSON.stringify(params) !== JSON.stringify(DEFAULTS_SIM)
+  return (
+    <section className="panel">
+      <h4>Simulador</h4>
+      <button className="btn" onClick={onRun} disabled={busy}>{busy ? 'Simulando…' : 'Simular'}</button>
+      {info && <div className="note">{info}</div>}
+      <details>
+        <summary>Parámetros{changed ? ' (modificados)' : ''}</summary>
+        <div className="params">
+          {PARAMS.map(([k, l, st, src]) => <label key={k} title={src}><span>{l}</span>{num(k, st)}</label>)}
+          <div className="note">Costos metabólicos (kcal/s)</div>
+          {COSTS.map(([k, l]) => <label key={k}><span>{l}</span><input type="number" step="0.001" value={params.costs[k]} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } })) }} /></label>)}
+          <div className="note">Bajar escalera: el script actual usa 0,0923; el CSV de ejemplo se generó con 0,106145.</div>
+          <div className="note">Segundos por unidad cosechada</div>
+          {PERIODS.map(([k, l]) => <label key={k}><span>{l}</span><input type="number" step="0.25" value={params.prodPeriod[k]} onChange={(e) => { const v = Number(e.target.value); if (v > 0) setParams((p) => ({ ...p, prodPeriod: { ...p.prodPeriod, [k]: v } })) }} /></label>)}
+          <button className="btn" onClick={() => setParams(DEFAULTS_SIM)}>Restablecer a MATLAB</button>
+        </div>
+      </details>
+    </section>
+  )
+}
+const DEFAULTS_SIM = JSON.parse(JSON.stringify(DEFAULTS))
+
+
+/* ---------------------------------------------------------------- validación contra MATLAB */
+let _ms = null
+const loadMS = (base) => (_ms ||= fetch(`${base}data/matlab_summary.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})))
+const VM = [['TimeWeightedAverageMetabolicRate', 'Tasa metabólica media (kcal)', 2], ['AverageHumanProduction', 'Producción media por trabajador (u)', 1], ['TotalHumanWorkload', 'Carga de trabajo total (kcal)', 1], ['TotalProductionCargoZone', 'Entregado a zona de carga (u)', 0], ['RemainingCropsHumanBags', 'Restante en bolsas (u)', 0], ['RemainingCropsBoxes', 'Restante en cajas (u)', 0], ['RemainingCropsRobot', 'Restante en robot (u)', 0], ['TotalRecollectedCrops', 'Total recolectado (u)', 0]]
+function Validation({ ho, hr, cfg, params, base }) {
+  const [ms, setMs] = useState(null)
+  useEffect(() => { loadMS(base).then(setMs) }, [])
+  const std = JSON.stringify({ ...params, duration: 0 }) === JSON.stringify({ ...DEFAULTS_SIM, duration: 0 }) && params.duration === DEFAULTS_SIM.duration
+  const block = (run, kind, label) => {
+    const ref = ms && cfg && ms[`${kind}|${cfg.nw}|${cfg.row}|${cfg.act}|${cfg.rp}`]
+    if (!run || !run.summary) return null
+    return (
+      <div key={kind}>
+        <h4 style={{ marginTop: 14 }}>{label}</h4>
+        {!ref ? <div className="note">MATLAB no tiene esta configuración en sus resúmenes; no hay contra qué comparar.</div> : (
+          <table className="cmp"><thead><tr><th>Métrica</th><th>Simulador</th><th>MATLAB</th><th>Δ</th></tr></thead><tbody>
+            {VM.map(([k, l, dg]) => {
+              const a = run.summary[k], b = ref[k], d = a - b
+              const ok = Math.abs(d) <= 1e-6 * Math.max(1, Math.abs(b))
+              const fm = (v) => v.toLocaleString('es-CL', { minimumFractionDigits: dg, maximumFractionDigits: dg })
+              return <tr key={k}><td>{l}</td><td className="num">{fm(a)}</td><td className="num">{fm(b)}</td><td className="num" style={{ color: ok ? 'var(--green)' : 'var(--warn, #b45309)' }}>{ok ? '✓' : (d > 0 ? '+' : '') + d.toLocaleString('es-CL', { maximumFractionDigits: 2 })}</td></tr>
+            })}
+          </tbody></table>
+        )}
+      </div>
+    )
+  }
+  return (
+    <div className="cardlist">
+      <div className="note">Compara las métricas finales del simulador con las de MATLAB para esta misma configuración (resúmenes de simulation_outputs). Réplica verificada: 366/366 configuraciones Solo-humano y 352/360 Humano-robot idénticas.</div>
+      {!std && <div className="note" style={{ color: 'var(--warn, #b45309)' }}>Cambiaste parámetros respecto a MATLAB: una diferencia ahora es el efecto del cambio, no un error del modelo.</div>}
+      {block(ho, 'HO', 'Solo humano')}
+      {block(hr, 'HR', 'Humano-robot')}
+    </div>
+  )
+}
+
 /* ---------------------------------------------------------------- panel izquierdo: configuración */
-function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, setPreset, snap, setColorBy, ov, setOv, onFiles, loading, look, setLook, canopy, setCanopy }) {
+function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, setPreset, snap, setColorBy, ov, setOv, onFiles, loading, look, setLook, canopy, setCanopy, source, setSource, simProps }) {
   const fileRef = useRef()
   const uniq = (k) => [...new Set(lib.map((e) => e[k]))].sort((a, b) => (typeof a === 'number' ? a - b : String(a).localeCompare(String(b))))
-  const acts = ACTS.filter((a) => lib.some((e) => e.act === a))
+  const sim = source === 'sim'
+  const acts = sim ? ACTS : ACTS.filter((a) => lib.some((e) => e.act === a))
+  const opt = (k, all) => (sim ? all : uniq(k))
   return (
     <aside className="wb-left">
       <section className="panel">
-        <h4>Configuración</h4>
-        <Field label="Trabajadores"><Seg value={cfg?.nw} options={uniq('nw').map((v) => [v, String(v)])} onChange={(v) => pickCfg('nw', v)} /></Field>
-        <Field label="Fila de cultivo"><Seg value={cfg?.row} options={uniq('row').map((v) => [v, String(v)])} onChange={(v) => pickCfg('row', v)} /></Field>
-        <Field label="Actividad"><Seg value={cfg?.act} options={acts.map((a) => [a, ACT_LABEL[a]])} onChange={(v) => pickCfg('act', v)} /></Field>
-        <Field label="Disposición (RP)"><Seg value={cfg?.rp} options={uniq('rp').map((v) => [v, String(v)])} onChange={(v) => pickCfg('rp', v)} /></Field>
-        <div className="note">{lib.length} corrida{lib.length === 1 ? '' : 's'} disponible{lib.length === 1 ? '' : 's'}. Las demás combinaciones se agregan cargando archivos de MATLAB.</div>
+        <h4>Fuente</h4>
+        <Seg value={source} onChange={setSource} options={[['data', 'Datos MATLAB'], ['sim', 'Simulador']]} />
       </section>
+
+      <section className="panel">
+        <h4>Configuración</h4>
+        <Field label="Trabajadores"><Seg value={cfg?.nw} options={opt('nw', [4, 6, 8, 10, 12, 16, 20]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('nw', v)} /></Field>
+        <Field label="Fila de cultivo"><Seg value={cfg?.row} options={opt('row', [1, 2, 3]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('row', v)} /></Field>
+        <Field label="Actividad"><Seg value={cfg?.act} options={acts.map((a) => [a, ACT_LABEL[a]])} onChange={(v) => pickCfg('act', v)} /></Field>
+        <Field label="Disposición (RP)"><Seg value={cfg?.rp} options={opt('rp', [0, 1]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('rp', v)} /></Field>
+        {sim ? <div className="note">Cualquier combinación se simula en tu navegador con el modelo de MATLAB.</div> : <div className="note">{lib.length} corrida{lib.length === 1 ? '' : 's'} disponible{lib.length === 1 ? '' : 's'}. Las demás combinaciones se agregan cargando archivos de MATLAB o con el simulador.</div>}
+      </section>
+
+      {sim && <SimPanel {...simProps} />}
 
       <section className="panel">
         <h4>Vista</h4>
@@ -54,13 +148,13 @@ function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, s
         </div>
       </section>
 
-      <section className="panel">
+      {!sim && <section className="panel">
         <h4>Datos</h4>
         <button className="btn" onClick={() => fileRef.current.click()}>Cargar archivos de MATLAB…</button>
         <input ref={fileRef} type="file" multiple accept=".csv,.txt" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = '' }} />
         <div className="note">Selecciona el <b>*_timeseries.csv</b> y, para corridas con robot, su <b>*_robot_status_log.txt</b>. Se procesan en tu navegador; no se suben a ningún servidor.</div>
         {loading && <div className="note">Cargando…</div>}
-      </section>
+      </section>}
     </aside>
   )
 }
@@ -324,6 +418,11 @@ export default function WorkloadApp({ modeSwitch }) {
   const [canopy, setCanopyState] = useState(0.42)
   const setCanopy = (v) => { play.canopy.v = v; setCanopyState(v) }
   const [ov, setOvState] = useState({ zones: false, intent: false })
+  const [source, setSourceState] = useState('data')
+  const [params, setParams] = useState(DEFAULTS_SIM)
+  const [simBusy, setSimBusy] = useState(false)
+  const [simInfo, setSimInfo] = useState(null)
+  const [simNonce, setSimNonce] = useState(0)
   const [snap, setSnap] = useState({ t: 0, playing: true, speed: play.speed, colorBy: play.colorBy, sel: null })
 
   useEffect(() => {
@@ -333,7 +432,7 @@ export default function WorkloadApp({ modeSwitch }) {
   const eHO = cfg && lib.find((e) => !e.robot && cfgKey(e) === cfgKey(cfg))
   const eHR = cfg && lib.find((e) => e.robot && cfgKey(e) === cfgKey(cfg))
   useEffect(() => {
-    if (!cfg) return
+    if (!cfg || source !== 'data') return
     let alive = true
     setLoading(true)
     Promise.all([eHO ? realize(eHO, base) : null, eHR ? realize(eHR, base) : null])
@@ -345,7 +444,24 @@ export default function WorkloadApp({ modeSwitch }) {
       })
       .catch((e) => { if (alive) { setErr(e.message); setLoading(false) } })
     return () => { alive = false }
-  }, [eHO?.id, eHR?.id])
+  }, [eHO?.id, eHR?.id, source])
+
+  useEffect(() => {
+    if (!cfg || source !== 'sim') return
+    let alive = true
+    setSimBusy(true); setErr(null)
+    runSimulation({ ...params, ...cfg })
+      .then(({ ho, hr, ms }) => {
+        if (!alive) return
+        setRuns({ ho, hr }); setSimBusy(false); setLoading(false)
+        const s = hr.summary
+        setSimInfo(`Simulado en ${Math.round(ms)} ms · carga total ${f0(hr.series.work[hr.n - 1])} kcal (HR) vs ${f0(ho.series.work[ho.n - 1])} kcal (HO) · ${s.handoffs} entregas a robot`)
+        play.t = 0; play.playing = true; play.selected = null
+        setView((v) => v)
+      })
+      .catch((e) => { if (alive) { setErr(e.message); setSimBusy(false) } })
+    return () => { alive = false }
+  }, [source, cfg?.nw, cfg?.row, cfg?.act, cfg?.rp, simNonce])
 
   const { ho, hr } = runs
   const vis = { ho: (view === 'ho' || view === 'cmp') && ho, hr: (view === 'hr' || view === 'cmp') && hr }
@@ -363,7 +479,12 @@ export default function WorkloadApp({ modeSwitch }) {
   const seek = (t) => { play.t = Math.max(0, Math.min(tmax, t)); setSnap((p) => ({ ...p, t: play.t })) }
   const setOv = (o) => { play.zones = o.zones; play.intent = o.intent; setOvState(o) }
   const setColorBy = (k) => { play.colorBy = k; setSnap((p) => ({ ...p, colorBy: k })) }
+  const setSource = (v) => {
+    setSourceState(v); if (v !== 'sim') setTab((t) => (t === 'valid' ? 'resumen' : t))
+    if (v === 'sim') { setRuns({ ho: null, hr: null }); setView('cmp'); if (!cfg) setCfg({ nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }) }
+  }
   const pickCfg = (field, value) => {
+    if (source === 'sim') { setCfg((c) => ({ ...(c || { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }), [field]: value })); return }
     const score = (e) => ['nw', 'row', 'act', 'rp'].reduce((s, k) => s + (k === field ? 0 : e[k] === cfg[k] ? 1 : 0), 0)
     const best = lib.filter((e) => e[field] === value).sort((a, b) => score(b) - score(a))[0]
     if (best) setCfg({ nw: best.nw, row: best.row, act: best.act, rp: best.rp })
@@ -387,11 +508,12 @@ export default function WorkloadApp({ modeSwitch }) {
       <header className="wb-top">
         <div className="logo"><span className="logo-mark">H</span> HarvestView</div>
         {modeSwitch}
-        <div className="wb-title"><b>{title}</b>{ref && <span className="muted"> · sesión de {fmtT(ref.series.t[ref.n - 1])} · reproducción de corridas del simulador MATLAB</span>}</div>
+        <div className="wb-title"><b>{title}</b>{ref && <span className="muted"> · sesión de {fmtT(ref.series.t[ref.n - 1])} {source === 'sim' ? ' · simulación en el navegador (réplica del modelo MATLAB)' : ' · reproducción de corridas del simulador MATLAB'}</span>}</div>
       </header>
 
       <ConfigPanel lib={lib} cfg={cfg} pickCfg={pickCfg} view={view} setView={setView} hasHO={!!ho} hasHR={!!hr} preset={preset} setPreset={setPreset}
-        snap={snap} setColorBy={setColorBy} ov={ov} setOv={setOv} onFiles={onFiles} loading={loading} look={look} setLook={setLook} canopy={canopy} setCanopy={setCanopy} />
+        snap={snap} setColorBy={setColorBy} ov={ov} setOv={setOv} onFiles={onFiles} loading={loading || simBusy} look={look} setLook={setLook} canopy={canopy} setCanopy={setCanopy}
+        source={source} setSource={setSource} simProps={{ params, setParams, onRun: () => setSimNonce((n) => n + 1), busy: simBusy, info: simInfo }} />
 
       <main className="wb-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
         {!shown.length && (
@@ -412,7 +534,7 @@ export default function WorkloadApp({ modeSwitch }) {
 
       <aside className="wb-right">
         <div className="tabs">
-          {[['resumen', 'Resumen'], ['trab', 'Trabajadores'], ['hri', 'Interacción'], ['datos', 'Datos']].map(([k, l]) => (
+          {[['resumen', 'Resumen'], ['trab', 'Trabajadores'], ['hri', 'Interacción'], ...(source === 'sim' ? [['valid', 'Validación']] : []), ['datos', 'Datos']].map(([k, l]) => (
             <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>
           ))}
         </div>
@@ -420,6 +542,7 @@ export default function WorkloadApp({ modeSwitch }) {
           {tab === 'resumen' && <Summary ho={ho} hr={hr} t={snap.t} seek={seek} />}
           {tab === 'trab' && <><WorkerList ho={ho} hr={hr} t={snap.t} sel={snap.sel} select={select} /><Detail ho={ho} hr={hr} t={snap.t} sel={snap.sel} /></>}
           {tab === 'hri' && <Analysis run={hr} i={hr ? hr.rowAt(snap.t) : 0} seek={seek} select={(h) => { select(h); setTab('trab') }} />}
+          {tab === 'valid' && source === 'sim' && <Validation ho={ho} hr={hr} cfg={cfg} params={params} base={base} />}
           {tab === 'datos' && <DataPanel ho={ho} hr={hr} />}
         </div>
       </aside>

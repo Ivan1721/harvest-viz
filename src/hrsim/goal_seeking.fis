@@ -1,0 +1,75 @@
+[System]
+Name='Robot_HRI_NEW_GoalSeeking_V3'
+Type='mamdani'
+Version=2.0
+NumInputs=2
+NumOutputs=2
+NumRules=21
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='Goal_distance'
+Range=[0 70]
+NumMFs=3
+MF1='near':'trimf',[0 0 5]
+MF2='medium':'trimf',[0 5 10]
+MF3='far':'trapmf',[5 10 70 70]
+
+[Input2]
+Name='Steering_angle'
+Range=[-360 360]
+NumMFs=7
+MF1='Neg_Big':'trapmf',[-360 -360 -180 -120]
+MF2='Pos_Big':'trapmf',[120 180 360 360]
+MF3='Neg_Med':'trimf',[-180 -120 -60]
+MF4='Neg_Small':'trimf',[-120 -60 0]
+MF5='Zero':'trimf',[-60 0 60]
+MF6='Pos_Small':'trimf',[0 60 120]
+MF7='Pos_Med':'trimf',[60 120 180]
+
+[Output1]
+Name='angular_velocity'
+Range=[-4 4]
+NumMFs=7
+MF1='Right_Med1':'trimf',[-3 -2 -1]
+MF2='Zero':'trimf',[-1 0 1]
+MF3='Left_Small':'trimf',[0 1 2]
+MF4='Right_Big1':'trimf',[-6 -4 -2]
+MF5='Right_Small1':'trimf',[-2 -1 0]
+MF6='Left_Med':'trimf',[1 2 3]
+MF7='Left_Big':'trimf',[2 4 6]
+
+[Output2]
+Name='Linear_velocity'
+Range=[0 2.24]
+NumMFs=3
+MF1='Slow_vel':'trimf',[0 0.5597 1.12]
+MF2='Medium_vel':'trimf',[0.5597 1.12 1.679]
+MF3='Fast_vel':'trimf',[1.12 1.679 2.24]
+
+[Rules]
+3 1, 7 3 (0.5) : 1
+3 3, 6 3 (0.5) : 1
+3 4, 3 3 (0.5) : 1
+2 1, 7 2 (0.5) : 1
+2 3, 6 2 (0.5) : 1
+2 4, 3 2 (0.5) : 1
+1 1, 7 1 (0.5) : 1
+1 3, 6 1 (0.5) : 1
+1 4, 3 1 (0.5) : 1
+3 2, 4 3 (0.5) : 1
+3 7, 1 3 (0.5) : 1
+3 6, 5 3 (0.5) : 1
+2 2, 4 2 (0.5) : 1
+2 7, 1 2 (0.5) : 1
+2 6, 5 2 (0.5) : 1
+1 2, 4 1 (0.5) : 1
+1 7, 1 1 (0.5) : 1
+1 6, 5 1 (0.5) : 1
+3 5, 2 3 (0.5) : 1
+2 5, 2 2 (0.5) : 1
+1 5, 2 1 (0.5) : 1

@@ -3,6 +3,8 @@
 Dos modos sobre un núcleo común (`src/shared`): **Workload** (reproduce y compara corridas del simulador MATLAB sobre el huerto real) y **Oclusión** (selección de punto de vista, nivel 2).
 
 ## Modo Workload
+**Simulador integrado:** además de reproducir corridas, `Fuente → Simulador` ejecuta en el navegador una réplica del modelo MATLAB con parámetros editables (ver `docs/simulador.md`).
+
 Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (huerto de 3 filas × 4 árboles, copa 3,25 m, mapa 29,7 × 25,8 m) y las compara.
 
 **Interfaz.** Panel izquierdo: configuración (trabajadores, fila, actividad, disposición RP), vista (Solo humano / Humano-robot / Comparar), cámara (isométrica, cenital, lateral), color de los trabajadores (carga metabólica o actividad), capas de cortesía y ruta anticipada, y carga de archivos. Centro: una o dos escenas sincronizadas. Panel derecho: Resumen (tabla comparativa y gráficos con clic para saltar en el tiempo), Trabajadores, Interacción y Datos. Pie: línea de tiempo (×1 a ×120) y barra de proximidad robot–humano.

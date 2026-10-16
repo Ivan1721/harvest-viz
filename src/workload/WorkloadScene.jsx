@@ -52,7 +52,8 @@ function Worker({ w, run, onSelect, selected, real }) {
     const phase = anim.t * 7
     root.current.position.set(px, hz, pz)
     root.current.rotation.y = hd
-    const cs = flag === 3 ? 2 : 0                // 2 = cargando una caja al robot
+    const carrying = !!run.meta.simulated && w.state && w.state[i] === 8   // estado exacto del simulador: lleva la caja hasta el punto de entrega
+    const cs = flag === 3 || carrying ? 2 : 0     // 2 = cargando una caja
     const s = flag === 2 ? Math.sin(phase) : 0
     refs.legL.current.rotation.z = s * 0.6
     refs.legR.current.rotation.z = -s * 0.6
@@ -63,6 +64,7 @@ function Worker({ w, run, onSelect, selected, real }) {
       tL = 2.3
       tR = u < 0.5 ? lerp(1.2, 2.55, ease(u / 0.5)) : u < 0.78 ? lerp(2.55, 0.8, ease((u - 0.5) / 0.28)) : 0.8
     } else if (flag === 3) { tL = tR = lerp(0.9, 2.0, ease(trip.place[i])) }
+    else if (carrying) { tL = tR = 1.6 }
     else { tL = s * 0.5; tR = -s * 0.5 }
     const a = st.current, kk = Math.min(1, dtReal * 12)
     a.aL += (tL - a.aL) * kk; a.aR += (tR - a.aR) * kk
@@ -71,8 +73,9 @@ function Worker({ w, run, onSelect, selected, real }) {
     refs.body.current.position.y = 0.95 + (flag === 2 ? Math.abs(Math.cos(phase)) * 0.03 : 0)
     if (carryRef.current) {
       carryRef.current.visible = cs > 0
-      carryRef.current.position.y = lerp(0.3, 1.15, ease(trip.place[i]))
-      carryRef.current.position.x = lerp(0.4, 0.75, ease(trip.place[i]))
+      const pl = carrying ? 0.6 : trip.place[i]
+      carryRef.current.position.y = lerp(0.3, 1.15, ease(pl))
+      carryRef.current.position.x = lerp(0.4, 0.75, ease(pl))
     }
     // color del chaleco
     const c = play.colorBy === 'rate' ? ramp(w.rate[i] / run.rateMax) : new THREE.Color(FLAG[flag]?.color || '#9aa6bf')
