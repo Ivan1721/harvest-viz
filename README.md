@@ -12,6 +12,8 @@ Se leen el paso de muestreo del CSV (1 s) y el índice de tick del log (0,25 s).
 
 **Posiciones reconstruidas.** Los CSV no guardan trayectorias. Los trabajadores se ubican en su posición base y viajan a su caja según las banderas de actividad (1 cosecha, 2 caminata, 3 caja, 4 baja escalera, 5 sube escalera); el robot se interpola linealmente entre eventos del log. Producción y carga de trabajo son datos exactos del simulador; las distancias y el rumbo no. Registrar la pose por tick en MATLAB las haría exactas.
 
+**Estilo visual.** Por defecto "Realista": palto Hass con fruta, suelo con textura, cielo, sombras y trabajadores con sombrero y bolsa de cosecha; el follaje es semitransparente y regulable. "Esquemático" conserva el aspecto sobrio para figuras. Medidas y fuentes en `docs/modelos_escenario.md`.
+
 **Robot.** Dimensiones reales del Clearpath Warthog (1,52 × 1,38 × 0,83 m, neumático de 0,61 m, holgura 0,254 m) y dirección diferencial: al girar, las ruedas de un lado ruedan más que las del otro. El simulador MATLAB usa un vehículo más grande (icono de 3,2 m, ruedas de 1 m, dirección 4WS); el visor prioriza el robot real porque el modelo se está reformulando. La capacidad (68 cajas × 15 u) es un parámetro del estudio.
 
 ### Análisis HRI (paso 2, etapa A)

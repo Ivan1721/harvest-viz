@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { RoundedBox } from '@react-three/drei'
 
 // Persona orientada hacia +X local. refs: { body, legL, legR, armL, armR, vest }
-export function Person({ refs, vest = '#ff8a1f', scale = 1 }) {
+export function Person({ refs, vest = '#ff8a1f', scale = 1, real = false }) {
   const skin = '#f1c9a5'
   return (
     <group scale={scale}>
@@ -27,10 +27,25 @@ export function Person({ refs, vest = '#ff8a1f', scale = 1 }) {
           <sphereGeometry args={[0.16, 18, 18]} />
           <meshStandardMaterial color={skin} />
         </mesh>
-        <mesh position={[0, 0.57, 0]}>
-          <sphereGeometry args={[0.18, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#fde047" />
-        </mesh>
+        {real ? (
+          <group position={[0, 0.58, 0]}>
+            <mesh><cylinderGeometry args={[0.3, 0.3, 0.015, 24]} /><meshStandardMaterial color="#d8b878" roughness={0.95} /></mesh>
+            <mesh position={[0, 0.06, 0]}><cylinderGeometry args={[0.15, 0.17, 0.12, 20]} /><meshStandardMaterial color="#cfa968" roughness={0.95} /></mesh>
+            <mesh position={[0, 0.025, 0]}><cylinderGeometry args={[0.172, 0.172, 0.03, 20]} /><meshStandardMaterial color="#5b4630" /></mesh>
+          </group>
+        ) : (
+          <mesh position={[0, 0.57, 0]}>
+            <sphereGeometry args={[0.18, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#fde047" />
+          </mesh>
+        )}
+        {real && (
+          <group position={[0.2, -0.02, 0]}>
+            {/* bolsa de cosecha de lona sobre el pecho; el relleno crece con la fruta recolectada */}
+            <mesh castShadow><boxGeometry args={[0.16, 0.3, 0.34]} /><meshStandardMaterial color="#7d6f45" roughness={1} /></mesh>
+            <mesh ref={refs.fill} position={[0.01, 0.14, 0]}><sphereGeometry args={[0.15, 12, 10]} /><meshStandardMaterial color="#35502a" roughness={0.7} /></mesh>
+          </group>
+        )}
         {[[refs.armL, -0.27], [refs.armR, 0.27]].map(([ref, z], i) => (
           <group key={i} ref={ref} position={[0, 0.2, z]}>
             <mesh position={[0, -0.22, 0]}><capsuleGeometry args={[0.06, 0.3, 4, 8]} /><meshStandardMaterial color="#334155" /></mesh>
@@ -106,6 +121,29 @@ export function Ladder({ height = 2.2 }) {
           <meshStandardMaterial color="#94a3b8" />
         </mesh>
       ))}
+    </group>
+  )
+}
+
+
+// Caja de campo plástica ventilada (modo realista): ranuras en las caras largas
+export function CrateReal({ position = [0, 0, 0], size = [0.6, 0.3, 0.4], color = '#d99a2b' }) {
+  const [lx, ly, lz] = size
+  return (
+    <group position={[position[0], position[1], position[2]]}>
+      <RoundedBox args={size} radius={0.015} position={[0, ly / 2, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={color} roughness={0.55} />
+      </RoundedBox>
+      {[0.3, 0.55, 0.8].map((f) => [-1, 1].map((sg) => (
+        <mesh key={`${f}${sg}`} position={[0, ly * f, sg * (lz / 2 + 0.001)]}>
+          <boxGeometry args={[lx * 0.8, ly * 0.07, 0.004]} />
+          <meshStandardMaterial color="#3a2a10" />
+        </mesh>
+      )))}
+      <mesh position={[0, ly + 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[lx * 0.9, lz * 0.9]} />
+        <meshStandardMaterial color="#2c4a22" roughness={0.9} />
+      </mesh>
     </group>
   )
 }

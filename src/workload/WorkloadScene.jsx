@@ -5,10 +5,11 @@ import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec'
 import { FLAG, onboard } from './run'
 import { ZONES, zoneOf } from './hri'
-import { Person, BigTree, Crate, Ladder } from '../shared/models'
+import { Person, BigTree, Crate, CrateReal, Ladder } from '../shared/models'
+import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic'
 
 // reloj de reproducción compartido (mutable, fuera de React)
-export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0 }
+export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0, canopy: { v: 0.42 } }
 
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
 
@@ -21,9 +22,10 @@ function Clock({ run }) {
   return null
 }
 
-function Worker({ w, run, onSelect, selected }) {
+function Worker({ w, run, onSelect, selected, real }) {
   const root = useRef(), ladder = useRef(), picker = useRef(), tag = useRef(), disc = useRef()
-  const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef() }
+  const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef(), fill: useRef() }
+  const prodMax = useMemo(() => { let m = 1; for (let k = 0; k < w.prod.length; k++) if (w.prod[k] > m) m = w.prod[k]; return m }, [w])
   useFrame(() => {
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const k = i * 4
@@ -51,6 +53,7 @@ function Worker({ w, run, onSelect, selected }) {
         disc.current.material.color.set(z < 3 ? ZONES[z].color : '#9aa6bf')
       } else disc.current.material.color.copy(c)
     }
+    if (refs.fill.current) refs.fill.current.scale.setScalar(0.25 + 0.75 * Math.min(1, w.prod[i] / prodMax))
     if (ladder.current) { ladder.current.visible = hz > 0.05 || flag === 5 || flag === 4 }
     if (picker.current) picker.current.visible = flag === 1
     if (tag.current) tag.current.className = 'tag small' + (selected ? ' sel' : '')
@@ -61,7 +64,7 @@ function Worker({ w, run, onSelect, selected }) {
         <ringGeometry args={[0.38, 0.55, 28]} />
         <meshBasicMaterial color="#16a34a" depthTest={false} transparent opacity={0.95} />
       </mesh>
-      <Person refs={refs} />
+      <Person refs={refs} real={real} />
       {w.act === 'ladder' && <group ref={ladder} position={[-0.15, 0, 0]}><Ladder /></group>}
       {w.act === 'picker' && (
         <group ref={picker} position={[0.25, 1.2, 0.27]} rotation={[0, 0, -1.1]}>
@@ -238,7 +241,7 @@ function Intent({ run }) {
 }
 
 // Cajas de trabajadores esperando al robot + pila en la zona de carga
-function Boxes({ run }) {
+function Boxes({ run, real }) {
   const refs = useRef([])
   const list = run.robot ? run.robot.boxes : []
   useFrame(() => {
@@ -251,7 +254,7 @@ function Boxes({ run }) {
         const [x, , z] = toW(b.x, b.y)
         return (
           <group key={k} ref={(m) => (refs.current[k] = m)} position={[x, 0, z]} visible={false}>
-            <Crate size={[0.6, 0.4, 0.5]} color="#e0b04f" />
+            {real ? <CrateReal size={[0.6, 0.3, 0.4]} /> : <Crate size={[0.6, 0.4, 0.5]} color="#e0b04f" />}
           </group>
         )
       })}
@@ -259,7 +262,7 @@ function Boxes({ run }) {
   )
 }
 
-function CargoPile({ run }) {
+function CargoPile({ run, real }) {
   const g = useRef()
   const slots = useMemo(() => {
     const out = []
@@ -279,29 +282,33 @@ function CargoPile({ run }) {
         <meshBasicMaterial color="#fbbf24" transparent opacity={0.35} />
       </mesh>
       <group ref={g} position={[cx, 0, cz]}>
-        {slots.map((s, k) => <Crate key={k} position={s} size={[0.44, 0.3, 0.38]} />)}
+        {slots.map((s, k) => real ? <CrateReal key={k} position={s} size={[0.6, 0.3, 0.4]} /> : <Crate key={k} position={s} size={[0.44, 0.3, 0.38]} />)}
       </group>
     </group>
   )
 }
 
-function Ground({ run }) {
+function Ground({ run, real }) {
   const route = useMemo(() => routeLoop(run.meta.row).map(([x, y]) => { const p = toW(x, y); return [p[0], 0.05, p[2]] }), [run.meta.row])
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#f1f5fd" />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
-        <planeGeometry args={[MAP.w, MAP.h]} />
-        <meshStandardMaterial color="#e3ecd9" />
-      </mesh>
+      {real ? <RealGround row={run.meta.row} /> : (
+        <>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[80, 80]} />
+            <meshStandardMaterial color="#f1f5fd" />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+            <planeGeometry args={[MAP.w, MAP.h]} />
+            <meshStandardMaterial color="#e3ecd9" />
+          </mesh>
+        </>
+      )}
       {Object.entries(ROWS).map(([r, R]) => R.x.map((tx, i) => {
         const [x, , z] = toW(tx, R.y)
         return (
           <group key={`${r}-${i}`} position={[x, 0, z]} visible>
-            <BigTree R={CANOPY_R} seed={+r * 7 + i} opacity={0.36} />
+            {real ? <AvocadoTree R={CANOPY_R} seed={+r * 7 + i} canopy={play.canopy} /> : <BigTree R={CANOPY_R} seed={+r * 7 + i} opacity={0.36} />}
           </group>
         )
       }))}
@@ -310,19 +317,30 @@ function Ground({ run }) {
   )
 }
 
-function World({ run, selected, onSelect, version }) {
+function World({ run, selected, onSelect, version, look }) {
+  const real = look === 'real'
   return (
     <>
-      <color attach="background" args={['#e9eefb']} />
-      <ambientLight intensity={1.35} />
-      <directionalLight position={[10, 22, 8]} intensity={1.4} castShadow shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-22} shadow-camera-right={22} shadow-camera-top={22} shadow-camera-bottom={-22} />
+      {real ? <SkyBackground /> : <color attach="background" args={['#e9eefb']} />}
+      {real ? (
+        <>
+          <hemisphereLight args={['#e4f0ff', '#8a7650', 1.5]} />
+          <directionalLight position={[-14, 24, 10]} intensity={2.0} color="#fff1d6" castShadow shadow-mapSize={[4096, 4096]} shadow-bias={-0.0004} shadow-normalBias={0.04}
+            shadow-camera-left={-26} shadow-camera-right={26} shadow-camera-top={26} shadow-camera-bottom={-26} shadow-camera-near={0.5} shadow-camera-far={90} />
+        </>
+      ) : (
+        <>
+          <ambientLight intensity={1.35} />
+          <directionalLight position={[10, 22, 8]} intensity={1.4} castShadow shadow-mapSize={[2048, 2048]}
+            shadow-camera-left={-22} shadow-camera-right={22} shadow-camera-top={22} shadow-camera-bottom={-22} />
+        </>
+      )}
       <Clock run={run} />
-      <Ground run={run} />
-      <CargoPile run={run} />
+      <Ground run={run} real={real} />
+      <CargoPile run={run} real={real} />
       {run.robot && <Intent run={run} />}
-      <Boxes run={run} />
-      {run.workers.map((w) => <Worker key={`${version}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} />)}
+      <Boxes run={run} real={real} />
+      {run.workers.map((w) => <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />)}
       {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}
     </>
   )
@@ -348,13 +366,13 @@ function CamRig({ preset }) {
   return null
 }
 
-export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso' }) {
+export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real' }) {
   return (
     <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }} onPointerMissed={() => onSelect(null)}>
       <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80} far={150} />
       <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
       <CamRig preset={preset} />
-      <World run={run} selected={selected} onSelect={onSelect} version={version} />
+      <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} />
     </Canvas>
   )
 }

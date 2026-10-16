@@ -26,7 +26,7 @@ function Field({ label, children }) {
 }
 
 /* ---------------------------------------------------------------- panel izquierdo: configuración */
-function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, setPreset, snap, setColorBy, ov, setOv, onFiles, loading }) {
+function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, setPreset, snap, setColorBy, ov, setOv, onFiles, loading, look, setLook, canopy, setCanopy }) {
   const fileRef = useRef()
   const uniq = (k) => [...new Set(lib.map((e) => e[k]))].sort((a, b) => (typeof a === 'number' ? a - b : String(a).localeCompare(String(b))))
   const acts = ACTS.filter((a) => lib.some((e) => e.act === a))
@@ -44,6 +44,8 @@ function ConfigPanel({ lib, cfg, pickCfg, view, setView, hasHO, hasHR, preset, s
       <section className="panel">
         <h4>Vista</h4>
         <Seg value={view} onChange={setView} options={[['ho', 'Solo humano', !hasHO], ['hr', 'Humano-robot', !hasHR], ['cmp', 'Comparar', !(hasHO && hasHR)]]} />
+        <Field label="Estilo visual"><Seg value={look} onChange={setLook} options={[['real', 'Realista'], ['schem', 'Esquemático']]} /></Field>
+        {look === 'real' && <Field label={`Opacidad del follaje · ${Math.round(canopy * 100)} %`}><input type="range" min="0.15" max="1" step="0.05" value={canopy} onChange={(e) => setCanopy(Number(e.target.value))} style={{ width: '100%' }} /></Field>}
         <Field label="Cámara"><Seg value={preset} onChange={setPreset} options={[['iso', 'Isométrica'], ['top', 'Cenital'], ['side', 'Lateral']]} /></Field>
         <Field label="Color de los trabajadores"><Seg value={snap.colorBy} onChange={setColorBy} options={[['rate', 'Carga metabólica'], ['flag', 'Actividad']]} /></Field>
         <div className="checks">
@@ -318,6 +320,9 @@ export default function WorkloadApp({ modeSwitch }) {
   const [err, setErr] = useState(null)
   const [tab, setTab] = useState('resumen')
   const [preset, setPreset] = useState('iso')
+  const [look, setLook] = useState('real')
+  const [canopy, setCanopyState] = useState(0.42)
+  const setCanopy = (v) => { play.canopy.v = v; setCanopyState(v) }
   const [ov, setOvState] = useState({ zones: false, intent: false })
   const [snap, setSnap] = useState({ t: 0, playing: true, speed: play.speed, colorBy: play.colorBy, sel: null })
 
@@ -386,7 +391,7 @@ export default function WorkloadApp({ modeSwitch }) {
       </header>
 
       <ConfigPanel lib={lib} cfg={cfg} pickCfg={pickCfg} view={view} setView={setView} hasHO={!!ho} hasHR={!!hr} preset={preset} setPreset={setPreset}
-        snap={snap} setColorBy={setColorBy} ov={ov} setOv={setOv} onFiles={onFiles} loading={loading} />
+        snap={snap} setColorBy={setColorBy} ov={ov} setOv={setOv} onFiles={onFiles} loading={loading} look={look} setLook={setLook} canopy={canopy} setCanopy={setCanopy} />
 
       <main className="wb-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
         {!shown.length && (
@@ -398,7 +403,7 @@ export default function WorkloadApp({ modeSwitch }) {
         )}
         {['ho', 'hr'].map((k) => vis[k] && (
           <div key={k} className="wb-view">
-            <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} />
+            <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
             <div className="wb-chip"><i style={{ background: SC[k].color }} />{SC[k].label}<span className="muted"> · {fmtT(snap.t)}</span></div>
           </div>
         ))}
