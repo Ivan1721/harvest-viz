@@ -1,6 +1,6 @@
 // Análisis HRI sobre una corrida reproducida (posiciones RECONSTRUIDAS: trabajadores desde sus banderas
 // de actividad, robot interpolado entre eventos del log → distancias aproximadas).
-import { FLAG } from './run'
+import { FLAG } from './run.js'
 
 // Zonas de proxemia (Hall, 1966; valores usuales en navegación social)
 export const ZONES = [

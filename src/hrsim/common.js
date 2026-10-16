@@ -1,4 +1,56 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
+
+/** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
+export const ENGINE_VERSION = '0.2.0'
+
+/**
+ * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
+ * @typedef {Object} SimParams
+ * @property {number} nw  número de trabajadores
+ * @property {1|2|3} row  fila de cultivo
+ * @property {'ground'|'ladder'|'picker'|'mixed'} act  actividad principal
+ * @property {0|1} rp  disposición de los trabajadores
+ * @property {number} duration  duración [s]
+ * @property {number} dt  paso de integración [s] (MATLAB: 0,25)
+ * @property {number} walkSpeed  [m/s]
+ * @property {number} ladderTime  [s]
+ * @property {number} maxProd  unidades por caja
+ * @property {Record<string, number>} costs  costos metabólicos [kcal/s]
+ * @property {number} metabolicMultiplier
+ * @property {number} capacityBoxes  capacidad del robot [cajas]
+ * @property {number} loadTimePerBox  [s]
+ * @property {number} unloadTimePerBox  [s]
+ * @property {number} waypointTimeout  [s]
+ * @property {number} maxBoxStopsPerLap
+ * @property {number} detectorRange  [m]
+ * @property {number} detectorFov  [rad]
+ * @property {number} boxRouteOffset  [m]
+ * @property {{1:number, 2:number, 3:number}} prodPeriod  s por unidad (suelo, escalera, gancho)
+ */
+
+/**
+ * Registro por tick de una simulación.
+ * @typedef {Object} SimRecord
+ * @property {number[]} t  tiempo [s]
+ * @property {number[]} delivered  unidades entregadas a la zona de carga
+ * @property {number[]} onboard  unidades a bordo del robot
+ * @property {number[]} work  carga de trabajo acumulada del equipo [kcal]
+ * @property {number[][]} prod  producción en bolsa por trabajador
+ * @property {number[][]} workH  carga acumulada por trabajador [kcal]
+ * @property {number[][]} flag  bandera de actividad por trabajador (convención MATLAB)
+ * @property {number[]} rx  @property {number[]} ry  @property {number[]} rth  pose del robot
+ * @property {number[][]} wx  @property {number[][]} wy  @property {number[][]} wth  @property {number[][]} wst  pose y estado por trabajador
+ */
+
+/** Hash corto y estable de un objeto (claves ordenadas, FNV-1a de 32 bits). */
+export function paramsHash(obj) {
+  const stable = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(',')}}` : JSON.stringify(v))
+  let h = 0x811c9dc5
+  for (const c of stable(obj)) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0 }
+  return h.toString(16).padStart(8, '0')
+}
+
+/** @type {SimParams} */
 export const DEFAULTS = {
   nw: 12, row: 3, act: 'mixed', rp: 0,
   duration: 2700, dt: 0.25,

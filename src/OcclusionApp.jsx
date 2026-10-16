@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import Scene from './Scene'
-import { orchard, loadOrchard, exportOrchard } from './data'
-import { sim, snapshot, resetSim, setStrategy, evaluate, chosenFor, PRESETS, STEPS } from './sim'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Scene from './Scene.jsx'
+import { orchard, loadOrchard, exportOrchard } from './data.js'
+import { sim, snapshot, resetSim, setStrategy, evaluate, chosenFor, PRESETS, STEPS } from './sim.js'
 
 const pct = (x) => `${Math.round(x * 100)}%`
-const deg = (r) => Math.round((r * 180) / Math.PI)
 const clock = (t) => {
   const s = Math.floor(t)
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`

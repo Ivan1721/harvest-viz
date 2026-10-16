@@ -2,27 +2,19 @@ import React, { useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera, OrbitControls, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
-import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec'
-import { FLAG, onboard } from './run'
-import { ZONES, zoneOf } from './hri'
-import { Person, BigTree, Crate, CrateReal, Ladder } from '../shared/models'
-import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic'
+import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
+import { FLAG, onboard } from './run.js'
+import { ZONES, zoneOf } from './hri.js'
+import { Person, BigTree, Crate, CrateReal, Ladder } from '../shared/models.jsx'
+import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic.jsx'
 
-// reloj de reproducción compartido (mutable, fuera de React)
-export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0, canopy: { v: 0.42 } }
-
-export const anim = { t: 0 }
+import { play, anim, advance } from './playback.js'
 const ease = (u) => u * u * (3 - 2 * u)
 const lerp = (a, b, u) => a + (b - a) * u
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
 
 function Clock({ run }) {
-  useFrame((_, dt) => {
-    if (!play.playing || !run || play.driver !== run.name) return
-    anim.t += Math.min(dt, 0.05)
-    play.t = Math.min(play.tEnd, play.t + Math.min(dt, 0.05) * play.speed)
-    if (play.t >= play.tEnd) play.playing = false
-  })
+  useFrame((_, dt) => { advance(run, dt) })
   return null
 }
 
@@ -48,7 +40,6 @@ function Worker({ w, run, onSelect, selected, real }) {
     const x = w.track[k], y = w.track[k + 1], hz = w.track[k + 2], hd = w.track[k + 3]
     const [px, , pz] = toW(x, y)
     const flag = w.flag[i]
-    const walking = flag === 2 || flag === 3
     const phase = anim.t * 7
     root.current.position.set(px, hz, pz)
     root.current.rotation.y = hd
@@ -251,13 +242,12 @@ function Intent({ run }) {
     if (!on) return
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     const p = run.robot.pos
-    let last = i, minD = 1e9
+    let minD = 1e9
     for (let k = 0; k <= AHEAD; k++) {
       const j = Math.min(run.n - 1, i + k)
       const w = toW(p[j * 3], p[j * 3 + 1])
       buf[k * 3] = w[0]; buf[k * 3 + 1] = 0.35; buf[k * 3 + 2] = w[2]
       if (run.hri) minD = Math.min(minD, run.hri.minD[j])
-      last = j
     }
     const col = minD < 0.45 ? '#dc2626' : minD < 1.2 ? '#f59e0b' : '#16a34a'
     line.current.geometry.setPositions(buf)

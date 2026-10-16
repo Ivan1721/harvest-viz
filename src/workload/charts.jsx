@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 // Colores por escenario (validados con la paleta de referencia: azul y naranja, ranuras 1 y 2)
 export const SC = { ho: { label: 'Solo humano', color: '#eb6834' }, hr: { label: 'Humano-robot', color: '#2a78d6' } }

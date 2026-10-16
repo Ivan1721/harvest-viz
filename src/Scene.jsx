@@ -1,9 +1,9 @@
-import React, { useRef, useState, useMemo } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrthographicCamera, OrbitControls, Html, Line, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
-import { orchard } from './data'
-import { sim, step, chosenFor, YIELD_DIST, SHOULDER_Y } from './sim'
+import { orchard } from './data.js'
+import { sim, step, chosenFor, YIELD_DIST, SHOULDER_Y } from './sim.js'
 
 const C = {
   robot: '#2f6bff',

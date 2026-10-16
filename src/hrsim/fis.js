@@ -48,7 +48,7 @@ export function parseFis(text) {
       if (!kv) continue
       const [, k, v] = kv
       if (k === 'Name') cur.name = v.replace(/'/g, '')
-      else if (k === 'Range') cur.range = v.replace(/[\[\]]/g, '').trim().split(/\s+/).map(Number)
+      else if (k === 'Range') cur.range = v.replace(/[[\]]/g, '').trim().split(/\s+/).map(Number)
       else if (/^MF\d+$/.test(k)) {
         const mm = v.match(/^'([^']*)':'(\w+)',\[(.*)\]$/)
         cur.mfs.push(mfFn(mm[2], mm[3].trim().split(/\s+/).map(Number)))

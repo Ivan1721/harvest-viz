@@ -1,7 +1,7 @@
 // Biblioteca de corridas: manifiesto (public/data/manifest.json) + archivos cargados por el usuario.
 // Una "configuración" es (nw, row, act, rp); cada una puede tener una corrida Solo-humano (HO) y otra Humano-Robot (HR).
-import { buildRun, parseName } from './run'
-import { analyzeHRI } from './hri'
+import { buildRun, parseName } from './run.js'
+import { analyzeHRI } from './hri.js'
 
 const cache = new Map()
 

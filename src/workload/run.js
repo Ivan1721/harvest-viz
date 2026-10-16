@@ -2,7 +2,8 @@
 // El CSV no registra trayectorias: la posición de los trabajadores y del robot se RECONSTRUYE
 // (trabajadores: posición base + viaje a su caja según las banderas de actividad;
 // robot: interpolación lineal entre los eventos del log).
-import { MIX, workerBase, boxXY, CARGO } from './spec'
+import { MIX, workerBase, boxXY, CARGO } from './spec.js'
+import { ladderHeights, metabolicRate, rateScale } from './derive.js'
 
 // Paso interno del simulador MATLAB: los índices `idx=` del log están en ticks de 0.25 s.
 // El CSV puede estar muestreado a otro paso (p. ej. 1 s en el estudio de 45 min): se deduce de Time_s.
@@ -34,8 +35,6 @@ function parseCSV(text) {
 function parseLog(text, n, dt) {
   const row = (idx) => Math.max(0, Math.round(((idx - 1) * SIM_TICK) / dt))
   const key = [], picks = [], boxes = [], unloads = []
-  const num = '(-?[\\d.]+)'
-  const reXY = new RegExp(`\\[${num}\\s+${num}\\]`)
   text.replace(/\r/g, '').split('\n').forEach((line) => {
     const m = /^idx=(\d+)\s*\|\s*(.+)$/.exec(line)
     if (!m) return
@@ -116,23 +115,6 @@ function workerTrack(flags, base, box) {
   return out
 }
 
-function ladderHeights(flags, H = 1.7) {
-  const n = flags.length
-  const h = new Float32Array(n)
-  let cur = 0, i = 0
-  while (i < n) {
-    const f = flags[i]
-    if (f === 5 || f === 4) {
-      let a = i
-      while (i < n && flags[i] === f) i++
-      const len = i - a
-      for (let k = a; k < i; k++) h[k] = f === 5 ? H * ((k - a + 1) / len) : H * (1 - (k - a + 1) / len)
-      cur = f === 5 ? H : 0
-    } else { h[i] = cur; i++ }
-  }
-  return h
-}
-
 export function buildRun({ csvText, logText, name }) {
   const meta = parseName(name) || { robot: !!logText, nw: 0, row: 3, act: 'mixed', rp: 0 }
   const { col, rows } = parseCSV(csvText)
@@ -163,18 +145,14 @@ export function buildRun({ csvText, logText, name }) {
     workers.forEach((w) => { w.prod[i] = g(r, `Production_H${w.h}`); w.work[i] = g(r, `Workload_H${w.h}`); w.flag[i] = g(r, `ActivityFlag_H${w.h}`) })
   })
   // tasa metabólica en ventana de 10 s (kcal/s) y su escala
-  const WIN = Math.max(1, Math.round(10 / dt))
   const all = []
   workers.forEach((w) => {
-    w.rate = new Float32Array(n)
-    for (let i = 0; i < n; i++) { const j = Math.max(0, i - WIN); w.rate[i] = i === j ? 0 : (w.work[i] - w.work[j]) / ((i - j) * dt) }
-    for (let i = WIN; i < n; i += Math.max(1, Math.round(1 / dt))) all.push(w.rate[i])
+    w.rate = metabolicRate(w.work, dt, all)
     w.track = workerTrack(w.flag, w.base, w.box)
     const lh = w.act === 'ladder' ? ladderHeights(w.flag) : null
     if (lh) for (let i = 0; i < n; i++) w.track[i * 4 + 2] = lh[i]
   })
-  all.sort((a, b) => a - b)
-  const rateMax = all.length ? all[Math.floor(all.length * 0.97)] || 1 : 1
+  const rateMax = rateScale(all)
   let robot = null
   if (lg) {
     robot = { pos: robotTrack(lg.key, n), picks: lg.picks, boxes: lg.boxes, unloads: lg.unloads }

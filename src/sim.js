@@ -1,7 +1,7 @@
 // Simulación (nivel 2): el robot cosecha frutos poco ocluidos y el humano los muy ocluidos.
 // El robot elige el punto de vista según una estrategia parametrizable.
 // Si el humano se acerca al robot, el robot cede el paso.
-import { orchard } from './data'
+import { orchard } from './data.js'
 
 export const STEPS = ['Detección', 'Selección de vista', 'Aproximación', 'Agarre', 'Entrega']
 export const YIELD_DIST = 2.0

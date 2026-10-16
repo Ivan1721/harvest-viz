@@ -197,3 +197,4 @@ body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; col
 .params label { display: grid; grid-template-columns: 1fr 78px; gap: 8px; align-items: center; font-size: 12px; }
 .params input { width: 100%; padding: 3px 6px; border: 1px solid var(--line, #d0d7e6); border-radius: 6px; background: transparent; color: inherit; font: inherit; }
 details > summary { cursor: pointer; font-size: 12px; margin-top: 8px; }
+.loading-mode { display: grid; place-items: center; height: 100vh; color: var(--muted); font-size: 13px; }
