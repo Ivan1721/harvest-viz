@@ -1,3 +1,4 @@
+import { toJSONSafe } from './common.js'
 // Exporta una corrida simulada en el formato de MATLAB (*_timeseries.csv, recargable en «Datos MATLAB»)
 // más las poses por tick y un JSON con los parámetros y la versión del motor (trazabilidad).
 const stem = (run) => {
@@ -38,11 +39,7 @@ export function posesCSV(run) {
 
 export function metaJSON(run) {
   const { engineVersion, params, paramsHash } = run.meta
-  return JSON.stringify(
-    { engine: 'harvest-viz/hrsim', engineVersion, paramsHash, params, summary: run.summary || null, exportedAt: new Date().toISOString() },
-    null,
-    2,
-  )
+  return toJSONSafe({ engine: 'harvest-viz/hrsim', engineVersion, paramsHash, params, summary: run.summary || null, exportedAt: new Date().toISOString() }, 2)
 }
 
 /** Archivos de una corrida: [[nombre, contenido], ...]. */

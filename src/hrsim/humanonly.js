@@ -182,7 +182,7 @@ export class HOSim {
       Humans: NH,
       TimeWeightedAverageMetabolicRate_kcal: meanWork.reduce((a, b) => a + b, 0) / NH,
       AverageHumanProduction_crop_units: totalHuman.reduce((a, b) => a + b, 0) / NH,
-      TotalHumanWorkload_kcal: Math.max(...rec.work),
+      TotalHumanWorkload_kcal: rec.work.reduce((m, v) => (v > m ? v : m), -Infinity),
       TotalProductionCargoZone_crop_units: this.delivered,
       RemainingCropsHumanBags_crop_units: V5,
       RemainingCropsBoxes_crop_units: 0,

@@ -85,7 +85,8 @@ export function evalFis(sys, inputs) {
       if (!j) continue
       const x = inputs[i],
         [lo, hi] = sys.inputs[i].range
-      const mu = x < lo || x > hi ? 0 : sys.inputs[i].mfs[j - 1](x)
+      // como evalfis de MATLAB: una entrada fuera de rango se satura al límite
+      const mu = sys.inputs[i].mfs[j - 1](Math.min(hi, Math.max(lo, x)))
       s = r.and ? Math.min(s, mu) : Math.max(s, mu)
       any = true
     }

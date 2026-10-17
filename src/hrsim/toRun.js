@@ -1,7 +1,7 @@
 // Convierte la salida de un simulador JS (HRSim / HOSim) en el mismo objeto `run` que el visor
 // construye desde los CSV de MATLAB, pero con trayectorias EXACTAS (no reconstruidas).
 import { workerBase, CARGO } from '../workload/spec.js'
-import { ENGINE_VERSION, paramsHash } from './common.js'
+import { ENGINE_VERSION, paramsHash, toJSONSafe } from './common.js'
 import { ladderHeights, metabolicRate, rateScale } from '../workload/derive.js'
 
 const f32 = (a) => Float32Array.from(a)
@@ -22,7 +22,7 @@ export function simToRun(sim, { robot }) {
     placement: p.placement,
     simulated: true,
     engineVersion: ENGINE_VERSION,
-    params: JSON.parse(JSON.stringify(p)),
+    params: JSON.parse(toJSONSafe(p)),
     paramsHash: paramsHash(p),
   }
   const series = {

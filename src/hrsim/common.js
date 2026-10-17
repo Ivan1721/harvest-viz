@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.2.1'
+export const ENGINE_VERSION = '0.3.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -25,7 +25,19 @@ export const ENGINE_VERSION = '0.2.1'
  * @property {number} detectorRange  [m]
  * @property {number} detectorFov  [rad]
  * @property {number} boxRouteOffset  [m]
- * @property {{1:number, 2:number, 3:number}} prodPeriod  s por unidad (suelo, escalera, gancho)
+ * @property {{1:number, 2:number, 3:number}} prodPeriod  s por unidad (suelo, escalera, gancho).
+ *   Se convierte a ticks con `dt`; MATLAB fija 16/24/20 ticks, así que con dt ≠ 0,25 s ambos modelos divergen a propósito.
+ * @property {boolean} fixRecallLoop  corrige el bucle de re-llamada cuando el robot se llena (por defecto replica MATLAB)
+ * @property {number} costProduction  ritmo base de cosecha [u/s] (nombre heredado de MATLAB; no es un costo)
+ * @property {number} mapW  @property {number} mapH  tamaño del mapa [m]
+ * @property {'tree_point'} placement  dónde deja el trabajador la caja
+ * @property {number} frontLen  @property {number} rearLen  geometría de dirección del robot [m]
+ * @property {number} lapRepeats  vueltas de la ruta base del robot
+ *
+ * Supuestos que difieren de MATLAB (documentados en docs/simulador.md):
+ * - Sin lidar ni FIS de seguimiento: con la ruta del estudio el robot nunca pasa a < 1,5 m de un tronco.
+ * - movePose decide la llegada con `dist <= v·dt`; MATLAB usa norm() de MKL y en empates exactos
+ *   (múltiplos de 0,1875 m al volver por el mismo segmento) puede llegar un tick antes o después.
  */
 
 /**
@@ -38,9 +50,18 @@ export const ENGINE_VERSION = '0.2.1'
  * @property {number[][]} prod  producción en bolsa por trabajador
  * @property {number[][]} workH  carga acumulada por trabajador [kcal]
  * @property {number[][]} flag  bandera de actividad por trabajador (convención MATLAB)
- * @property {number[]} rx  @property {number[]} ry  @property {number[]} rth  pose del robot
- * @property {number[][]} wx  @property {number[][]} wy  @property {number[][]} wth  @property {number[][]} wst  pose y estado por trabajador
+ * @property {number[]} rx  posición x del robot [m]
+ * @property {number[]} ry  posición y del robot [m]
+ * @property {number[]} rth  orientación del robot [rad]
+ * @property {number[]} rst  estado del robot (0 en ruta, 1 esperando, 2 descargando)
+ * @property {number[][]} wx  posición x por trabajador [m]
+ * @property {number[][]} wy  posición y por trabajador [m]
+ * @property {number[][]} wth  orientación por trabajador [rad]
+ * @property {number[][]} wst  estado de la máquina de estados por trabajador
  */
+
+/** JSON que conserva Infinity/NaN como texto (p. ej. capacidad ilimitada). */
+export const toJSONSafe = (v, space) => JSON.stringify(v, (_k, x) => (typeof x === 'number' && !Number.isFinite(x) ? String(x) : x), space)
 
 /** Límites de entrada: protegen la memoria del navegador (cada tick guarda ~8 + 7·nw valores). */
 export const LIMITS = { maxDuration: 4 * 3600, maxWorkers: 48, minDt: 0.05, maxDt: 1 }
@@ -80,7 +101,9 @@ export function paramsHash(obj) {
           .sort()
           .map((k) => `${JSON.stringify(k)}:${stable(v[k])}`)
           .join(',')}}`
-      : JSON.stringify(v)
+      : typeof v === 'number' && !Number.isFinite(v)
+        ? `"${v}"` // Infinity/NaN como texto (JSON.stringify los convertiría en null)
+        : JSON.stringify(v)
   let h = 0x811c9dc5
   for (const c of stable(obj)) {
     h ^= c.charCodeAt(0)
@@ -128,10 +151,10 @@ export const DEFAULTS = {
   detectorFov: (4 * Math.PI) / 6,
   boxRouteOffset: 1.2,
   placement: 'tree_point',
-  wheelRadius: 0.5,
   frontLen: 1.2,
   rearLen: 1.7,
   lapRepeats: 47,
+  fixRecallLoop: false, // true: corrige el bucle de re-llamada heredado de MATLAB (ver engine.js); difiere de MATLAB
   prodPeriod: { 1: 4, 2: 6, 3: 5 }, // s por unidad cosechada: suelo, escalera, gancho (16/24/20 ticks de 0,25 s)
 }
 
