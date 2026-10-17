@@ -97,18 +97,21 @@ export function Person({ refs, vest = '#ff8a1f', scale = 1, real = false }) {
 }
 
 // Árbol con copa de radio R (m), centrado en el origen del grupo
+/** Copa esquemática determinista (misma semilla → mismo árbol). */
+export function bigTreeBlobs(R = 3.25, seed = 0) {
+  const out = []
+  let s = seed * 9301 + 49297
+  const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280
+  for (let i = 0; i < 9; i++) {
+    const a = rnd() * Math.PI * 2,
+      d = rnd() * R * 0.55
+    out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, y: 3.1 + (rnd() - 0.5) * 1.4, r: R * (0.5 + rnd() * 0.22) })
+  }
+  return out
+}
+
 export function BigTree({ R = 3.25, seed = 0, opacity = 0.62 }) {
-  const blobs = React.useMemo(() => {
-    const out = []
-    let s = seed * 9301 + 49297
-    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280
-    for (let i = 0; i < 9; i++) {
-      const a = rnd() * Math.PI * 2,
-        d = rnd() * R * 0.55
-      out.push({ x: Math.cos(a) * d, z: Math.sin(a) * d, y: 3.1 + (rnd() - 0.5) * 1.4, r: R * (0.5 + rnd() * 0.22) })
-    }
-    return out
-  }, [R, seed])
+  const blobs = React.useMemo(() => bigTreeBlobs(R, seed), [R, seed])
   return (
     <group>
       <mesh position={[0, 0.9, 0]} castShadow>

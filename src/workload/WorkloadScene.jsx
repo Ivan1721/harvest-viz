@@ -5,8 +5,9 @@ import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
 import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
-import { Person, BigTree, Crate, CrateReal, Ladder } from '../shared/models.jsx'
-import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic.jsx'
+import { Person, Crate, CrateReal, Ladder } from '../shared/models.jsx'
+import { RealGround, SkyBackground } from '../shared/realistic.jsx'
+import { Orchard } from '../shared/orchard.jsx'
 
 import { play, anim, advance } from './playback.js'
 import { sampleAt, trackAt } from './interp.js'
@@ -408,7 +409,16 @@ function CargoPile({ run, real }) {
   )
 }
 
+// posiciones y semillas de los árboles (las mismas que antes usaba cada AvocadoTree / BigTree)
+const TREES = Object.entries(ROWS).flatMap(([r, R]) =>
+  R.x.map((tx, i) => {
+    const [x, , z] = toW(tx, R.y)
+    return { x, z, seed: +r * 7 + i }
+  }),
+)
+
 function Ground({ run, real }) {
+  const trees = TREES
   const route = useMemo(
     () =>
       routeLoop(run.meta.row).map(([x, y]) => {
@@ -433,16 +443,7 @@ function Ground({ run, real }) {
           </mesh>
         </>
       )}
-      {Object.entries(ROWS).map(([r, R]) =>
-        R.x.map((tx, i) => {
-          const [x, , z] = toW(tx, R.y)
-          return (
-            <group key={`${r}-${i}`} position={[x, 0, z]} visible>
-              {real ? <AvocadoTree R={CANOPY_R} seed={+r * 7 + i} canopy={play.canopy} /> : <BigTree R={CANOPY_R} seed={+r * 7 + i} opacity={0.36} />}
-            </group>
-          )
-        }),
-      )}
+      <Orchard trees={trees} R={CANOPY_R} real={real} canopy={play.canopy} />
       {run.robot && <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />}
     </group>
   )
@@ -461,7 +462,7 @@ function World({ run, selected, onSelect, version, look }) {
             intensity={2.0}
             color="#fff1d6"
             castShadow
-            shadow-mapSize={[4096, 4096]}
+            shadow-mapSize={[2048, 2048]}
             shadow-bias={-0.0004}
             shadow-normalBias={0.04}
             shadow-camera-left={-26}
@@ -525,7 +526,7 @@ function CamRig({ preset }) {
 
 export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real' }) {
   return (
-    <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }} onPointerMissed={() => onSelect(null)}>
+    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => onSelect(null)}>
       <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80} far={150} />
       <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
       <CamRig preset={preset} />
