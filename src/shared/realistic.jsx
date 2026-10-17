@@ -13,42 +13,45 @@ const mulberry = (a) => () => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296
 }
 
-const GREENS = ['#4a8a42', '#56994a', '#63a552', '#3f7c3c', '#5a9d4c']
+export const GREENS = ['#4a8a42', '#56994a', '#63a552', '#3f7c3c', '#5a9d4c']
+
+/** Geometría determinista de un palto (misma semilla → mismo árbol): esferas de follaje, frutos y ramas. */
+export function avocadoParts(R = 3.25, seed = 1) {
+  const rnd = mulberry(seed * 977 + 13)
+  const blobs = []
+  for (let i = 0; i < 38; i++) {
+    const a = rnd() * Math.PI * 2,
+      d = Math.sqrt(rnd()) * (R - 1.0)
+    const dome = Math.sqrt(Math.max(0, 1 - (d / R) ** 2))
+    const y = 1.9 + dome * (1.9 + rnd() * 1.4)
+    const r = 0.95 + rnd() * 0.75
+    blobs.push({ x: Math.cos(a) * d, y, z: Math.sin(a) * d, r, c: Math.floor(rnd() * GREENS.length), sy: 0.78 + rnd() * 0.15 })
+  }
+  const fruits = []
+  for (let i = 0; i < 90; i++) {
+    const b = blobs[Math.floor(rnd() * blobs.length)]
+    const th = rnd() * Math.PI * 2,
+      ph = Math.PI * (0.5 + rnd() * 0.5)
+    fruits.push({
+      x: b.x + Math.sin(ph) * Math.cos(th) * b.r * 0.97,
+      y: b.y + Math.cos(ph) * b.r * b.sy * 0.97,
+      z: b.z + Math.sin(ph) * Math.sin(th) * b.r * 0.97,
+      rot: rnd() * Math.PI,
+    })
+  }
+  const limbs = [0, 1, 2].map((k) => {
+    const a = (k / 3) * Math.PI * 2 + rnd()
+    return { a, tilt: 0.45 + rnd() * 0.2, len: 2.2 + rnd() * 0.8 }
+  })
+  return { blobs, fruits, limbs }
+}
 
 export function AvocadoTree({ R = 3.25, seed = 1, canopy }) {
   const mats = useMemo(
     () => GREENS.map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.78, transparent: true, opacity: 0.5, depthWrite: false })),
     [],
   )
-  const { blobs, fruits, limbs } = useMemo(() => {
-    const rnd = mulberry(seed * 977 + 13)
-    const blobs = []
-    for (let i = 0; i < 38; i++) {
-      const a = rnd() * Math.PI * 2,
-        d = Math.sqrt(rnd()) * (R - 1.0)
-      const dome = Math.sqrt(Math.max(0, 1 - (d / R) ** 2))
-      const y = 1.9 + dome * (1.9 + rnd() * 1.4)
-      const r = 0.95 + rnd() * 0.75
-      blobs.push({ x: Math.cos(a) * d, y, z: Math.sin(a) * d, r, c: Math.floor(rnd() * GREENS.length), sy: 0.78 + rnd() * 0.15 })
-    }
-    const fruits = []
-    for (let i = 0; i < 90; i++) {
-      const b = blobs[Math.floor(rnd() * blobs.length)]
-      const th = rnd() * Math.PI * 2,
-        ph = Math.PI * (0.5 + rnd() * 0.5)
-      fruits.push({
-        x: b.x + Math.sin(ph) * Math.cos(th) * b.r * 0.97,
-        y: b.y + Math.cos(ph) * b.r * b.sy * 0.97,
-        z: b.z + Math.sin(ph) * Math.sin(th) * b.r * 0.97,
-        rot: rnd() * Math.PI,
-      })
-    }
-    const limbs = [0, 1, 2].map((k) => {
-      const a = (k / 3) * Math.PI * 2 + rnd()
-      return { a, tilt: 0.45 + rnd() * 0.2, len: 2.2 + rnd() * 0.8 }
-    })
-    return { blobs, fruits, limbs }
-  }, [R, seed])
+  const { blobs, fruits, limbs } = useMemo(() => avocadoParts(R, seed), [R, seed])
   const inst = useRef()
   React.useLayoutEffect(() => {
     const m = new THREE.Matrix4(),

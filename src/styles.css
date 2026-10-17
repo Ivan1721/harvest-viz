@@ -1278,3 +1278,34 @@ details > summary {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* diagnóstico de rendimiento (?perf=1) */
+.perf-overlay {
+  position: fixed;
+  left: 50%;
+  top: 56px;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(15, 20, 35, 0.86);
+  color: #fff;
+  font:
+    11px/1.5 ui-monospace,
+    monospace;
+  padding: 6px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* exportación de video */
+.rec-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 20, 35, 0.45);
+  display: grid;
+  place-items: center;
+}
+.rec-modal .panel {
+  width: min(420px, 90vw);
+  background: var(--surface, #fff);
+}

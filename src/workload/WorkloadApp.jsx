@@ -13,6 +13,8 @@ import { Validation } from './panels/Validation.jsx'
 import { Detail, WorkerList } from './panels/Workers.jsx'
 import { play, setPlay, usePlayback } from './playback.js'
 import WorkloadScene from './WorkloadScene.jsx'
+import { PerfOverlay, perfEnabled } from './perf.jsx'
+import { VideoPanel } from './panels/VideoPanel.jsx'
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
 import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
@@ -23,7 +25,9 @@ export default function WorkloadApp({ modeSwitch }) {
   const base = import.meta.env.BASE_URL
   const [lib, setLib] = useState([])
   const [cfg, setCfg] = useState(null)
-  const [view, setView] = useState('cmp')
+  // parámetros de URL: ?view=ho|hr|cmp, ?speed=1…120, ?perf=1 (diagnóstico), ?look=schem
+  const qs = new URLSearchParams(window.location.search)
+  const [view, setView] = useState(() => (['ho', 'hr', 'cmp'].includes(qs.get('view')) ? qs.get('view') : 'cmp'))
   const [runs, setRuns] = useState({ ho: null, hr: null })
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
@@ -43,6 +47,11 @@ export default function WorkloadApp({ modeSwitch }) {
   const [simInfo, setSimInfo] = useState(null)
   const [simNonce, setSimNonce] = useState(0)
   const snap = usePlayback()
+  useEffect(() => {
+    const sp = Number(qs.get('speed'))
+    if (sp > 0) setPlay({ speed: sp })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     loadManifest(base).then((l) => {
@@ -206,8 +215,19 @@ export default function WorkloadApp({ modeSwitch }) {
           info: simInfo,
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
         }}
+        videoPanel={
+          shown.length > 0 && (
+            <VideoPanel
+              tmax={tmax}
+              title={`${title}${source === 'sim' ? ' · simulación' : ' · MATLAB'}`}
+              fileStem={cfg ? `harvest-viz_${cfg.nw}_ROW${cfg.row}_${cfg.act}_RP${cfg.rp}_${view}` : 'harvest-viz'}
+              disabled={loading || simBusy}
+            />
+          )
+        }
       />
 
+      {perfEnabled() && <PerfOverlay />}
       <main className="wb-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
         {!shown.length && (
           <div className="wb-empty panel">

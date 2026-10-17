@@ -2,6 +2,19 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [0.4.0] — 2026-10-17
+
+### Agregado
+
+- **Exportar video (MP4):** panel «Video» y `npm run export:video`. Render cuadro a cuadro con tiempo fijo (fluido aunque el equipo sea lento), 720p a 4K, 30/60 fps, H.264 (respaldo VP9/AV1), vista Comparar en un solo video, con encabezado, reloj y etiquetas.
+- Diagnóstico de rendimiento `?perf=1` y `npm run bench:visual` (FPS, p95, draw calls por estilo y vista; resultados en `bench/visual-*.json`).
+- Parámetros de URL `?view=ho|hr|cmp` y `?speed=`.
+
+### Cambiado
+
+- Interpolación entre ticks: posición, altura y rumbo continuos (antes 4 posiciones/s; 1/s con CSV de MATLAB).
+- Huerto con instancias (de ~43 llamadas de dibujo por árbol a 4 en total), sombras 2048 px, sin `preserveDrawingBuffer`. En el PC del laboratorio (GTX 1660 Ti), Realista · Comparar pasa de 46 a 80 FPS.
+
 ## [0.3.0] — 2026-10-16
 
 ### Agregado

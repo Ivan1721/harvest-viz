@@ -28,6 +28,7 @@ export function ConfigPanel({
   source,
   setSource,
   simProps,
+  videoPanel,
 }) {
   const fileRef = useRef()
   const uniq = (k) => [...new Set(lib.map((e) => e[k]))].sort((a, b) => (typeof a === 'number' ? a - b : String(a).localeCompare(String(b))))
@@ -157,6 +158,7 @@ export function ConfigPanel({
           {loading && <div className="note">Cargando…</div>}
         </section>
       )}
+      {videoPanel}
     </aside>
   )
 }

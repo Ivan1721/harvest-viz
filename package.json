@@ -1,7 +1,7 @@
 {
   "name": "harvest-viz",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,12 +19,15 @@
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=90 \"tests/**/*.test.mjs\"",
     "test:mutation": "stryker run",
     "bench": "node scripts/bench.mjs",
-    "sensitivity": "node scripts/sensitivity.mjs"
+    "sensitivity": "node scripts/sensitivity.mjs",
+    "bench:visual": "node scripts/bench-visual.mjs",
+    "export:video": "node scripts/export-video.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
     "fflate": "^0.8.3",
+    "mediabunny": "^1.61.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.169.0"
