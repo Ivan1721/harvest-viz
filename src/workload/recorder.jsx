@@ -19,12 +19,16 @@ export function RecorderProbe({ name }) {
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
-/** Primer códec que este navegador puede codificar al tamaño pedido: H.264 (máxima compatibilidad), VP9 o AV1; null si ninguno. */
-export async function pickCodec(width, height) {
-  if (typeof VideoEncoder === 'undefined') return null
+/** Tasa de bits objetivo: ~0,1 bit por píxel y cuadro (1080p a 60 fps ≈ 12 Mbit/s). */
+export const bitrateFor = (w, h, fps) => Math.round(w * h * fps * 0.1)
+
+/** Códecs que este navegador dice poder codificar, en orden de preferencia: H.264 (máxima compatibilidad), VP9, AV1. */
+export async function codecCandidates(width, height, fps = 60) {
+  if (typeof VideoEncoder === 'undefined') return []
   const { canEncodeVideo } = await import('mediabunny')
-  for (const c of ['avc', 'vp9', 'av1']) if (await canEncodeVideo(c, { width, height })) return c
-  return null
+  const out = []
+  for (const c of ['avc', 'vp9', 'av1']) if (await canEncodeVideo(c, { width, height, bitrate: bitrateFor(width, height, fps) })) out.push(c)
+  return out
 }
 
 /**
@@ -32,7 +36,7 @@ export async function pickCodec(width, height) {
  * labels: { [nombre de escena]: texto }; title: texto del encabezado. Devuelve un Blob MP4.
  */
 export async function recordVideo({ t0, t1, speed, fps, width, height, title, labels = {}, order = [], codec = 'avc' }, onProgress, signal) {
-  const { Output, Mp4OutputFormat, BufferTarget, CanvasSource, QUALITY_HIGH } = await import('mediabunny')
+  const { Output, Mp4OutputFormat, BufferTarget, CanvasSource } = await import('mediabunny')
   const list = [...scenes.entries()].sort((a, b) => {
     const ia = order.indexOf(a[0]),
       ib = order.indexOf(b[0])
@@ -48,7 +52,7 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
   comp.height = height
   const ctx = comp.getContext('2d')
   const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() })
-  const source = new CanvasSource(comp, { codec, quality: QUALITY_HIGH, keyFrameInterval: 2 })
+  const source = new CanvasSource(comp, { codec, bitrate: bitrateFor(width, height, fps), keyFrameInterval: 2 })
   output.addVideoTrack(source, { frameRate: fps })
   await output.start()
 

@@ -14,7 +14,7 @@ test('exporta un video MP4 de la reproducción', async ({ page }) => {
   const dl = page.waitForEvent('download', { timeout: 240_000 })
   await video.getByRole('button', { name: 'Exportar video (MP4)' }).click()
   const d = await dl
-  expect(d.suggestedFilename()).toMatch(/_0-0min_x5_720p30\.mp4$/)
+  expect(d.suggestedFilename()).toMatch(/_0-12s_x5_720p30\.mp4$/)
   const buf = fs.readFileSync(await d.path())
   expect(buf.length).toBeGreaterThan(10_000)
   expect(buf.subarray(4, 8).toString('latin1')).toBe('ftyp') // contenedor MP4

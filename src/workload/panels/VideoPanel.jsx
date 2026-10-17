@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { recordVideo, pickCodec } from '../recorder.jsx'
+import { recordVideo, codecCandidates } from '../recorder.jsx'
 import { NumField } from './SimPanel.jsx'
 import { Field, Seg } from '../ui.jsx'
 
@@ -19,33 +19,46 @@ export function VideoPanel({ tmax, title, fileStem, disabled }) {
 
   async function run() {
     const [w, h] = RES[res]
-    const codec = await pickCodec(w, h)
-    if (!codec) {
+    const codecs = await codecCandidates(w, h, fps)
+    if (!codecs.length) {
       setJob({ p: 0, msg: 'Este navegador no puede codificar video a esta resolución. Usa Chrome o Edge, o baja la resolución.', done: true })
       return
     }
     ctrl.current = new AbortController()
-    setJob({ p: 0, msg: codec === 'avc' ? 'Grabando (H.264)…' : `Grabando (${codec.toUpperCase()}; este navegador no tiene H.264)…` })
     try {
-      const blob = await recordVideo(
-        {
-          t0: from * 60,
-          t1: end * 60,
-          speed,
-          fps,
-          width: w,
-          height: h,
-          title,
-          labels: { 'Solo humano': 'Solo humano', 'Humano-robot': 'Humano-robot' },
-          order: ['Solo humano', 'Humano-robot'],
-        },
-        (p) => setJob((j) => j && { ...j, p }),
-        ctrl.current.signal,
-      )
+      let blob = null,
+        lastErr = null
+      // si el navegador anuncia un códec pero rechaza la configuración, se prueba el siguiente
+      for (const codec of codecs) {
+        setJob({ p: 0, msg: codec === 'avc' ? 'Grabando (H.264)…' : `Grabando (${codec.toUpperCase()}; este navegador no codifica H.264)…` })
+        try {
+          blob = await recordVideo(
+            {
+              t0: from * 60,
+              t1: end * 60,
+              speed,
+              fps,
+              width: w,
+              height: h,
+              title,
+              labels: { 'Solo humano': 'Solo humano', 'Humano-robot': 'Humano-robot' },
+              order: ['Solo humano', 'Humano-robot'],
+              codec,
+            },
+            (p) => setJob((j) => j && { ...j, p }),
+            ctrl.current.signal,
+          )
+          break
+        } catch (e) {
+          if (e.name === 'AbortError') throw e
+          lastErr = e
+        }
+      }
+      if (!blob) throw lastErr
       const url = URL.createObjectURL(blob)
       const a = Object.assign(document.createElement('a'), {
         href: url,
-        download: `${fileStem}_${Math.round(from)}-${Math.round(end)}min_x${speed}_${h}p${fps}.mp4`,
+        download: `${fileStem}_${Math.round(from * 60)}-${Math.round(end * 60)}s_x${speed}_${h}p${fps}.mp4`,
       })
       document.body.appendChild(a)
       a.click()
