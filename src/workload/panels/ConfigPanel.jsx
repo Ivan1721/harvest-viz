@@ -98,7 +98,16 @@ export function ConfigPanel({
         </Field>
         {look === 'real' && (
           <Field label={`Opacidad del follaje · ${Math.round(canopy * 100)} %`}>
-            <input type="range" min="0.15" max="1" step="0.05" value={canopy} onChange={(e) => setCanopy(Number(e.target.value))} style={{ width: '100%' }} />
+            <input
+              type="range"
+              aria-label="Opacidad del follaje"
+              min="0.15"
+              max="1"
+              step="0.05"
+              value={canopy}
+              onChange={(e) => setCanopy(Number(e.target.value))}
+              style={{ width: '100%' }}
+            />
           </Field>
         )}
         <Field label="Cámara">

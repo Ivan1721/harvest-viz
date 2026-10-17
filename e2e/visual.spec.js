@@ -28,6 +28,6 @@ test('escena 3D Humano-robot en un instante fijo', async ({ page }) => {
 test('pestaña de validación del simulador', async ({ page }) => {
   await openWorkload(page)
   await useSimulator(page)
-  await page.getByRole('button', { name: 'Validación' }).click()
+  await page.getByRole('tab', { name: 'Validación' }).click()
   await expect(page.locator('.wb-right')).toHaveScreenshot('validacion.png')
 })

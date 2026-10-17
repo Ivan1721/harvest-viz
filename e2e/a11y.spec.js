@@ -27,7 +27,7 @@ test('Workload (simulador + validación) sin violaciones críticas ni graves', a
   await openWorkload(page)
   await useSimulator(page)
   await page.getByTestId('sim-params').click()
-  await page.getByRole('button', { name: 'Validación' }).click()
+  await page.getByRole('tab', { name: 'Validación' }).click()
   await audit(page, 'Simulador')
 })
 

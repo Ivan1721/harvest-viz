@@ -18,7 +18,7 @@ import { VideoPanel } from './panels/VideoPanel.jsx'
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
 import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
-import { Seg, f0, fmtT } from './ui.jsx'
+import { Seg, Tabs, Toast, f0, fmtT } from './ui.jsx'
 
 /* ---------------------------------------------------------------- aplicación */
 export default function WorkloadApp({ modeSwitch }) {
@@ -255,23 +255,22 @@ export default function WorkloadApp({ modeSwitch }) {
               </div>
             ),
         )}
-        {err && <div className="toast err">{err}</div>}
+        {err && <Toast onClose={() => setErr(null)}>{err}</Toast>}
       </main>
 
       <aside className="wb-right">
-        <div className="tabs">
-          {[
+        <Tabs
+          label="Paneles de análisis"
+          value={tab}
+          onChange={setTab}
+          options={[
             ['resumen', 'Resumen'],
             ['trab', 'Trabajadores'],
             ['hri', 'Interacción'],
             ...(source === 'sim' ? [['valid', 'Validación']] : []),
             ['datos', 'Datos'],
-          ].map(([k, l]) => (
-            <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-              {l}
-            </button>
-          ))}
-        </div>
+          ]}
+        />
         <div className="wb-scroll">
           {tab === 'resumen' && <Summary ho={ho} hr={hr} t={snap.t} seek={seek} />}
           {tab === 'trab' && (

@@ -1,8 +1,7 @@
 // Modo "Realista": palto (Hass) con follaje denso y fruta, suelo con textura procedural, cielo y luz.
 // Todo procedural (sin assets externos). Las alturas del árbol son estimadas; ver docs/modelos_escenario.md.
-import React, { useMemo, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
 import { MAP, ROWS, CARGO, routeLoop } from '../workload/spec.js'
 
 const mulberry = (a) => () => {
@@ -46,70 +45,10 @@ export function avocadoParts(R = 3.25, seed = 1) {
   return { blobs, fruits, limbs }
 }
 
-export function AvocadoTree({ R = 3.25, seed = 1, canopy }) {
-  const mats = useMemo(
-    () => GREENS.map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.78, transparent: true, opacity: 0.5, depthWrite: false })),
-    [],
-  )
-  const { blobs, fruits, limbs } = useMemo(() => avocadoParts(R, seed), [R, seed])
-  const inst = useRef()
-  React.useLayoutEffect(() => {
-    const m = new THREE.Matrix4(),
-      q = new THREE.Quaternion(),
-      e = new THREE.Euler(),
-      sc = new THREE.Vector3(0.04, 0.056, 0.04),
-      p = new THREE.Vector3()
-    fruits.forEach((f, i) => {
-      e.set(0.3, f.rot, 0.2)
-      q.setFromEuler(e)
-      p.set(f.x, f.y, f.z)
-      m.compose(p, q, sc)
-      inst.current.setMatrixAt(i, m)
-    })
-    inst.current.instanceMatrix.needsUpdate = true
-  }, [fruits])
-  useFrame(() => {
-    const o = canopy ? canopy.v : 0.5
-    mats.forEach((m) => {
-      m.opacity = o
-      m.depthWrite = o > 0.97
-    })
-  })
-  return (
-    <group>
-      <mesh position={[0, 0.95, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.27, 1.9, 12]} />
-        <meshStandardMaterial color="#5f4a35" roughness={1} />
-      </mesh>
-      {limbs.map((l, i) => (
-        <mesh
-          key={i}
-          position={[(Math.cos(l.a) * Math.sin(l.tilt) * l.len) / 2, 1.9 + (Math.cos(l.tilt) * l.len) / 2, (Math.sin(l.a) * Math.sin(l.tilt) * l.len) / 2]}
-          rotation={[Math.sin(l.a) * l.tilt, 0, -Math.cos(l.a) * l.tilt]}
-          castShadow
-        >
-          <cylinderGeometry args={[0.07, 0.12, l.len, 8]} />
-          <meshStandardMaterial color="#6b5540" roughness={1} />
-        </mesh>
-      ))}
-      {blobs.map((b, i) => (
-        <mesh key={i} position={[b.x, b.y, b.z]} scale={[b.r, b.r * b.sy, b.r]} castShadow>
-          <icosahedronGeometry args={[1, 2]} />
-          <primitive object={mats[b.c]} attach="material" />
-        </mesh>
-      ))}
-      <instancedMesh ref={inst} args={[null, null, fruits.length]} castShadow>
-        <sphereGeometry args={[1, 10, 8]} />
-        <meshStandardMaterial color="#2f3a22" roughness={0.55} />
-      </instancedMesh>
-    </group>
-  )
-}
-
 // ---- Suelo: textura procedural (pasto en calles, suelo bajo hileras, huellas del robot, grava en la zona de carga)
 const MARGIN = 8
 export function useGroundTexture(row) {
-  return useMemo(() => {
+  const tex = useMemo(() => {
     const PPM = 36,
       W = Math.round((MAP.w + 2 * MARGIN) * PPM),
       H = Math.round((MAP.h + 2 * MARGIN) * PPM)
@@ -183,6 +122,9 @@ export function useGroundTexture(row) {
     t.anisotropy = 8
     return t
   }, [row])
+  // la textura es de ~1300×1200 px: liberarla en la GPU al cambiar de fila o desmontar
+  useEffect(() => () => tex.dispose(), [tex])
+  return tex
 }
 
 export function RealGround({ row }) {
@@ -218,5 +160,6 @@ export function SkyBackground() {
     t.colorSpace = THREE.SRGBColorSpace
     return t
   }, [])
+  useEffect(() => () => tex.dispose(), [tex])
   return <primitive object={tex} attach="background" />
 }

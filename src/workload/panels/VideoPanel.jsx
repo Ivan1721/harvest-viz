@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { recordVideo, codecCandidates, bitrateFor } from '../recorder.jsx'
 import { NumField } from './SimPanel.jsx'
 import { Field, Seg } from '../ui.jsx'
@@ -16,7 +16,17 @@ export function VideoPanel({ tmax, title, fileStem, disabled }) {
   const [fps, setFps] = useState(60)
   const [res, setRes] = useState(1080)
   const [job, setJob] = useState(null) // { p, msg } mientras graba
-  const ctrl = useRef(null)
+  const ctrl = useRef(null),
+    modal = useRef(null),
+    opener = useRef(null)
+  const open = !!job
+  // diálogo: foco al botón (Cancelar/Cerrar) al abrir, Escape lo cancela o cierra, y el foco vuelve al botón que lo abrió
+  useEffect(() => {
+    if (!open) return
+    opener.current = document.activeElement
+    modal.current?.querySelector('button')?.focus()
+    return () => opener.current?.focus?.()
+  }, [open])
   const end = Math.min(tmax / 60, to == null ? tmax / 60 : to) // minutos
   const secs = Math.max(0, ((end - from) * 60) / speed)
   const frames = Math.round(secs * fps)
@@ -131,10 +141,23 @@ export function VideoPanel({ tmax, title, fileStem, disabled }) {
         Exportar video (MP4)
       </button>
       {job && (
-        <div className="rec-modal" role="dialog" aria-modal="true" aria-label="Exportando video">
+        <div
+          ref={modal}
+          className="rec-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Exportando video"
+          onKeyDown={(e) => {
+            if (e.key !== 'Escape') return
+            e.stopPropagation()
+            job.done ? setJob(null) : ctrl.current?.abort()
+          }}
+        >
           <div className="panel">
             <h4>Exportar video</h4>
-            <div className="note">{job.msg}</div>
+            <div className="note" role="status">
+              {job.msg}
+            </div>
             {!job.done && (
               <>
                 <progress max="1" value={job.p} style={{ width: '100%' }} aria-label="Progreso de la grabación" />

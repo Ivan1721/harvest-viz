@@ -149,5 +149,6 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
     })
     play.t = before.t
     play.playing = before.playing
+    anim.t = before.anim
   }
 }
