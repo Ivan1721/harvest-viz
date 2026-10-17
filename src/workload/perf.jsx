@@ -15,7 +15,7 @@ export function PerfProbe({ name }) {
     if (b.last) b.times.push(now - b.last)
     b.last = now
     if (b.times.length > 240) b.times.shift()
-    if (b.times.length % 30 !== 0) return
+    if (b.times.length < 30 || b.times.length % 30 !== 0) return
     const t = [...b.times].sort((x, y) => x - y)
     const mean = t.reduce((s, v) => s + v, 0) / t.length
     const info = gl.info
@@ -46,8 +46,8 @@ export function PerfOverlay() {
     <div className="perf-overlay" aria-live="off">
       {Object.entries(rows).map(([k, r]) => (
         <div key={k}>
-          <b>{k}</b> {f0(r.fps)} FPS · {r.frameMs.toFixed(1)} ms (p95 {r.p95Ms.toFixed(1)}) · {f0(r.calls)} draw calls · {f0(r.triangles)} triángulos · dpr{' '}
-          {r.dpr}
+          <b>{k}</b> {f0(r.fps)} FPS · {(r.frameMs ?? 0).toFixed(1)} ms (p95 {(r.p95Ms ?? 0).toFixed(1)}) · {f0(r.calls)} draw calls · {f0(r.triangles)}{' '}
+          triángulos · dpr {r.dpr}
         </div>
       ))}
     </div>
