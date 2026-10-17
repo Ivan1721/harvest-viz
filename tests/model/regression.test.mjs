@@ -2,9 +2,9 @@
 // Por defecto corre una muestra fija; con FULL=1 corre las 720 configuraciones.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { HRSim } from '../src/hrsim/engine.js'
-import { HOSim } from '../src/hrsim/humanonly.js'
-import { FIS, MATLAB, norm, KNOWN_HR_DEVIATIONS } from './helpers.mjs'
+import { HRSim } from '../../src/hrsim/engine.js'
+import { HOSim } from '../../src/hrsim/humanonly.js'
+import { FIS, MATLAB, norm, KNOWN_HR_DEVIATIONS } from '../helpers.mjs'
 
 const FULL = process.env.FULL === '1'
 const keys = Object.keys(MATLAB).sort()
