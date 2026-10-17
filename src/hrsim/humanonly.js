@@ -2,11 +2,11 @@
 // Cada trabajador cosecha, lleva su caja llena a la zona de carga, la descarga y vuelve.
 // Estados: 1 cosecha, 2 baja escalera, 3 camina cargando a la zona de carga, 4 descarga,
 //          5 vuelve al árbol, 7 sube escalera. Banderas: 1 cosecha, 2 camina, 3 descarga, 4 baja, 5 sube.
-import { DEFAULTS, initWorkers, movePose } from './common.js'
+import { resolveParams, initWorkers, movePose } from './common.js'
 
 export class HOSim {
   constructor(opts = {}) {
-    const p = (this.p = { ...DEFAULTS, cargoUnloadTime: 1.44, tolerance: 0.35, ...opts, costs: { ...DEFAULTS.costs, ...(opts.costs || {}) } })
+    const p = (this.p = resolveParams(opts, { cargoUnloadTime: 1.44, tolerance: 0.35 }))
     const NH = (this.NH = p.nw),
       dt = (this.dt = p.dt)
     this.N = Math.round(p.duration / dt) + 1

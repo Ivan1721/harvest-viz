@@ -1,6 +1,6 @@
 // Biblioteca de corridas: manifiesto (public/data/manifest.json) + archivos cargados por el usuario.
 // Una "configuración" es (nw, row, act, rp); cada una puede tener una corrida Solo-humano (HO) y otra Humano-Robot (HR).
-import { buildRun, parseName } from './run.js'
+import { buildRun, parseName, INPUT_LIMITS } from './run.js'
 import { analyzeHRI } from './hri.js'
 
 const cache = new Map()
@@ -35,7 +35,7 @@ export async function realize(entry, base) {
   } else {
     const get = (f) => fetch(`${base}data/${f}`).then((r) => (r.ok ? r.text() : ''))
     ;[csvText, logText] = await Promise.all([get(entry.csv), entry.log ? get(entry.log) : Promise.resolve('')])
-    if (!csvText.startsWith('Time_s')) throw new Error(`No se pudo leer ${entry.csv}`)
+    if (!csvText.replace(/^\uFEFF/, '').startsWith('Time_s')) throw new Error(`No se pudo leer ${entry.csv}`)
   }
   const name = entry.csv.replace(/_timeseries\.csv$/i, '')
   const run = makeRun({ csvText, logText: logText && logText.startsWith('idx=') ? logText : null, name })
@@ -53,7 +53,13 @@ export async function entriesFromFiles(files) {
   for (const csv of csvs) {
     const stem = csv.name.replace(/_timeseries\.csv$/i, '').replace(/\.csv$/i, '')
     const m = parseName(stem)
-    if (!m) throw new Error(`No reconozco el nombre "${csv.name}". Debe ser del tipo HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_…_timeseries.csv`)
+    if (!m)
+      throw new Error(
+        `No reconozco el nombre "${csv.name}". Debe ser del tipo HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_…_timeseries.csv (fila 1–3, RP 0–1, hasta ${INPUT_LIMITS.maxWorkers} trabajadores).`,
+      )
+    const mb = (f) => (f.size / 1048576).toFixed(0)
+    for (const f of [csv, ...fl.filter((x) => /\.txt$/i.test(x.name) && x.name.startsWith(stem))])
+      if (f.size > INPUT_LIMITS.maxBytes) throw new Error(`"${f.name}" pesa ${mb(f)} MB; el máximo es ${INPUT_LIMITS.maxBytes / 1048576} MB.`)
     const log = fl.find((f) => /\.txt$/i.test(f.name) && f.name.startsWith(stem))
     const id = `file-${stem}-${csv.size}`
     cache.delete(id)

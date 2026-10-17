@@ -9,12 +9,12 @@
 //     10 camina al robot, 11 carga la caja, 12 baja escalera para atender al robot
 //   banderas de actividad (w_flag): 1 cosecha, 2 camina, 3 caja/carga, 4 baja escalera, 5 sube escalera
 import { parseFis, evalFis } from './fis.js'
-import { DEFAULTS, TREES_ALL, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
+import { DEFAULTS, resolveParams, TREES_ALL, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 export { DEFAULTS }
 
 export class HRSim {
   constructor(opts = {}, goalFisText) {
-    const p = (this.p = { ...DEFAULTS, ...opts, costs: { ...DEFAULTS.costs, ...(opts.costs || {}) } })
+    const p = (this.p = resolveParams(opts))
     this.fis = parseFis(goalFisText)
     const dt = (this.dt = p.dt)
     const NH = (this.NH = p.nw)

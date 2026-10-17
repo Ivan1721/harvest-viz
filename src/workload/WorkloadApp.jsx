@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DEFAULTS } from '../hrsim/common.js'
-import { runSimulation } from '../hrsim/simClient.js'
+import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
 import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
@@ -49,7 +49,7 @@ export default function WorkloadApp({ modeSwitch }) {
   const snap = usePlayback()
   useEffect(() => {
     const sp = Number(qs.get('speed'))
-    if (sp > 0) setPlay({ speed: sp })
+    if (sp > 0) setPlay({ speed: Math.min(120, Math.max(1, sp)) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -98,23 +98,24 @@ export default function WorkloadApp({ modeSwitch }) {
       .then(({ ho, hr, ms }) => {
         if (!alive) return
         setRuns({ ho, hr })
-        setSimBusy(false)
         setLoading(false)
         const s = hr.summary
         setSimInfo(
           `Simulado en ${Math.round(ms)} ms · carga total ${f0(hr.series.work[hr.n - 1])} kcal (HR) vs ${f0(ho.series.work[ho.n - 1])} kcal (HO) · ${s.handoffs} entregas a robot`,
         )
         setPlay({ t: 0, playing: true, selected: null })
-        setView((v) => v)
       })
       .catch((e) => {
-        if (alive && e.name !== 'AbortError') {
-          setErr(e.message)
-          setSimBusy(false)
-        }
+        if (alive && e.name !== 'AbortError') setErr(e.message)
+      })
+      .finally(() => {
+        if (alive) setSimBusy(false)
       })
     return () => {
+      // al cambiar de fuente o de configuración: detener la simulación en curso y liberar la interfaz
       alive = false
+      cancelSimulation()
+      setSimBusy(false)
     }
   }, [source, cfg?.nw, cfg?.row, cfg?.act, cfg?.rp, simNonce])
 
@@ -211,6 +212,7 @@ export default function WorkloadApp({ modeSwitch }) {
           params,
           setParams,
           onRun: () => setSimNonce((n) => n + 1),
+          onCancel: () => cancelSimulation(),
           busy: simBusy,
           info: simInfo,
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,

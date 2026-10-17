@@ -42,6 +42,36 @@ export const ENGINE_VERSION = '0.2.1'
  * @property {number[][]} wx  @property {number[][]} wy  @property {number[][]} wth  @property {number[][]} wst  pose y estado por trabajador
  */
 
+/** Límites de entrada: protegen la memoria del navegador (cada tick guarda ~8 + 7·nw valores). */
+export const LIMITS = { maxDuration: 4 * 3600, maxWorkers: 48, minDt: 0.05, maxDt: 1 }
+
+/**
+ * Combina los parámetros con DEFAULTS (incluidos los objetos anidados costs y prodPeriod)
+ * y valida rangos. Lanza un Error con mensaje legible si algo está fuera de rango.
+ * @returns {SimParams}
+ */
+export function resolveParams(opts = {}, extra = {}) {
+  const p = {
+    ...DEFAULTS,
+    ...extra,
+    ...opts,
+    costs: { ...DEFAULTS.costs, ...(opts.costs || {}) },
+    prodPeriod: { ...DEFAULTS.prodPeriod, ...(opts.prodPeriod || {}) },
+  }
+  const bad = (msg) => {
+    throw new Error(`Parámetro inválido: ${msg}`)
+  }
+  if (!Number.isInteger(p.nw) || p.nw < 1 || p.nw > LIMITS.maxWorkers) bad(`nw debe ser un entero entre 1 y ${LIMITS.maxWorkers} (es ${p.nw})`)
+  if (![1, 2, 3].includes(p.row)) bad(`row debe ser 1, 2 o 3 (es ${p.row})`)
+  if (![0, 1].includes(p.rp)) bad(`rp debe ser 0 o 1 (es ${p.rp})`)
+  if (!(p.dt >= LIMITS.minDt && p.dt <= LIMITS.maxDt)) bad(`dt debe estar entre ${LIMITS.minDt} y ${LIMITS.maxDt} s (es ${p.dt})`)
+  if (!(p.duration > 0 && p.duration <= LIMITS.maxDuration)) bad(`duration debe estar entre 0 y ${LIMITS.maxDuration} s (es ${p.duration})`)
+  for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
+  for (const [k, v] of Object.entries(p.costs)) if (!(Number.isFinite(v) && v >= 0)) bad(`costs.${k} debe ser un número ≥ 0`)
+  for (const k of ['walkSpeed', 'maxProd', 'capacityBoxes', 'maxBoxStopsPerLap']) if (!(p[k] > 0)) bad(`${k} debe ser > 0`)
+  return p
+}
+
 /** Hash corto y estable de un objeto (claves ordenadas, FNV-1a de 32 bits). */
 export function paramsHash(obj) {
   const stable = (v) =>

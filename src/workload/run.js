@@ -18,10 +18,15 @@ export const FLAG = {
   5: { label: 'Subiendo escalera', color: '#ec4899' },
 }
 
+/** Límites de los archivos que se cargan en el navegador (evitan congelar la pestaña). */
+export const INPUT_LIMITS = { maxBytes: 50 * 1024 * 1024, maxRows: 200_000, maxCols: 500, maxWorkers: 48 }
+
 export function parseName(name) {
-  const m = /HUMAN_(ROBOT|ONLY)_(\d+)_ROW(\d)_harv_([a-z]+)_RP(\d)/i.exec(name || '')
+  const m = /HUMAN_(ROBOT|ONLY)_(\d+)_ROW([1-3])_harv_(ground|ladder|picker|mixed)_RP([01])/i.exec(name || '')
   if (!m) return null
-  return { robot: m[1].toUpperCase() === 'ROBOT', nw: +m[2], row: +m[3], act: m[4].toLowerCase(), rp: +m[5] }
+  const nw = +m[2]
+  if (nw < 1 || nw > INPUT_LIMITS.maxWorkers) return null
+  return { robot: m[1].toUpperCase() === 'ROBOT', nw, row: +m[3], act: m[4].toLowerCase(), rp: +m[5] }
 }
 
 function parseCSV(text) {
@@ -29,10 +34,13 @@ function parseCSV(text) {
     .replace(/\r/g, '')
     .split('\n')
     .filter((l) => l.trim())
+  if (lines.length - 1 > INPUT_LIMITS.maxRows)
+    throw new FormatError(`El CSV tiene ${(lines.length - 1).toLocaleString('es-CL')} filas; el máximo es ${INPUT_LIMITS.maxRows.toLocaleString('es-CL')}.`)
   const head = lines[0]
     .replace(/^\uFEFF/, '')
     .split(',')
     .map((h) => h.trim())
+  if (head.length > INPUT_LIMITS.maxCols) throw new FormatError(`El CSV tiene ${head.length} columnas; el máximo es ${INPUT_LIMITS.maxCols}.`)
   const col = Object.fromEntries(head.map((h, i) => [h, i]))
   const rows = lines.slice(1).map((l) => l.split(',').map((v) => (v.trim() === '' ? NaN : Number(v))))
   return { col, rows }

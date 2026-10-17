@@ -2,19 +2,21 @@ import { useEffect, useState } from 'react'
 import { DEFAULTS } from '../../hrsim/common.js'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
-export function NumField({ value, onCommit, step, min = 0 }) {
+export function NumField({ value, onCommit, step, min = 0, max = Infinity, label }) {
   const [text, setText] = useState(String(value))
   useEffect(() => {
     if (Number(text) !== value) setText(String(value))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
   const v = Number(text.trim())
-  const invalid = text.trim() === '' || !Number.isFinite(v) || v < min
+  const invalid = text.trim() === '' || !Number.isFinite(v) || v < min || v > max
   return (
     <input
       type="number"
       step={step}
       min={min}
+      max={Number.isFinite(max) ? max : undefined}
+      aria-label={label}
       value={text}
       aria-invalid={invalid}
       style={invalid ? { borderColor: '#dc2626' } : undefined}
@@ -22,14 +24,14 @@ export function NumField({ value, onCommit, step, min = 0 }) {
         const t = e.target.value
         setText(t)
         const n = Number(t.trim())
-        if (t.trim() !== '' && Number.isFinite(n) && n >= min) onCommit(n)
+        if (t.trim() !== '' && Number.isFinite(n) && n >= min && n <= max) onCommit(n)
       }}
     />
   )
 }
 
 /* ---------------------------------------------------------------- parámetros del simulador */
-// [clave, etiqueta, paso, fuente/valor de MATLAB, mínimo válido]
+// [clave, etiqueta, paso, fuente/valor de MATLAB, mínimo válido, máximo válido]
 const PARAMS = [
   ['walkSpeed', 'Velocidad de caminata (m/s)', 0.05, 'MATLAB: 0,75', 0.05],
   ['ladderTime', 'Tiempo de escalera (s)', 0.5, 'MATLAB: 5', 0],
@@ -42,7 +44,7 @@ const PARAMS = [
   ['detectorRange', 'Alcance del detector (m)', 0.5, 'MATLAB: 3', 0.1],
   ['boxRouteOffset', 'Desvío de ruta a caja (m)', 0.1, 'MATLAB: 1,2', 0],
   ['metabolicMultiplier', 'Multiplicador metabólico', 0.05, '1 = costos del script', 0],
-  ['duration', 'Duración (s)', 60, 'Estudio: 2700 (45 min)', 60],
+  ['duration', 'Duración (s)', 60, 'Estudio: 2700 (45 min) · máx. 14 400 (4 h)', 60, 14400],
 ]
 const COSTS = [
   ['walking', 'Caminar'],
@@ -59,17 +61,23 @@ const PERIODS = [
   [3, 'Gancho'],
 ]
 
-export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
+export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExport }) {
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
-  const num = (k, step, min) => <NumField value={params[k]} step={step} min={min} onCommit={(v) => set(k, v)} />
+  const num = (k, step, min, max) => <NumField value={params[k]} step={step} min={min} max={max} onCommit={(v) => set(k, v)} />
   const changed = JSON.stringify(params) !== JSON.stringify(DEFAULTS_SIM)
   return (
     <section className="panel">
       <h4>Simulador</h4>
-      <button className="btn" onClick={onRun} disabled={busy}>
-        {busy ? 'Simulando…' : 'Simular'}
-      </button>
+      {busy ? (
+        <button className="btn" onClick={onCancel} data-testid="sim-cancel">
+          Simulando… · Cancelar
+        </button>
+      ) : (
+        <button className="btn" onClick={onRun} data-testid="sim-run">
+          Simular
+        </button>
+      )}
       {info && <div className="note">{info}</div>}
       {onExport && (
         <button
@@ -85,10 +93,10 @@ export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
       <details>
         <summary>Parámetros{changed ? ' (modificados)' : ''}</summary>
         <div className="params">
-          {PARAMS.map(([k, l, st, src, min]) => (
+          {PARAMS.map(([k, l, st, src, min, max]) => (
             <label key={k} title={src}>
               <span>{l}</span>
-              {num(k, st, min)}
+              {num(k, st, min, max)}
             </label>
           ))}
           <div className="note">Costos metabólicos (kcal/s)</div>
