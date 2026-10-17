@@ -10,3 +10,7 @@ test-results/
 playwright-report/
 .stryker-tmp/
 coverage/
+
+# videos exportados y registros locales
+*.mp4
+*.log

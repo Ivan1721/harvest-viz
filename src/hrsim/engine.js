@@ -9,12 +9,24 @@
 //     10 camina al robot, 11 carga la caja, 12 baja escalera para atender al robot
 //   banderas de actividad (w_flag): 1 cosecha, 2 camina, 3 caja/carga, 4 baja escalera, 5 sube escalera
 import { parseFis, evalFis } from './fis.js'
-import { DEFAULTS, TREES_ALL, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
+import { DEFAULTS, resolveParams, TREES_ALL, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 export { DEFAULTS }
+
+// Radios y tiempos fijos del MATLAB (HumanRobot_Sim.m), con nombre para leer el código
+const PICKUP_RADIUS = 0.75 // m: el robot "está en la caja" (MATLAB 3925)
+const CARGO_RADIUS = 0.5 // m: el robot "está en la zona de carga" (MATLAB 3994)
+const WAYPOINT_RADIUS = 0.5 // m: waypoint alcanzado
+const UNLOAD_COOLDOWN_TICKS = 10 // ticks antes de poder volver a descargar
+
+const maxOf = (a) => {
+  let m = -Infinity
+  for (let i = 0; i < a.length; i++) if (a[i] > m) m = a[i]
+  return m
+}
 
 export class HRSim {
   constructor(opts = {}, goalFisText) {
-    const p = (this.p = { ...DEFAULTS, ...opts, costs: { ...DEFAULTS.costs, ...(opts.costs || {}) } })
+    const p = (this.p = resolveParams(opts))
     this.fis = parseFis(goalFisText)
     const dt = (this.dt = p.dt)
     const NH = (this.NH = p.nw)
@@ -387,14 +399,19 @@ export class HRSim {
       if (!(w.nBoxes >= 1 && w.prodBox > 0 && w.box && this.boxInserted[h])) continue
       const dist = hyp(rpos[0] - w.box[0], rpos[1] - w.box[1])
       const hasRoom = this.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
-      if (dist < 0.75 && !hasRoom) this.capacityBlocked++
+      if (dist < PICKUP_RADIUS && !hasRoom) {
+        this.capacityBlocked++
+        // MATLAB deja call=true aunque el robot ya no tenga espacio: el trabajador vuelve a girar y cargar
+        // indefinidamente sin cosechar. Con fixRecallLoop se cancela la llamada (difiere de MATLAB).
+        if (p.fixRecallLoop) w.call = false
+      }
       let ready = true
-      if (dist < 0.75 && hasRoom && !w.done) {
+      if (dist < PICKUP_RADIUS && hasRoom && !w.done) {
         w.call = true
         this.waiting = true
         ready = false
       }
-      if (dist < 0.75 && hasRoom && ready) {
+      if (dist < PICKUP_RADIUS && hasRoom && ready) {
         const picked = w.prodBox
         w.call = false
         w.done = false
@@ -439,10 +456,11 @@ export class HRSim {
       }
     }
     // descarga en la zona de carga
-    if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < 0.5 && this.contaT === 0) {
+    if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0) {
       this.lapBoxStops = 0
       this.log(`Robot reached CARGO ZONE | unloading ${this.prodRobot.toFixed(2)} crops | Prod_ROBOT_total before=${this.prodRobotTotal.toFixed(2)}`)
-      if (this.prodRobot > 0) this.holdSteps += Math.round(0 / dt) + Math.round((p.unloadTimePerBox * (this.prodRobot / unit)) / dt)
+      // MATLAB suma UNLOAD_TIME_S (0 en el estudio) + tiempo por caja
+      if (this.prodRobot > 0) this.holdSteps += Math.round((p.unloadTimePerBox * (this.prodRobot / unit)) / dt)
       this.ev.unloads.push({ idx: this.idx, amount: this.prodRobot })
       this.prodRobotTotal += this.prodRobot
       this.prodRobot = 0
@@ -450,7 +468,7 @@ export class HRSim {
       this.timeT1 = 0
     }
     if (this.contaT === 1) this.timeT1 += 1
-    if (this.timeT1 === 10) this.contaT = 0
+    if (this.timeT1 === UNLOAD_COOLDOWN_TICKS) this.contaT = 0
     // control hacia el waypoint actual
     const cur = [Math.max(Math.min(this.rpose[0], p.mapW - 0.05), 0.05), Math.max(Math.min(this.rpose[1], p.mapH - 0.05), 0.05), this.rpose[2]]
     if (this.kWp > this.waypoints.length - 1) this.kWp = this.waypoints.length - 1
@@ -474,7 +492,7 @@ export class HRSim {
       timedOut = true
       this.skips++
     }
-    if (goalD < 0.5 || timedOut) {
+    if (goalD < WAYPOINT_RADIUS || timedOut) {
       this.log(`Robot reached ROUTE waypoint | k=${this.kWp + 1}/${this.waypoints.length} | pos=[${this.rpose[0].toFixed(2)} ${this.rpose[1].toFixed(2)}]`)
       this.kWp += 1
       if (this.kWp > this.waypoints.length - 1) this.kWp = 0
@@ -542,7 +560,7 @@ export class HRSim {
       Humans: NH,
       TimeWeightedAverageMetabolicRate_kcal: meanWork.reduce((a, b) => a + b, 0) / NH,
       AverageHumanProduction_crop_units: totalHuman.reduce((a, b) => a + b, 0) / NH,
-      TotalHumanWorkload_kcal: Math.max(...rec.work),
+      TotalHumanWorkload_kcal: maxOf(rec.work),
       TotalProductionCargoZone_crop_units: V4,
       RemainingCropsHumanBags_crop_units: V5,
       RemainingCropsBoxes_crop_units: V5a1,
@@ -550,6 +568,7 @@ export class HRSim {
       TotalRecollectedCrops_crop_units: V4 + V5 + V5a1 + V6,
       handoffs: this.handoffCount,
       waypointSkips: this.skips,
+      capacityBlocked: this.capacityBlocked,
     }
   }
 }

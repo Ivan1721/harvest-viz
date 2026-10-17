@@ -21,7 +21,7 @@ function ModeSwitch({ mode, setMode }) {
 export default function App() {
   const [mode, setMode] = useState(() => {
     try {
-      return localStorage.getItem('hv-mode') || 'workload'
+      return ['workload', 'occlusion'].includes(localStorage.getItem('hv-mode')) ? localStorage.getItem('hv-mode') : 'workload'
     } catch {
       return 'workload'
     }

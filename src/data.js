@@ -196,9 +196,27 @@ export function generateOrchard() {
 // Opcionales por fruto: r, side(+1/-1), tree, assignee ("robot"|"human"),
 //   views:[{ "pos":[x,y,z], "occ":0..1 }]  (puntos de vista y su oclusión medidos)
 // Opcionales globales: trees:[{id,cx,cz,cy,R}], leaves:[{tree,x,y,z,r}]
+/** Límites del JSON cargado: el cálculo de oclusión es O(frutos × (hojas + frutos)). */
+export const ORCHARD_LIMITS = { maxFruits: 2000, maxLeaves: 5000, maxTrees: 200, maxViews: 200 }
+
 export function loadOrchard(json) {
   if (!json || !Array.isArray(json.fruits) || json.fruits.length === 0) {
     return { ok: false, msg: 'El JSON debe tener un arreglo "fruits" no vacío.' }
+  }
+  const L = ORCHARD_LIMITS
+  if (json.fruits.length > L.maxFruits) return { ok: false, msg: `Demasiados frutos (${json.fruits.length}); el máximo es ${L.maxFruits}.` }
+  if (Array.isArray(json.leaves) && json.leaves.length > L.maxLeaves)
+    return { ok: false, msg: `Demasiadas hojas (${json.leaves.length}); el máximo es ${L.maxLeaves}.` }
+  if (Array.isArray(json.trees) && json.trees.length > L.maxTrees)
+    return { ok: false, msg: `Demasiados árboles (${json.trees.length}); el máximo es ${L.maxTrees}.` }
+  const num = (...v) => v.every((x) => Number.isFinite(x))
+  if (Array.isArray(json.leaves)) {
+    const bad = json.leaves.findIndex((l) => !l || !num(l.x, l.y, l.z, l.r) || l.r <= 0)
+    if (bad >= 0) return { ok: false, msg: `Hoja #${bad + 1}: x, y, z y r (> 0) deben ser números.` }
+  }
+  if (Array.isArray(json.trees)) {
+    const bad = json.trees.findIndex((t) => !t || !num(t.cx, t.cz))
+    if (bad >= 0) return { ok: false, msg: `Árbol #${bad + 1}: cx y cz deben ser números.` }
   }
   const fruits = []
   for (let i = 0; i < json.fruits.length; i++) {
@@ -206,6 +224,8 @@ export function loadOrchard(json) {
     if (![s.x, s.y, s.z].every((v) => Number.isFinite(v))) {
       return { ok: false, msg: `Fruto #${i + 1}: x, y, z deben ser números.` }
     }
+    if (s.views && (!Array.isArray(s.views) || s.views.length > L.maxViews))
+      return { ok: false, msg: `Fruto #${i + 1}: views debe ser un arreglo de hasta ${L.maxViews} vistas.` }
     if (s.views && !s.views.every((v) => Array.isArray(v.pos) && v.pos.length === 3 && v.pos.every(Number.isFinite))) {
       return { ok: false, msg: `Fruto #${i + 1}: cada vista necesita pos:[x,y,z] numérico.` }
     }

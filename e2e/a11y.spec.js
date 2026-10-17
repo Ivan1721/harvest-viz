@@ -26,8 +26,8 @@ test('Workload (datos MATLAB) sin violaciones críticas ni graves', async ({ pag
 test('Workload (simulador + validación) sin violaciones críticas ni graves', async ({ page }) => {
   await openWorkload(page)
   await useSimulator(page)
-  await page.getByText('Parámetros').click()
-  await page.getByRole('button', { name: 'Validación' }).click()
+  await page.getByTestId('sim-params').click()
+  await page.getByRole('tab', { name: 'Validación' }).click()
   await audit(page, 'Simulador')
 })
 

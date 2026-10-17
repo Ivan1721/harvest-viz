@@ -29,18 +29,31 @@ export function checkInvariants(sim, { robot }) {
         f = rec.flag[h][i]
       if (!(pr >= 0 && pr <= p.maxProd)) assert.fail(`bolsa de H${h + 1} fuera de [0, ${p.maxProd}]: ${pr}`)
       if (!(f >= 0 && f <= 5)) assert.fail(`bandera inválida ${f}`)
+      if ((f === 4 || f === 5) && sim.ladder[h] !== 1) assert.fail(`H${h + 1} no usa escalera pero tiene bandera ${f} en t=${rec.t[i]}`)
       const x = rec.wx[h][i],
         y = rec.wy[h][i]
       if (!(x >= 0 && x <= p.mapW && y >= 0 && y <= p.mapH)) assert.fail(`H${h + 1} fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
     }
   if (robot) {
     const cap = p.capacityBoxes * p.maxProd
+    const [om, vel] = sim.fis.outputs.map((o) => Math.max(...o.range.map(Math.abs)))
+    const vBound = Math.hypot(vel, 0.5 * om * (p.frontLen + p.rearLen))
     for (let i = 0; i < n; i++) {
       const o = rec.onboard[i]
       if (!(o >= 0 && o <= cap + EPS)) assert.fail(`carga a bordo fuera de [0, ${cap}]: ${o}`)
       const x = rec.rx[i],
         y = rec.ry[i]
       if (!(x >= 0 && x <= p.mapW && y >= 0 && y <= p.mapH)) assert.fail(`robot fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
+      if (i === 0) continue
+      // el robot no pierde fruta: lo que baja a bordo aparece como entregado en el mismo tick
+      const dOn = o - rec.onboard[i - 1],
+        dDel = rec.delivered[i] - rec.delivered[i - 1]
+      if (dOn < -EPS && dDel <= EPS) assert.fail(`la carga a bordo baja sin entrega en t=${rec.t[i]}: ${rec.onboard[i - 1]} → ${o}`)
+      if (o + rec.delivered[i] < rec.onboard[i - 1] + rec.delivered[i - 1] - EPS) assert.fail(`a bordo + entregado disminuye en t=${rec.t[i]}`)
+      // velocidad acotada por las salidas del FIS (v ≤ vMax, deriva lateral ≤ ½·ωMax·L) y nula si está detenido
+      const v = Math.hypot(x - rec.rx[i - 1], y - rec.ry[i - 1]) / p.dt
+      if (v > vBound + 1e-9) assert.fail(`robot a ${v.toFixed(3)} m/s en t=${rec.t[i]} (máx. ${vBound.toFixed(3)})`)
+      if (rec.rst[i] !== 0 && v > EPS) assert.fail(`robot detenido (estado ${rec.rst[i]}) pero se mueve en t=${rec.t[i]}`)
     }
   } else assert.equal(rec.onboard, undefined, 'sin robot no hay serie a bordo')
   // conservación: todo lo cosechado está en bolsas, cajas, robot o zona de carga

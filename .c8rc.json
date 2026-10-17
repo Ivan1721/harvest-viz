@@ -1,0 +1,11 @@
+{
+  "all": true,
+  "include": ["src/**/*.js"],
+  "exclude": ["src/**/*.worker.js"],
+  "reporter": ["text-summary", "html"],
+  "reportDir": "reports/coverage",
+  "checkCoverage": true,
+  "lines": 96,
+  "branches": 90,
+  "functions": 92
+}

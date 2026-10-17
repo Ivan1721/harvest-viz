@@ -36,7 +36,7 @@ test('la línea de tiempo avanza, se pausa y se puede mover', async ({ page }) =
 test('el simulador corre, valida contra MATLAB y exporta', async ({ page }) => {
   const errors = await openWorkload(page)
   await useSimulator(page)
-  await page.getByRole('button', { name: 'Validación' }).click()
+  await page.getByRole('tab', { name: 'Validación' }).click()
   await expect(page.locator('td', { hasText: '✓' })).toHaveCount(16)
   const zip = await exportZip(page)
   const names = Object.keys(zip).sort()
@@ -52,13 +52,13 @@ test('el simulador corre, valida contra MATLAB y exporta', async ({ page }) => {
 test('cambiar un parámetro marca la validación como no comparable', async ({ page }) => {
   await openWorkload(page)
   await useSimulator(page)
-  await page.getByText('Parámetros').click()
-  await page.getByTitle('MATLAB: 0,75').locator('input').fill('1.2')
+  await page.getByTestId('sim-params').click()
+  await page.getByLabel('Velocidad de caminata (m/s)').fill('1.2')
   await page.getByRole('button', { name: 'Simular', exact: true }).click()
-  await page.getByRole('button', { name: 'Validación' }).click()
+  await page.getByRole('tab', { name: 'Validación' }).click()
   await expect(page.getByText(/Cambiaste parámetros respecto a MATLAB/)).toBeVisible()
   await page.getByRole('button', { name: 'Restablecer a MATLAB' }).click()
-  await expect(page.getByText('Parámetros', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('sim-params')).toHaveText('Parámetros')
 })
 
 test('cualquier combinación se puede simular (no solo las que tienen CSV)', async ({ page }) => {

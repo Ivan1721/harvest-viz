@@ -1,7 +1,10 @@
-import { useRef, useState } from 'react'
-import { recordVideo, codecCandidates } from '../recorder.jsx'
+import { useEffect, useRef, useState } from 'react'
+import { recordVideo, codecCandidates, bitrateFor } from '../recorder.jsx'
 import { NumField } from './SimPanel.jsx'
 import { Field, Seg } from '../ui.jsx'
+
+// el MP4 se arma en memoria: estos topes evitan que la pestaña se quede sin RAM
+export const VIDEO_LIMITS = { maxFrames: 20000, maxMB: 1500 }
 
 const RES = { 720: [1280, 720], 1080: [1920, 1080], 1440: [2560, 1440], 2160: [3840, 2160] }
 
@@ -13,9 +16,23 @@ export function VideoPanel({ tmax, title, fileStem, disabled }) {
   const [fps, setFps] = useState(60)
   const [res, setRes] = useState(1080)
   const [job, setJob] = useState(null) // { p, msg } mientras graba
-  const ctrl = useRef(null)
-  const end = Math.min(tmax, to == null ? tmax / 60 : to) // minutos
+  const ctrl = useRef(null),
+    modal = useRef(null),
+    opener = useRef(null)
+  const open = !!job
+  // diálogo: foco al botón (Cancelar/Cerrar) al abrir, Escape lo cancela o cierra, y el foco vuelve al botón que lo abrió
+  useEffect(() => {
+    if (!open) return
+    opener.current = document.activeElement
+    modal.current?.querySelector('button')?.focus()
+    return () => opener.current?.focus?.()
+  }, [open])
+  const end = Math.min(tmax / 60, to == null ? tmax / 60 : to) // minutos
   const secs = Math.max(0, ((end - from) * 60) / speed)
+  const frames = Math.round(secs * fps)
+  const [rw, rh] = RES[res]
+  const mb = (bitrateFor(rw, rh, fps) * secs) / 8 / 1e6
+  const tooBig = frames > VIDEO_LIMITS.maxFrames || mb > VIDEO_LIMITS.maxMB
 
   async function run() {
     const [w, h] = RES[res]
@@ -114,14 +131,33 @@ export function VideoPanel({ tmax, title, fileStem, disabled }) {
         Duración del video: {Math.floor(secs / 60)} min {Math.round(secs % 60)} s · {Math.round(secs * fps).toLocaleString('es-CL')} cuadros. Se graba lo que
         muestra la vista (Solo humano, Humano-robot o Comparar) con la cámara y las capas activas.
       </div>
-      <button className="btn" style={{ marginTop: 6 }} onClick={run} disabled={disabled || !!job || secs <= 0}>
+      {tooBig && (
+        <div className="note" role="alert" style={{ color: 'var(--warn-ink, #b45309)' }}>
+          Video demasiado largo para generarlo en el navegador (máx. {VIDEO_LIMITS.maxFrames.toLocaleString('es-CL')} cuadros y{' '}
+          {VIDEO_LIMITS.maxMB.toLocaleString('es-CL')} MB). Sube la velocidad, acorta el rango o baja la resolución o los fps.
+        </div>
+      )}
+      <button className="btn" style={{ marginTop: 6 }} onClick={run} disabled={disabled || !!job || secs <= 0 || tooBig} data-testid="video-export">
         Exportar video (MP4)
       </button>
       {job && (
-        <div className="rec-modal" role="dialog" aria-modal="true" aria-label="Exportando video">
+        <div
+          ref={modal}
+          className="rec-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Exportando video"
+          onKeyDown={(e) => {
+            if (e.key !== 'Escape') return
+            e.stopPropagation()
+            job.done ? setJob(null) : ctrl.current?.abort()
+          }}
+        >
           <div className="panel">
             <h4>Exportar video</h4>
-            <div className="note">{job.msg}</div>
+            <div className="note" role="status">
+              {job.msg}
+            </div>
             {!job.done && (
               <>
                 <progress max="1" value={job.p} style={{ width: '100%' }} aria-label="Progreso de la grabación" />

@@ -69,7 +69,7 @@ export function Validation({ ho, hr, cfg, params, base }) {
     <div className="cardlist">
       <div className="note">
         Compara las métricas finales del simulador con las de MATLAB para esta misma configuración (resúmenes de simulation_outputs). Réplica verificada:
-        366/366 configuraciones Solo-humano y 352/360 Humano-robot idénticas.
+        360/360 configuraciones Solo-humano y 352/360 Humano-robot idénticas (las demás difieren por un empate de redondeo; ver docs/simulador.md).
       </div>
       {!std && (
         <div className="note" style={{ color: 'var(--warn, #b45309)' }}>

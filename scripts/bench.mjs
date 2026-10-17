@@ -1,5 +1,6 @@
 // Benchmark del simulador: mediana de 5 corridas por caso, comparada con bench/baseline.json.
 // uso: npm run bench            → informa y avisa si algo es >20 % más lento
+//      npm run bench -- --strict → además termina con código 1 si algo es >20 % más lento
 //      npm run bench -- --save  → guarda las medidas actuales como nueva línea base
 import fs from 'node:fs'
 import os from 'node:os'
@@ -39,4 +40,7 @@ if (process.argv.includes('--save')) {
   fs.mkdirSync(new URL('../bench/', import.meta.url), { recursive: true })
   fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n')
   console.log('línea base guardada en bench/baseline.json')
-} else if (slow) console.log(`\n${slow} caso(s) >20 % más lentos que la línea base (medida en otra máquina: compara con cuidado).`)
+} else if (slow) {
+  console.log(`\n${slow} caso(s) >20 % más lentos que la línea base (medida en otra máquina: compara con cuidado).`)
+  if (process.argv.includes('--strict')) process.exitCode = 1
+}

@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
 import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
-import { Person, Crate, CrateReal, Ladder } from '../shared/models.jsx'
+import { Person, Crate, CrateReal, CrateSet, Ladder } from '../shared/models.jsx'
 import { RealGround, SkyBackground } from '../shared/realistic.jsx'
 import { Orchard } from '../shared/orchard.jsx'
 
@@ -26,6 +26,7 @@ function Clock({ run }) {
 
 function Worker({ w, run, onSelect, selected, real }) {
   const root = useRef(),
+    lift = useRef(),
     ladder = useRef(),
     picker = useRef(),
     tag = useRef(),
@@ -40,11 +41,11 @@ function Worker({ w, run, onSelect, selected, real }) {
     for (let k = 0; k < n; k++) {
       if (w.flag[k] === 3) {
         if (run0 < 0) run0 = k
-        place[k] = ((k - run0 + 1) / 3.6) % 1 || 1
+        place[k] = (((k - run0 + 1) * run.dt) / 3.6) % 1 || 1 // 3,6 s por caja, sea cual sea el paso de la corrida
       } else run0 = -1
     }
     return { place }
-  }, [w])
+  }, [w, run.dt])
   const carryRef = useRef(),
     st = useRef({ aL: 0, aR: 0 }),
     tmp = useRef([0, 0, 0, 0])
@@ -61,8 +62,10 @@ function Worker({ w, run, onSelect, selected, real }) {
     const [px, , pz] = toW(x, y)
     const flag = w.flag[i]
     const phase = anim.t * 7
-    root.current.position.set(px, hz, pz)
+    // en el suelo: anillo y escalera; elevado (sobre la escalera o la plataforma): solo la persona y lo que lleva
+    root.current.position.set(px, 0, pz)
     root.current.rotation.y = hd
+    lift.current.position.y = hz
     const carrying = !!run.meta.simulated && w.state && w.state[i] === 8 // estado exacto del simulador: lleva la caja hasta el punto de entrega
     const cs = flag === 3 || carrying ? 2 : 0 // 2 = cargando una caja
     const s = flag === 2 ? Math.sin(phase) : 0
@@ -124,34 +127,36 @@ function Worker({ w, run, onSelect, selected, real }) {
         <ringGeometry args={[0.38, 0.55, 28]} />
         <meshBasicMaterial color="#16a34a" depthTest={false} transparent opacity={0.95} />
       </mesh>
-      <Person refs={refs} real={real} />
-      <group ref={carryRef} position={[0.36, 0.82, 0]} visible={false}>
-        {real ? <CrateReal size={[0.4, 0.3, 0.6]} /> : <Crate size={[0.4, 0.3, 0.6]} color="#e0b04f" />}
-      </group>
       {w.act === 'ladder' && (
         <group ref={ladder} position={[-0.15, 0, 0]}>
           <Ladder />
         </group>
       )}
-      {w.act === 'picker' && (
-        <group ref={picker} position={[0.25, 1.2, 0.27]} rotation={[0, 0, -1.1]}>
-          <mesh position={[0, 1.4, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 3.2, 6]} />
-            <meshStandardMaterial color="#64748b" />
-          </mesh>
-          <mesh position={[-0.1, 3.0, 0]} rotation={[0, 0, -0.8]}>
-            <torusGeometry args={[0.1, 0.02, 6, 10, 4]} />
-            <meshStandardMaterial color="#64748b" />
-          </mesh>
+      <group ref={lift}>
+        <Person refs={refs} real={real} />
+        <group ref={carryRef} position={[0.36, 0.82, 0]} visible={false}>
+          {real ? <CrateReal size={[0.4, 0.3, 0.6]} /> : <Crate size={[0.4, 0.3, 0.6]} color="#e0b04f" />}
         </group>
-      )}
-      {/* ancla de la etiqueta para la exportación de video (las etiquetas HTML no quedan en el lienzo) */}
-      <object3D position={[0, 2.1, 0]} userData={{ videoTag: `H${w.h}` }} />
-      <Html position={[0, 2.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div ref={tag} className="tag small">
-          H{w.h}
-        </div>
-      </Html>
+        {w.act === 'picker' && (
+          <group ref={picker} position={[0.25, 1.2, 0.27]} rotation={[0, 0, -1.1]}>
+            <mesh position={[0, 1.4, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, 3.2, 6]} />
+              <meshStandardMaterial color="#64748b" />
+            </mesh>
+            <mesh position={[-0.1, 3.0, 0]} rotation={[0, 0, -0.8]}>
+              <torusGeometry args={[0.1, 0.02, 6, 10, 4]} />
+              <meshStandardMaterial color="#64748b" />
+            </mesh>
+          </group>
+        )}
+        {/* ancla de la etiqueta para la exportación de video (las etiquetas HTML no quedan en el lienzo) */}
+        <object3D position={[0, 2.1, 0]} userData={{ videoTag: `H${w.h}` }} />
+        <Html position={[0, 2.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
+          <div ref={tag} className="tag small">
+            H{w.h}
+          </div>
+        </Html>
+      </group>
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
           <ringGeometry args={[0.55, 0.65, 32]} />
@@ -310,12 +315,16 @@ function Intent({ run }) {
   const AHEAD = Math.max(4, Math.round(8 / run.dt))
   const back = Math.min(3, AHEAD - 1)
   const buf = useMemo(() => new Float32Array((AHEAD + 1) * 3), [AHEAD])
+  const lastI = useRef(-1),
+    coneOn = useRef(false)
   useFrame(() => {
     const on = play.intent && run.robot && run.robot.pos
     if (line.current) line.current.visible = !!on
-    if (cone.current) cone.current.visible = !!on
-    if (!on) return
+    if (cone.current) cone.current.visible = !!on && coneOn.current
+    if (!on) return (lastI.current = -1)
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
+    if (i === lastI.current) return // la ruta solo cambia de tick en tick: no rehacer la geometría en cada cuadro
+    lastI.current = i
     const p = run.robot.pos
     let minD = 1e9
     for (let k = 0; k <= AHEAD; k++) {
@@ -337,7 +346,8 @@ function Intent({ run }) {
     cone.current.rotation.set(Math.PI / 2, 0, 0)
     cone.current.rotation.order = 'YXZ'
     cone.current.rotation.y = Math.atan2(dx, dz)
-    cone.current.visible = Math.hypot(dx, dz) > 0.05
+    coneOn.current = Math.hypot(dx, dz) > 0.05
+    cone.current.visible = coneOn.current
   })
   return (
     <group>
@@ -363,42 +373,26 @@ function Intent({ run }) {
   )
 }
 
-// Cajas de trabajadores esperando al robot + pila en la zona de carga
+// Cajas de trabajadores esperando al robot + pila en la zona de carga (con instancias)
 function Boxes({ run, real }) {
-  const refs = useRef([])
-  const list = run.robot ? run.robot.boxes : []
-  useFrame(() => {
-    const i = Math.floor(play.t / run.dt)
-    refs.current.forEach((m, k) => {
-      if (m) m.visible = i >= list[k].idx && i < list[k].picked
-    })
-  })
+  const list = useMemo(() => (run.robot ? run.robot.boxes.map((b) => ({ ...b, w: toW(b.x, b.y) })) : []), [run])
+  if (!list.length) return null
   return (
-    <group>
-      {list.map((b, k) => {
-        const [x, , z] = toW(b.x, b.y)
-        return (
-          <group key={k} ref={(m) => (refs.current[k] = m)} position={[x, 0, z]} visible={false}>
-            {real ? <CrateReal size={[0.6, 0.3, 0.4]} /> : <Crate size={[0.6, 0.4, 0.5]} color="#e0b04f" />}
-          </group>
-        )
-      })}
-    </group>
+    <CrateSet
+      capacity={list.length}
+      real={real}
+      size={real ? [0.6, 0.3, 0.4] : [0.6, 0.4, 0.5]}
+      color={real ? undefined : '#e0b04f'}
+      frame={(put) => {
+        const i = Math.floor(play.t / run.dt)
+        for (const b of list) if (i >= b.idx && i < b.picked) put(b.w[0], 0, b.w[2])
+      }}
+    />
   )
 }
 
+const PILE = Array.from({ length: 60 }, (_, k) => [(k % 10) * 0.48 - 2.2, Math.floor(k / 30) * 0.34, (Math.floor(k / 10) % 3) * 0.42 - 0.4])
 function CargoPile({ run, real }) {
-  const g = useRef()
-  const slots = useMemo(() => {
-    const out = []
-    for (let k = 0; k < 60; k++) out.push([(k % 10) * 0.48 - 2.2, Math.floor(k / 30) * 0.34, (Math.floor(k / 10) % 3) * 0.42 - 0.4])
-    return out
-  }, [])
-  useFrame(() => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
-    const nBox = Math.min(60, Math.round(run.series.cargo[i] / 15))
-    g.current.children.forEach((c, k) => (c.visible = k < nBox))
-  })
   const [cx, , cz] = toW((CARGO.x[0] + CARGO.x[1]) / 2, (CARGO.y[0] + CARGO.y[1]) / 2)
   return (
     <group>
@@ -406,8 +400,17 @@ function CargoPile({ run, real }) {
         <planeGeometry args={[CARGO.x[1] - CARGO.x[0], CARGO.y[1] - CARGO.y[0]]} />
         <meshBasicMaterial color="#fbbf24" transparent opacity={0.35} />
       </mesh>
-      <group ref={g} position={[cx, 0, cz]}>
-        {slots.map((s, k) => (real ? <CrateReal key={k} position={s} size={[0.6, 0.3, 0.4]} /> : <Crate key={k} position={s} size={[0.44, 0.3, 0.38]} />))}
+      <group position={[cx, 0, cz]}>
+        <CrateSet
+          capacity={PILE.length}
+          real={real}
+          size={real ? [0.6, 0.3, 0.4] : [0.44, 0.3, 0.38]}
+          frame={(put) => {
+            const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
+            const nBox = Math.min(PILE.length, Math.round(run.series.cargo[i] / 15))
+            for (let k = 0; k < nBox; k++) put(...PILE[k])
+          }}
+        />
       </group>
     </group>
   )
@@ -513,18 +516,36 @@ const PRESETS = {
 
 function CamRig({ preset }) {
   const { camera, controls, size } = useThree()
-  const fit = Math.min(1.5, size.width / 880, size.height / 600)
+  const raw = Math.min(size.width / 880, size.height / 600)
+  const fit = Math.max(0.3, Math.min(1.5, raw))
+  const st = useRef({ preset: null, raw, moved: false })
+  // ¿movió el usuario la cámara desde el último encuadre? (entonces un cambio de tamaño no debe perder su vista)
   React.useEffect(() => {
-    const p = PRESETS[preset] || PRESETS.iso
-    camera.position.set(...p.pos)
-    camera.zoom = p.zoom * Math.max(0.3, fit)
-    camera.lookAt(0, 0, 0)
-    camera.updateProjectionMatrix()
-    if (controls) {
-      controls.target.set(0, 0, 0)
-      controls.update()
+    if (!controls) return
+    const onStart = () => (st.current.moved = true)
+    controls.addEventListener('start', onStart)
+    return () => controls.removeEventListener('start', onStart)
+  }, [controls])
+  React.useEffect(() => {
+    const S = st.current
+    if (S.preset === preset && S.moved) {
+      // solo cambió el tamaño (ventana, panel o grabación de video): escalar el zoom y conservar la vista del usuario
+      if (S.raw > 0 && raw > 0) camera.zoom *= raw / S.raw
+    } else {
+      const p = PRESETS[preset] || PRESETS.iso
+      camera.position.set(...p.pos)
+      camera.zoom = p.zoom * fit
+      camera.lookAt(0, 0, 0)
+      if (controls) {
+        controls.target.set(0, 0, 0)
+        controls.update()
+      }
+      if (S.preset !== preset) S.moved = false
     }
-  }, [preset, camera, controls, fit])
+    camera.updateProjectionMatrix()
+    S.preset = preset
+    S.raw = raw
+  }, [preset, camera, controls, fit, raw])
   return null
 }
 

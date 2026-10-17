@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SC } from '../charts.jsx'
 import { ZONES } from '../hri.js'
 import { Bar } from './Workers.jsx'
-import { fmtT } from '../ui.jsx'
+import { Tabs, fmtT } from '../ui.jsx'
 
 /* ---------------------------------------------------------------- análisis HRI (corrida con robot) */
 export function Analysis({ run, i, seek, select }) {
@@ -17,13 +17,7 @@ export function Analysis({ run, i, seek, select }) {
   ]
   return (
     <>
-      <div className="seg">
-        {tabs.map(([k, l]) => (
-          <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-            {l}
-          </button>
-        ))}
-      </div>
+      <Tabs className="seg" label="Análisis de interacción" value={tab} onChange={setTab} options={tabs} />
       {tab === 'cortesia' && (
         <>
           <div className="legend wrap">

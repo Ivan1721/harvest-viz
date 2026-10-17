@@ -16,10 +16,11 @@ export default [
       ...react.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
       'react/prop-types': 'off',
-      'react/no-unknown-property': 'off', // props de react-three-fiber (position, args, …)
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
+  // escenas 3D: props de react-three-fiber (position, args, attach…) que la regla no conoce
+  { files: ['src/Scene.jsx', 'src/workload/WorkloadScene.jsx', 'src/shared/*.jsx'], rules: { 'react/no-unknown-property': 'off' } },
   { files: ['src/hrsim/sim.worker.js'], languageOptions: { globals: { ...globals.worker } } },
   { files: ['scripts/bench-visual.mjs', 'scripts/export-video.mjs'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
   // pruebas de interfaz: corren en Node y evalúan funciones dentro del navegador

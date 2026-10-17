@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Scene from './Scene.jsx'
+import { Tabs, Toast } from './workload/ui.jsx'
 import { orchard, loadOrchard, exportOrchard } from './data.js'
 import { sim, snapshot, resetSim, setStrategy, evaluate, chosenFor, PRESETS, STEPS } from './sim.js'
 
@@ -272,13 +273,15 @@ function Lists({ snap, onSelect }) {
     .slice(0, 40)
   return (
     <div className="card lists">
-      <div className="tabs">
-        {['frutos', 'agentes'].map((t) => (
-          <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
-            {t === 'frutos' ? `Frutos ${snap.total - snap.done}` : 'Agentes 2'}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label="Listas"
+        value={tab}
+        onChange={setTab}
+        options={[
+          ['frutos', `Frutos ${snap.total - snap.done}`],
+          ['agentes', 'Agentes 2'],
+        ]}
+      />
       <div className="list" tabIndex={0} role="region" aria-label="Lista de frutos y agentes">
         {tab === 'frutos' ? (
           rows.map(({ f, s }) => (
@@ -473,7 +476,11 @@ export default function OcclusionApp({ modeSwitch }) {
         <Lists snap={snap} onSelect={onSelect} />
       </div>
 
-      {toast && <div className={`toast ${toast.ok ? 'ok' : 'err'}`}>{toast.msg}</div>}
+      {toast && (
+        <Toast kind={toast.ok ? 'ok' : 'err'} onClose={() => setToast(null)}>
+          {toast.msg}
+        </Toast>
+      )}
       {drag && <div className="dropzone">Suelta el archivo JSON para cargar los datos</div>}
     </div>
   )

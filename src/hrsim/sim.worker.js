@@ -1,5 +1,5 @@
 // Web Worker: corre el simulador (HO y/o HR) fuera del hilo de la interfaz.
-// Las series se envían como typed arrays transferibles (sin copia).
+// Las series se copian a typed arrays y se transfieren (postMessage sin copia adicional).
 import fisText from './goal_seeking.fis?raw'
 import { HRSim } from './engine.js'
 import { HOSim } from './humanonly.js'
@@ -20,8 +20,9 @@ function pack(s, transfer) {
 }
 
 self.onmessage = (e) => {
-  const { id, opts, which } = e.data
+  const { id, opts, which } = e.data || {}
   try {
+    if (!Array.isArray(which) || !which.every((w) => w === 'ho' || w === 'hr')) throw new Error('Mensaje inválido para el simulador')
     const out = {},
       transfer = []
     const t0 = performance.now()

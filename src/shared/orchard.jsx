@@ -1,6 +1,6 @@
 // Huerto completo con instancias: todos los árboles en ~4 llamadas de dibujo (antes ~43 por árbol, más sus sombras).
-// Misma geometría que AvocadoTree / BigTree (mismas semillas), pero agrupada por tipo de pieza.
-import { useLayoutEffect, useMemo, useRef } from 'react'
+// Árboles deterministas (misma semilla, mismo árbol), agrupados por tipo de pieza.
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { avocadoParts, GREENS } from './realistic.jsx'
@@ -71,6 +71,7 @@ function RealOrchard({ trees, R, canopy }) {
   useInstances(rL, parts.limbs)
   useInstances(rT, parts.trunks)
   const leaf = useMemo(() => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.78, transparent: true, opacity: 0.5, depthWrite: false }), [])
+  useEffect(() => () => leaf.dispose(), [leaf])
   useFrame(() => {
     const o = canopy ? canopy.v : 0.5
     if (leaf.opacity !== o) {
@@ -91,7 +92,8 @@ function RealOrchard({ trees, R, canopy }) {
       <instancedMesh ref={rB} args={[null, leaf, parts.blobs.length]} castShadow>
         <icosahedronGeometry args={[1, 2]} />
       </instancedMesh>
-      <instancedMesh ref={rF} args={[null, null, parts.fruits.length]} castShadow>
+      {/* frutos: 4 cm, su sombra no se distingue y cuesta un pase más por cada uno */}
+      <instancedMesh ref={rF} args={[null, null, parts.fruits.length]}>
         <sphereGeometry args={[1, 10, 8]} />
         <meshStandardMaterial color="#2f3a22" roughness={0.55} />
       </instancedMesh>
@@ -125,7 +127,8 @@ function SchematicOrchard({ trees, R, opacity }) {
         <cylinderGeometry args={[0.16, 0.28, 1.8, 10]} />
         <meshStandardMaterial color="#8f6f50" roughness={0.9} />
       </instancedMesh>
-      <instancedMesh ref={rB} args={[null, null, parts.blobs.length]} castShadow>
+      {/* copas semitransparentes del estilo esquemático: sin sombra (se veía como un bloque opaco) */}
+      <instancedMesh ref={rB} args={[null, null, parts.blobs.length]}>
         <icosahedronGeometry args={[1, 1]} />
         <meshStandardMaterial color="#ffffff" flatShading transparent opacity={opacity} depthWrite={false} />
       </instancedMesh>

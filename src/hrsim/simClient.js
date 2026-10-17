@@ -15,36 +15,49 @@ function get() {
       if (!pending || pending.id !== id) return
       const p = pending
       pending = null
+      clearTimeout(p.timer)
       error ? p.reject(new Error(error)) : p.resolve(out)
     }
     worker.onerror = (e) => {
       if (pending) {
         pending.reject(new Error(e.message || 'Error en el simulador'))
+        clearTimeout(pending.timer)
         pending = null
       }
+      worker?.terminate()
       worker = null
     }
   }
   return worker
 }
 
-export function cancelSimulation() {
+/** Termina la simulación en curso (si hay) y rechaza su promesa con AbortError. */
+export function cancelSimulation(reason = 'Simulación cancelada', name = 'AbortError') {
   if (!pending) return
   worker?.terminate()
   worker = null
-  const err = new Error('Simulación cancelada')
-  err.name = 'AbortError'
+  const err = new Error(reason)
+  err.name = name
+  clearTimeout(pending.timer)
   pending.reject(err)
   pending = null
 }
 
+/** Tiempo máximo de una simulación: si el worker no responde (p. ej. sin memoria), se termina. */
+export const SIM_TIMEOUT_MS = 120_000
+
 const norm = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/_crop_units|_kcal/, ''), v]))
 
-export async function runSimulation(opts, which = ['ho', 'hr']) {
+export async function runSimulation(opts, which = ['ho', 'hr'], { timeoutMs = SIM_TIMEOUT_MS } = {}) {
   cancelSimulation()
   const id = ++seq
   const out = await new Promise((resolve, reject) => {
-    pending = { id, resolve, reject }
+    const timer = setTimeout(
+      () =>
+        cancelSimulation(`La simulación superó ${Math.round(timeoutMs / 1000)} s y se detuvo. Reduce la duración o el número de trabajadores.`, 'TimeoutError'),
+      timeoutMs,
+    )
+    pending = { id, resolve, reject, timer }
     get().postMessage({ id, opts, which })
   })
   const res = { ms: out.ms }

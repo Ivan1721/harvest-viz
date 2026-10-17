@@ -15,22 +15,34 @@ dirección delantera (FourWheelSteering). Código: `common.js` (parámetros), `e
 
 ## Validación (métricas agregadas)
 
-| Prueba                                                                              | Resultado                                                                                                                               |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Solo humano, resúmenes de MATLAB (`npm run test:full`, `scripts/bench_compare.mjs`) | 366/366 configuraciones idénticas                                                                                                       |
-| Humano-robot, resúmenes de MATLAB                                                   | 358/366 idénticas; 8 con desfase de 1 tick en un traspaso raro (carga ≤ 0,03 %; solo 7-3-mixta-RP0 cambia lo entregado: 3075 vs 3045 u) |
-| Corrida de ejemplo (series por tick)                                                | 0 discrepancias en trabajo, producción, bandera, a bordo y entregado                                                                    |
+Las referencias son los CSV resumen de MATLAB: 732 filas (principal, extended y scaling), que se reducen a **720 configuraciones únicas** (360 Solo humano + 360 Humano-robot) en `public/data/matlab_summary.json`.
 
-La pestaña **Validación** compara en vivo el simulador con `public/data/matlab_summary.json` (generado con
-`scripts/build_matlab_summary.mjs` desde los CSV resumen de MATLAB, 720 configuraciones).
+| Prueba                               | Resultado                                                                                                                                                                                 |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Solo humano                          | 360/360 configuraciones idénticas (error relativo < 1e-6 en las 8 métricas)                                                                                                               |
+| Humano-robot                         | 352/360 idénticas. De las 8 restantes, 5 difieren < 4e-5 (dentro de la tolerancia normal); 3 difieren más: 7-3-mixta-RP0 (entregado 3075 vs 3045 u) y 24-1-gancho-RP0/RP1 (4 u en bolsas) |
+| Corrida de ejemplo (series por tick) | 0 discrepancias en trabajo, producción, bandera, a bordo y entregado                                                                                                                      |
+
+La pestaña **Validación** compara en vivo el simulador con `matlab_summary.json` (generado con `scripts/build_matlab_summary.mjs`).
+
+### Por qué difieren esas configuraciones
+
+No es un error del port. Cuando un trabajador que vuelve a su árbol (estado 9) es llamado por el robot, da la vuelta (estado 10) y recorre el mismo segmento al revés; la distancia que le queda es un múltiplo exacto del paso (0,75 m/s × 0,25 s = 0,1875 m). La llegada se decide con `dist <= v·dt`, y en ese empate exacto el resultado depende de los últimos bits del redondeo: `Math.hypot` (V8) y `norm` (MKL de MATLAB) redondean distinto, así que el trabajador puede llegar un tick antes o después y desplazar en cascada el resto de la corrida. Se probó cambiar `hypot` por `sqrt`: el set principal pasa a 144/144, pero otras configuraciones del set extendido dejan de coincidir. No existe una implementación en JavaScript que reproduzca MKL bit a bit; la propia referencia de MATLAB tampoco es reproducible entre máquinas o versiones de MKL. Decisión: documentarlo y acotar las 3 desviaciones con tolerancias fijas al valor observado (`tests/helpers.mjs`).
+
+### Otros supuestos que difieren de MATLAB
+
+- **Sin lidar ni FIS de seguimiento.** MATLAB activa `fis_tracking` cuando el lidar (1,5 m) ve un tronco, aunque la evasión de obstáculos esté apagada. Con la ruta del estudio el robot nunca pasa tan cerca (lo confirma la regresión), pero cambiar `boxRouteOffset` podría activarlo en MATLAB y no en JS.
+- **`dt` distinto de 0,25 s.** El JS convierte los periodos de cosecha (`prodPeriod`, en segundos) a ticks con `dt`; MATLAB los fija en 16/24/20 ticks, así que en MATLAB la tasa de cosecha cambia al cambiar `dt`. Con `dt = 0,25` coinciden.
+- **Bucle de re-llamada.** En MATLAB, si el robot se llena justo cuando un trabajador terminó de cargar, ese trabajador vuelve a girar y cargar sin cosechar. El JS lo replica por defecto; `fixRecallLoop: true` lo corrige (no afecta al protocolo del estudio, donde el robot nunca se llena).
+- **Entradas del FIS fuera de rango** se saturan al límite, como `evalfis`.
 
 ## Pruebas
 
-`npm test` corre una muestra fija de la regresión (1 de cada 12 configuraciones + las 8 desviaciones conocidas) más pruebas del FIS, determinismo y exportación; `npm run test:full` corre las 720. El despliegue a GitHub Pages se bloquea si fallan. Las desviaciones conocidas están en `tests/helpers.mjs` con tolerancia propia: si se corrige la causa, hay que sacarlas de la lista.
+`npm test` corre una muestra fija de la regresión (1 de cada 12 configuraciones + las desviaciones conocidas) además de las pruebas de modelo, datos y rendimiento; `npm run test:full` corre las 720. Ver `docs/testing.md`.
 
 ## Rendimiento
 
-Node 22, 1 hilo: HO ≈ 20 ms y HR ≈ 240 ms por sesión de 45 min (máx. 410 ms con 24 trabajadores); las 732 configuraciones en 97 s con ≈ 310 MB de memoria pico.
+Node 22, 1 hilo: HO ≈ 20 ms y HR ≈ 240 ms por sesión de 45 min (máx. 410 ms con 24 trabajadores); las 732 filas en ~100 s con ≈ 310 MB de memoria pico. Topes de entrada: 4 h de simulación, 48 trabajadores, `dt` entre 0,05 y 1 s (`LIMITS` en `common.js`).
 
 ## Hallazgo de reproducibilidad
 
@@ -40,5 +52,5 @@ mientras que el script actual y los CSV resumen usan **0,0923**. Con 0,106145 el
 
 ## Pendiente
 
-Calibrar contra métricas agregadas con parámetros libres, depurar las 8 configuraciones HR con desfase, validar trayectorias
+Calibrar contra métricas agregadas con parámetros libres, validar trayectorias
 con el parche de poses de MATLAB (`EXPORT_POSE_LOG`, sección 0 de `HumanRobot_Sim.m`) y reformular el modelo sobre la base calibrada.
