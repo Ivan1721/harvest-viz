@@ -145,6 +145,8 @@ function Worker({ w, run, onSelect, selected, real }) {
           </mesh>
         </group>
       )}
+      {/* ancla de la etiqueta para la exportación de video (las etiquetas HTML no quedan en el lienzo) */}
+      <object3D position={[0, 2.1, 0]} userData={{ videoTag: `H${w.h}` }} />
       <Html position={[0, 2.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={tag} className="tag small">
           H{w.h}
@@ -283,6 +285,7 @@ function RobotCarrier({ run, onSelect, selected }) {
         <cylinderGeometry args={[0.025, 0.025, 0.5, 10]} />
         <meshStandardMaterial color="#2b3447" />
       </mesh>
+      <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current?.textContent || 'RB-01', videoAccent: true }} />
       <Html position={[0, 1.7, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
         <div className="tag" style={{ borderColor: '#2f6bff' }}>
           <span ref={lab} style={{ color: 'inherit', fontWeight: 700 }}>

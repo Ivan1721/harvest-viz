@@ -2,6 +2,7 @@
 // y la codifica a MP4 (H.264) en el navegador con WebCodecs (biblioteca mediabunny).
 import { useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
+import * as THREE from 'three'
 import { play, anim } from './playback.js'
 
 const scenes = new Map()
@@ -18,6 +19,36 @@ export function RecorderProbe({ name }) {
 
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+const v3 = new THREE.Vector3()
+
+/** Etiquetas (H1…, RB-01) dibujadas sobre el cuadro: proyecta las anclas `userData.videoTag` de la escena. */
+function drawTags(ctx, st, x0, y0, w, h, px) {
+  const tags = []
+  st.scene.traverse((o) => o.userData?.videoTag && o.visible && tags.push(o))
+  ctx.font = `600 ${Math.round(px)}px Inter, system-ui, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const o of tags) {
+    v3.setFromMatrixPosition(o.matrixWorld).project(st.camera)
+    if (v3.z > 1 || Math.abs(v3.x) > 1.05 || Math.abs(v3.y) > 1.05) continue
+    const x = x0 + ((v3.x + 1) / 2) * w,
+      y = y0 + ((1 - v3.y) / 2) * h
+    const text = typeof o.userData.videoTag === 'function' ? o.userData.videoTag() : o.userData.videoTag
+    const tw = ctx.measureText(text).width + px * 0.9,
+      th = px * 1.5
+    ctx.fillStyle = 'rgba(255,255,255,0.94)'
+    ctx.strokeStyle = o.userData.videoAccent ? '#1f56e8' : '#1c2540'
+    ctx.lineWidth = Math.max(1, px / 9)
+    ctx.beginPath()
+    ctx.roundRect(x - tw / 2, y - th / 2, tw, th, th / 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#1c2540'
+    ctx.fillText(text, x, y + px * 0.05)
+  }
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+}
 
 /** Tasa de bits objetivo: ~0,1 bit por píxel y cuadro (1080p a 60 fps ≈ 12 Mbit/s). */
 export const bitrateFor = (w, h, fps) => Math.round(w * h * fps * 0.1)
@@ -82,6 +113,7 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
         const st = get()
         st.advance((k * 1000) / fps)
         ctx.drawImage(st.gl.domElement, i * cellW, head, cellW, cellH)
+        drawTags(ctx, st, i * cellW, head, cellW, cellH, Math.max(11, height / 72))
         if (labels[name]) {
           ctx.font = font(head * 0.32)
           ctx.fillStyle = '#1c2540'
