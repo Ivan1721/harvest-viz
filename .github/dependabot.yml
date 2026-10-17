@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # acciones de GitHub (fijadas por SHA): un PR mensual agrupado
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+  # dependencias npm: parches y menores agrupados; las mayores (three, R3F, React…) por separado
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

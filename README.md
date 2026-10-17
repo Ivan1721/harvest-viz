@@ -59,7 +59,7 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 | `scripts/`      | Comparaciones y benchmark contra salidas de MATLAB fuera del repo                                            |
 | `public/data/`  | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión)                                     |
 
-**Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas y build. Al fusionar en `main`, `Deploy a GitHub Pages` vuelve a correr lint y pruebas antes de publicar. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
+**Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas, cobertura, build e interfaz (Playwright). Al fusionar en `main` corre lo mismo y, solo si todo pasa, publica en GitHub Pages. Las acciones están fijadas por SHA y Dependabot propone actualizaciones mensuales. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
 
 **Copias del visor.** Este repositorio es la única fuente. `WorkloadProductionSim` lo incluye como submódulo en `viz/` (`git submodule update --remote viz` para actualizarlo).
 

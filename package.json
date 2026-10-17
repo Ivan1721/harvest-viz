@@ -3,6 +3,15 @@
   "private": true,
   "version": "0.4.0",
   "type": "module",
+  "description": "Visor 3D y simulador de cosecha colaborativa humano-robot (réplica JS de HumanRobot_Sim/HumanOnly_Sim)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ivan1721/harvest-viz.git"
+  },
+  "homepage": "https://ivan1721.github.io/harvest-viz/",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
