@@ -22,7 +22,7 @@ test('manifest.json: cada entrada apunta a archivos existentes y con nombre vál
 for (const e of manifest.runs)
   test(`contrato del CSV de ejemplo ${e.csv}`, () => {
     const csv = read(e.csv)
-    const head = csv.slice(0, csv.indexOf('\n')).split(',')
+    const head = csv.split(/\r?\n/)[0].split(',')
     for (const c of REQUIRED_COLUMNS) assert.ok(head.includes(c), `falta ${c}`)
     for (let h = 1; h <= e.nw; h++) for (const c of ['Production', 'Workload', 'ActivityFlag']) assert.ok(head.includes(`${c}_H${h}`), `falta ${c}_H${h}`)
     const run = buildRun({ csvText: csv, logText: e.log ? read(e.log) : null, name: e.csv })

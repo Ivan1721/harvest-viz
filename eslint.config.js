@@ -30,5 +30,5 @@ export default [
     plugins: { react },
     rules: { ...react.configs['jsx-runtime'].rules, 'react/jsx-uses-vars': 'error' },
   },
-  { files: ['scripts/**/*.mjs', 'tests/**/*.mjs', '*.config.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } } },
+  { files: ['scripts/**/*.mjs', 'tests/**/*.mjs', 'tests/**/setup.js', '*.config.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } } },
 ]

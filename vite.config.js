@@ -5,7 +5,7 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   // pruebas de componentes (vitest + jsdom); el motor y los datos se prueban con node:test en tests/**/*.test.mjs
-  test: { environment: 'jsdom', include: ['tests/components/**/*.test.jsx'], globals: false },
+  test: { environment: 'jsdom', include: ['tests/components/**/*.test.jsx'], setupFiles: ['tests/components/setup.js'], globals: false },
   build: {
     chunkSizeWarningLimit: 800, // three.js minificado pesa ~680 kB por sí solo
     rollupOptions: {
