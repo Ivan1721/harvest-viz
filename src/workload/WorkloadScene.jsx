@@ -12,6 +12,7 @@ import { Orchard } from '../shared/orchard.jsx'
 import { play, anim, advance } from './playback.js'
 import { sampleAt, trackAt } from './interp.js'
 import { PerfProbe, perfEnabled } from './perf.jsx'
+import { RecorderProbe } from './recorder.jsx'
 const ease = (u) => u * u * (3 - 2 * u)
 const lerp = (a, b, u) => a + (b - a) * u
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
@@ -532,6 +533,7 @@ export default function WorkloadScene({ run, selected, onSelect, version, preset
       <CamRig preset={preset} />
       <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} />
       {perfEnabled() && <PerfProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />}
+      <RecorderProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />
     </Canvas>
   )
 }

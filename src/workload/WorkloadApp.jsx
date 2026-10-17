@@ -14,6 +14,7 @@ import { Detail, WorkerList } from './panels/Workers.jsx'
 import { play, setPlay, usePlayback } from './playback.js'
 import WorkloadScene from './WorkloadScene.jsx'
 import { PerfOverlay, perfEnabled } from './perf.jsx'
+import { VideoPanel } from './panels/VideoPanel.jsx'
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
 import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
@@ -214,6 +215,16 @@ export default function WorkloadApp({ modeSwitch }) {
           info: simInfo,
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
         }}
+        videoPanel={
+          shown.length > 0 && (
+            <VideoPanel
+              tmax={tmax}
+              title={`${title}${source === 'sim' ? ' · simulación' : ' · MATLAB'}`}
+              fileStem={cfg ? `harvest-viz_${cfg.nw}_ROW${cfg.row}_${cfg.act}_RP${cfg.rp}_${view}` : 'harvest-viz'}
+              disabled={loading || simBusy}
+            />
+          )
+        }
       />
 
       {perfEnabled() && <PerfOverlay />}

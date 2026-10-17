@@ -1295,3 +1295,17 @@ details > summary {
   border-radius: 6px;
   pointer-events: none;
 }
+
+/* exportación de video */
+.rec-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 20, 35, 0.45);
+  display: grid;
+  place-items: center;
+}
+.rec-modal .panel {
+  width: min(420px, 90vw);
+  background: var(--surface, #fff);
+}
