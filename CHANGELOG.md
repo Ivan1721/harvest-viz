@@ -2,6 +2,38 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [0.5.0] — 2026-10-17
+
+Correcciones de la auditoría profunda de la v0.4.0.
+
+### Agregado
+
+- **Motor 0.3.0:** opción `fixRecallLoop` (corrige el bucle de re-llamada de MATLAB; por defecto se replica), contador `capacityBlocked`.
+- Cancelar la simulación y tiempo máximo de 120 s; topes de parámetros (`LIMITS`), de video, de CSV y de JSON de huerto, con mensajes claros.
+- Pruebas: modo Oclusión (unitarias + property-based), reproducción, biblioteca, exportación, cliente del worker, VideoPanel, controles accesibles; invariantes de velocidad del robot, banderas de escalera y conservación a bordo.
+- Dependabot (mensual) y caché de navegadores de Playwright en CI.
+
+### Cambiado
+
+- Cobertura medida sobre todo `src/**/*.js` con c8 (antes solo lo importado): ≈ 98 % de líneas, umbrales 96/90/92.
+- Regresión contra MATLAB: 3 desviaciones conocidas (antes 8; 5 estaban dentro de la tolerancia normal), cada una con tope por métrica. Causa documentada en `docs/simulador.md`: empate de redondeo en `movePose`.
+- El FIS satura las entradas fuera de rango, como `evalfis`.
+- CI: un solo workflow; el despliegue a Pages espera a las pruebas de interfaz. Permisos mínimos, timeouts, concurrencia y acciones fijadas por SHA. Stryker también muta el motor (caché incremental); `bench --strict`.
+- Visor: cajas con instancias; geometrías y materiales compartidos entre personas y escaleras; texturas liberadas al desmontar; frutos y copas esquemáticas sin sombra. La cámara conserva la vista del usuario al cambiar de tamaño (también al grabar video).
+- Accesibilidad: pestañas con `role=tab` y flechas, grupos nombrados, `aria-pressed`, avisos con `role=alert` y botón de cierre, diálogo de video con foco inicial y Escape, contraste del naranja y del aviso.
+
+### Corregido
+
+- La escalera y el anillo del trabajador ya no se elevan con él.
+- La animación de carga de cajas usaba ticks como segundos en corridas con `dt ≠ 1`.
+- Tras grabar un video, el reloj de animación no volvía a su valor.
+- El indicador «simulando» podía quedar activo al cambiar de fuente.
+- Cifras de validación en la interfaz y en la documentación (360/360 Solo humano, 352/360 Humano-robot).
+
+### Eliminado
+
+- Código sin uso (`AvocadoTree`, `BigTree`, `DT`, `scripts/torun_test.mjs`) y estilos huérfanos.
+
 ## [0.4.0] — 2026-10-17
 
 ### Agregado

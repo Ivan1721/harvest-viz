@@ -34,7 +34,7 @@ export default function WorkloadApp({ modeSwitch }) {
   const [tab, setTab] = useState('resumen')
   const [preset, setPreset] = useState('iso')
   // ?look=schem abre en estilo Esquemático (más liviano: útil para figuras y equipos sin GPU)
-  const [look, setLook] = useState(() => (new URLSearchParams(window.location.search).get('look') === 'schem' ? 'schem' : 'real'))
+  const [look, setLook] = useState(() => (qs.get('look') === 'schem' ? 'schem' : 'real'))
   const [canopy, setCanopyState] = useState(0.42)
   const setCanopy = (v) => {
     play.canopy.v = v

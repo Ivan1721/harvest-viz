@@ -228,9 +228,9 @@ export function step(rawDt) {
     sim.resetTimer += dt
     R.status = H.status = 'Huerto completado'
     if (sim.resetTimer > 4) {
-      const keep = { selected: sim.selected, mode: sim.strategy }
+      const selected = sim.selected
       resetSim()
-      sim.selected = keep.selected
+      sim.selected = selected
     }
   }
 }

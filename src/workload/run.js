@@ -8,7 +8,6 @@ import { ladderHeights, metabolicRate, rateScale } from './derive.js'
 // Paso interno del simulador MATLAB: los índices `idx=` del log están en ticks de 0.25 s.
 // El CSV puede estar muestreado a otro paso (p. ej. 1 s en el estudio de 45 min): se deduce de Time_s.
 export const SIM_TICK = 0.25
-export const DT = SIM_TICK
 export const FLAG = {
   0: { label: 'Inicio', color: '#9aa6bf' },
   1: { label: 'Cosechando', color: '#16a34a' },
