@@ -19,7 +19,8 @@
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=90 \"tests/**/*.test.mjs\"",
     "test:mutation": "stryker run",
     "bench": "node scripts/bench.mjs",
-    "sensitivity": "node scripts/sensitivity.mjs"
+    "sensitivity": "node scripts/sensitivity.mjs",
+    "bench:visual": "node scripts/bench-visual.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.0",

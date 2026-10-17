@@ -9,6 +9,8 @@ import { Person, BigTree, Crate, CrateReal, Ladder } from '../shared/models.jsx'
 import { AvocadoTree, RealGround, SkyBackground } from '../shared/realistic.jsx'
 
 import { play, anim, advance } from './playback.js'
+import { sampleAt, trackAt } from './interp.js'
+import { PerfProbe, perfEnabled } from './perf.jsx'
 const ease = (u) => u * u * (3 - 2 * u)
 const lerp = (a, b, u) => a + (b - a) * u
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
@@ -42,19 +44,18 @@ function Worker({ w, run, onSelect, selected, real }) {
     return { place }
   }, [w])
   const carryRef = useRef(),
-    st = useRef({ aL: 0, aR: 0 })
+    st = useRef({ aL: 0, aR: 0 }),
+    tmp = useRef([0, 0, 0, 0])
   const prodMax = useMemo(() => {
     let m = 1
     for (let k = 0; k < w.prod.length; k++) if (w.prod[k] > m) m = w.prod[k]
     return m
   }, [w])
   useFrame((_, dtReal) => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
-    const k = i * 4
-    const x = w.track[k],
-      y = w.track[k + 1],
-      hz = w.track[k + 2],
-      hd = w.track[k + 3]
+    // estado discreto en el tick i; posición, altura y rumbo interpolados entre i e i+1
+    const smp = sampleAt(run.n, run.dt, play.t),
+      i = smp.i
+    const [x, y, hz, hd] = trackAt(w.track, 4, smp, tmp.current, { angleIdx: 3 })
     const [px, , pz] = toW(x, y)
     const flag = w.flag[i]
     const phase = anim.t * 7
@@ -171,12 +172,13 @@ function RobotCarrier({ run, onSelect, selected }) {
     zr = useRef([])
   const wheels = useRef([])
   const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
-  const shown = useRef({ v: 0, t: 0 })
+  const shown = useRef({ v: 0, t: 0 }),
+    rtmp = useRef([0, 0, 0])
   useFrame(() => {
-    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
-    const p = run.robot.pos
-    const [px, , pz] = toW(p[i * 3], p[i * 3 + 1])
-    const h = p[i * 3 + 2]
+    const smp = sampleAt(run.n, run.dt, play.t),
+      i = smp.i
+    const [rx, ry, h] = trackAt(run.robot.pos, 3, smp, rtmp.current, { angleIdx: 2 })
+    const [px, , pz] = toW(rx, ry)
     root.current.position.set(px, 0, pz)
     root.current.rotation.y = h
     // Rodadura diferencial: distancia de cada lado = d ∓ dθ·(ancho de vía/2); el lado derecho es +z local
@@ -528,6 +530,7 @@ export default function WorkloadScene({ run, selected, onSelect, version, preset
       <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
       <CamRig preset={preset} />
       <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} />
+      {perfEnabled() && <PerfProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />}
     </Canvas>
   )
 }

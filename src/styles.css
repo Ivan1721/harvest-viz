@@ -1278,3 +1278,20 @@ details > summary {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* diagnóstico de rendimiento (?perf=1) */
+.perf-overlay {
+  position: fixed;
+  left: 50%;
+  top: 56px;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(15, 20, 35, 0.86);
+  color: #fff;
+  font:
+    11px/1.5 ui-monospace,
+    monospace;
+  padding: 6px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+}
