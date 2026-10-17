@@ -34,8 +34,13 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 
     npm install --include=dev
     npm run dev           # servidor local
-    npm test              # pruebas rápidas (muestra de la regresión contra MATLAB, ~20 s)
-    npm run test:full     # regresión completa: 720 configuraciones de MATLAB (~2 min)
+    npm test              # modelo, datos y rendimiento (~30 s)
+    npm run test:full     # + regresión completa: 720 configuraciones de MATLAB (~2 min)
+    npm run test:components
+    npm run test:e2e      # interfaz y accesibilidad en Chromium (requiere npm run build)
+    npm run test:coverage # cobertura con umbral
+    npm run bench         # rendimiento vs bench/baseline.json
+    npm run sensitivity   # elasticidades de los parámetros
     npm run lint          # ESLint
     npm run format        # Prettier
     npm run build         # sitio estático en dist/
@@ -47,7 +52,8 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 | `src/hrsim/`    | Simulador (motor HR/HO, FIS, Web Worker, exportación) — sin dependencias de React                            |
 | `src/workload/` | Modo Workload: app, escena 3D, lectura de CSV MATLAB, análisis HRI; `panels/` con los paneles de la interfaz |
 | `src/shared/`   | Modelos 3D comunes y ErrorBoundary                                                                           |
-| `tests/`        | Pruebas `node:test` (regresión vs MATLAB, FIS, motor, exportación)                                           |
+| `tests/`        | Pruebas `node:test` (unit, model, data, perf) y de componentes (Vitest); guía en `docs/testing.md`           |
+| `e2e/`          | Pruebas de interfaz, accesibilidad y visuales (Playwright)                                                   |
 | `scripts/`      | Comparaciones y benchmark contra salidas de MATLAB fuera del repo                                            |
 | `public/data/`  | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión)                                     |
 

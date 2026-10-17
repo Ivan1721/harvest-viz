@@ -23,6 +23,7 @@ jobs:
       # el despliegue solo ocurre si el lint y la regresión contra MATLAB pasan
       - run: npm run lint
       - run: npm test
+      - run: npm run test:components
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
