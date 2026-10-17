@@ -20,7 +20,8 @@
     "test:mutation": "stryker run",
     "bench": "node scripts/bench.mjs",
     "sensitivity": "node scripts/sensitivity.mjs",
-    "bench:visual": "node scripts/bench-visual.mjs"
+    "bench:visual": "node scripts/bench-visual.mjs",
+    "export:video": "node scripts/export-video.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.0",
