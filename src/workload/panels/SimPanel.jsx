@@ -64,7 +64,7 @@ const PERIODS = [
 export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExport }) {
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
-  const num = (k, step, min, max) => <NumField value={params[k]} step={step} min={min} max={max} onCommit={(v) => set(k, v)} />
+  const num = (k, step, min, max, label) => <NumField value={params[k]} step={step} min={min} max={max} label={label} onCommit={(v) => set(k, v)} />
   const changed = JSON.stringify(params) !== JSON.stringify(DEFAULTS_SIM)
   return (
     <section className="panel">
@@ -91,19 +91,19 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
         </button>
       )}
       <details>
-        <summary>Parámetros{changed ? ' (modificados)' : ''}</summary>
+        <summary data-testid="sim-params">Parámetros{changed ? ' (modificados)' : ''}</summary>
         <div className="params">
           {PARAMS.map(([k, l, st, src, min, max]) => (
             <label key={k} title={src}>
               <span>{l}</span>
-              {num(k, st, min, max)}
+              {num(k, st, min, max, l)}
             </label>
           ))}
           <div className="note">Costos metabólicos (kcal/s)</div>
           {COSTS.map(([k, l]) => (
             <label key={k}>
               <span>{l}</span>
-              <NumField value={params.costs[k]} step="0.001" min={0} onCommit={(v) => setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))} />
+              <NumField value={params.costs[k]} step="0.001" min={0} label={l} onCommit={(v) => setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))} />
             </label>
           ))}
           <div className="note">Bajar escalera: el script actual usa 0,0923; el CSV de ejemplo se generó con 0,106145.</div>

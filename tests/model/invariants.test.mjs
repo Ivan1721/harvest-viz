@@ -24,7 +24,8 @@ const cfgArb = fc.record({
   row: fc.constantFrom(1, 2, 3),
   act: fc.constantFrom(...ACTS),
   rp: fc.constantFrom(0, 1),
-  duration: fc.integer({ min: 30, max: 600 }),
+  // corridas cortas (bordes) y de 5–15 min, donde el robot alcanza a llenarse, descargar y recibir cajas
+  duration: fc.oneof(fc.integer({ min: 30, max: 120 }), fc.integer({ min: 300, max: 900 })),
   walkSpeed: fc.double({ min: 0.2, max: 2, noNaN: true }),
   ladderTime: fc.double({ min: 0.5, max: 15, noNaN: true }),
   maxProd: fc.integer({ min: 3, max: 30 }),
