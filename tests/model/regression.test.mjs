@@ -14,13 +14,12 @@ const sample = FULL ? keys : keys.filter((k, i) => i % 12 === 0 || (k.startsWith
 for (const key of sample) {
   const [kind, nw, row, act, rp] = key.split('|')
   const cfg = { nw: +nw, row: +row, act, rp: +rp }
-  const known = kind === 'HR' && KNOWN_HR_DEVIATIONS.has(`${nw}|${row}|${act}|${rp}`)
+  const known = kind === 'HR' ? KNOWN_HR_DEVIATIONS.get(`${nw}|${row}|${act}|${rp}`) : undefined
   test(`${key}${known ? ' (desviación conocida)' : ''}`, () => {
     const s = norm((kind === 'HO' ? new HOSim(cfg) : new HRSim(cfg, FIS)).run().summary())
-    const total = MATLAB[key].TotalRecollectedCrops
     for (const [m, ref] of Object.entries(MATLAB[key])) {
-      // desviación conocida: hasta 1,5 % de la métrica + 2 % de la cosecha total (reparto entre bolsas/cajas/robot)
-      const tol = known ? 0.015 * Math.max(1, Math.abs(ref)) + 0.02 * total : 1e-3 * Math.max(1, Math.abs(ref))
+      // tolerancia normal 1e-3 relativa; en una desviación conocida, la diferencia observada fijada en helpers.mjs
+      const tol = Math.max(1e-3 * Math.max(1, Math.abs(ref)), known?.[m] ?? 0)
       assert.ok(Math.abs(s[m] - ref) <= tol, `${m}: simulador ${s[m]} vs MATLAB ${ref}`)
     }
   })

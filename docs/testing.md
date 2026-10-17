@@ -17,7 +17,7 @@ Cada familia de pruebas responde a una pregunta distinta. Las rápidas corren en
 | Accesibilidad           | ¿Cumple WCAG 2.1 AA (sin violaciones críticas ni graves)?                                  | `e2e/a11y.spec.js` (axe-core)                      | `npm run test:e2e`                                           | PR                                 |
 | Multi-navegador         | ¿Funciona en Firefox y Safari (WebKit)?                                                    | los mismos `e2e/`                                  | `npm run test:e2e:all`                                       | semanal                            |
 | Regresión visual        | ¿Cambió algo que se ve?                                                                    | `e2e/visual.spec.js`                               | `npm run test:visual` (`-- --update-snapshots` para aceptar) | semanal                            |
-| Cobertura               | ¿Qué código no ejecuta ninguna prueba?                                                     | —                                                  | `npm run test:coverage` (umbral 95 % líneas)                 | PR                                 |
+| Cobertura               | ¿Qué código no ejecuta ninguna prueba?                                                     | `.c8rc.json` (c8, todos los `src/**/*.js`)         | `npm run test:coverage` (umbrales en `.c8rc.json`)           | PR                                 |
 | Mutación                | ¿Detectan las pruebas errores introducidos a propósito?                                    | `stryker.config.json`                              | `npm run test:mutation`                                      | semanal                            |
 | Sensibilidad            | ¿Qué parámetros mueven las conclusiones?                                                   | `scripts/sensitivity.mjs` → `docs/sensibilidad.md` | `npm run sensitivity`                                        | semanal (artefacto)                |
 
@@ -30,7 +30,10 @@ Cada familia de pruebas responde a una pregunta distinta. Las rápidas corren en
 - **Contratos/fuzzing:** un CSV vacío o con columnas faltantes daba un error interno. Ahora da un mensaje claro (`FormatError`) y tolera BOM, CRLF y espacios en la cabecera.
 - **Accesibilidad:** contraste insuficiente del gris y del azul de la interfaz (4,1–4,5:1), línea de tiempo sin etiqueta y lista de Oclusión sin acceso por teclado. Corregidos.
 
-- **Mutación (primera corrida, 1120 de 1147 mutantes antes de cortarla):** las pruebas detectaron ~49 % (550 eliminados, 570 sobrevivientes). Es el próximo frente: el informe HTML (`reports/mutation/index.html`, `npm run test:mutation` o el artefacto del workflow semanal) muestra qué líneas de `fis.js`, `common.js`, `derive.js` y `run.js` cambian sin que ninguna prueba falle.
+- **Cobertura honesta:** el umbral anterior (95 % de líneas) solo medía los archivos que alguna prueba importaba; `sim.js`, `playback.js`, `library.js` y `simClient.js` no aparecían. Con c8 `--all` la cobertura real de `src/**/*.js` es ≈ 80 % de líneas, 88 % de ramas y 86 % de funciones; los umbrales quedan justo debajo para que no baje, y suben a medida que se agregan pruebas. Los `.jsx` se miden con las pruebas de componentes (Vitest).
+- **Regresión:** de las 8 «desviaciones conocidas», 5 estaban dentro de la tolerancia normal. Quedan 3 (7-3-mixta-RP0, 24-1-gancho-RP0/RP1), cada una con la diferencia observada por métrica como tope (`tests/helpers.mjs`), en vez de una tolerancia amplia común.
+
+- **Mutación (primera corrida, 1120 de 1147 mutantes antes de cortarla):** las pruebas detectaron ~49 % (550 eliminados, 570 sobrevivientes). Es el próximo frente: el informe HTML (`reports/mutation/index.html`, `npm run test:mutation` o el artefacto del workflow semanal) muestra qué líneas cambian sin que ninguna prueba falle. El porcentaje es la proporción de mutantes detectados (no cobertura); ahora también se mutan `engine.js` y `humanonly.js`, con caché incremental entre corridas.
 
 ## No automatizable (todavía)
 

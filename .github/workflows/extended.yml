@@ -21,7 +21,9 @@ jobs:
           PBT_SEED: ${{ github.run_id }}
           FUZZ_RUNS: 5000
       - name: Benchmark y sensibilidad
+        shell: bash
         run: |
+          set -o pipefail
           npm run bench | tee bench.txt
           npm run sensitivity -- --out sensibilidad.md
       - uses: actions/upload-artifact@v4
@@ -83,6 +85,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --include=dev
+      - uses: actions/cache@v4
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-${{ github.sha }}
+          restore-keys: stryker-
       - run: npm run test:mutation
       - uses: actions/upload-artifact@v4
         if: always()
