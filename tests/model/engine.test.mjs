@@ -1,9 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { HRSim } from '../src/hrsim/engine.js'
-import { HOSim } from '../src/hrsim/humanonly.js'
-import { simToRun } from '../src/hrsim/toRun.js'
-import { FIS } from './helpers.mjs'
+import { HRSim } from '../../src/hrsim/engine.js'
+import { HOSim } from '../../src/hrsim/humanonly.js'
+import { simToRun } from '../../src/hrsim/toRun.js'
+import { FIS } from '../helpers.mjs'
 
 const cfg = { nw: 6, row: 2, act: 'mixed', rp: 1, duration: 600 }
 
@@ -37,8 +37,8 @@ test('cambiar un parámetro cambia el resultado (los parámetros se aplican)', (
 })
 
 test('la exportación tiene el formato de MATLAB y se puede volver a leer', async () => {
-  const { timeseriesCSV, runStem } = await import('../src/hrsim/export.js')
-  const { buildRun, parseName } = await import('../src/workload/run.js')
+  const { timeseriesCSV, runStem } = await import('../../src/hrsim/export.js')
+  const { buildRun, parseName } = await import('../../src/workload/run.js')
   const run = simToRun(new HRSim(cfg, FIS).run(), { robot: true })
   const csv = timeseriesCSV(run)
   assert.ok(csv.startsWith('Time_s,Total_product_cargo,Total_product,Total_product_robot,Total_workload,Production_H1'))
@@ -46,4 +46,19 @@ test('la exportación tiene el formato de MATLAB y se puede volver a leer', asyn
   assert.deepEqual(parseName(runStem(run)), { robot: true, nw: 6, row: 2, act: 'mixed', rp: 1 })
   const back = buildRun({ csvText: csv, logText: null, name: runStem(run) })
   assert.ok(Math.abs(back.series.work[back.n - 1] - run.series.work[run.n - 1]) < 1e-3)
+})
+
+test('runFiles entrega timeseries, poses y meta coherentes', async () => {
+  const { runFiles } = await import('../../src/hrsim/export.js')
+  const run = simToRun(new HRSim(cfg, FIS).run(), { robot: true })
+  const files = runFiles(run)
+  assert.deepEqual(
+    files.map(([n]) => n.replace(/^.*_SIM-[0-9a-f]{8}/, '')),
+    ['_timeseries.csv', '_poses.csv', '_meta.json'],
+  )
+  const poses = files[1][1].trim().split('\n')
+  assert.equal(poses.length, run.n + 1)
+  assert.ok(poses[0].startsWith('Time_s,Robot_x,Robot_y,Robot_theta_rad,Robot_status,X_H1'))
+  const meta = JSON.parse(files[2][1])
+  assert.equal(meta.paramsHash, run.meta.paramsHash)
 })

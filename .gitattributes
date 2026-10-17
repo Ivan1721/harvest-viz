@@ -1,0 +1,4 @@
+# Los datos de ejemplo se guardan tal cual (sin convertir fin de línea en Windows)
+public/data/** -text
+*.csv -text
+*.png binary

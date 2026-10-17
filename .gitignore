@@ -3,3 +3,10 @@ dist
 .DS_Store
 # scene_spec.json no lo usa la app (la geometria esta en src/workload/spec.js)
 public/data/scene_spec.json
+
+# reportes de pruebas
+reports/
+test-results/
+playwright-report/
+.stryker-tmp/
+coverage/

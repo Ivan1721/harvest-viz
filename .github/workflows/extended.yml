@@ -1,0 +1,91 @@
+name: Pruebas extendidas
+# Lo que es demasiado lento para cada PR: corre cada lunes y a demanda.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+jobs:
+  model:
+    name: Regresión completa, property-based y fuzzing intensivos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm run test:full
+        env:
+          PBT_RUNS: 500
+          PBT_SEED: ${{ github.run_id }}
+          FUZZ_RUNS: 5000
+      - name: Benchmark y sensibilidad
+        run: |
+          npm run bench | tee bench.txt
+          npm run sensitivity -- --out sensibilidad.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: analisis
+          path: |
+            bench.txt
+            sensibilidad.md
+
+  browsers:
+    name: Interfaz en Chromium, Firefox y WebKit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npx playwright install --with-deps
+      - run: npm run build
+      - run: npm run test:e2e:all
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-browsers
+          path: playwright-report
+          retention-days: 14
+
+  visual:
+    name: Regresión visual
+    runs-on: ubuntu-latest
+    # las referencias se generaron en otro Linux: diferencias de fuentes pueden dar falsos positivos
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-visual
+          path: playwright-report
+          retention-days: 14
+
+  mutation:
+    name: Pruebas de mutación (Stryker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=dev
+      - run: npm run test:mutation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-report
+          path: reports/mutation

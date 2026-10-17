@@ -45,22 +45,29 @@ export function metaJSON(run) {
   )
 }
 
-/** Descarga los tres archivos de una corrida en el navegador. */
-export function downloadRun(run) {
+/** Archivos de una corrida: [[nombre, contenido], ...]. */
+export function runFiles(run) {
   const base = stem(run)
-  const files = [
-    [`${base}_timeseries.csv`, timeseriesCSV(run), 'text/csv'],
-    [`${base}_poses.csv`, posesCSV(run), 'text/csv'],
-    [`${base}_meta.json`, metaJSON(run), 'application/json'],
+  return [
+    [`${base}_timeseries.csv`, timeseriesCSV(run)],
+    [`${base}_poses.csv`, posesCSV(run)],
+    [`${base}_meta.json`, metaJSON(run)],
   ]
-  for (const [name, text, type] of files) {
-    const url = URL.createObjectURL(new Blob([text], { type }))
-    const a = Object.assign(document.createElement('a'), { href: url, download: name })
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
+}
+
+/** Descarga las corridas en un solo .zip (los navegadores bloquean varias descargas desde un clic). */
+export async function downloadRuns(runs) {
+  const { zipSync, strToU8 } = await import('fflate')
+  const entries = {}
+  for (const r of runs) for (const [name, text] of runFiles(r)) entries[name] = strToU8(text)
+  const m = runs[runs.length - 1].meta
+  const zipName = `harvest-viz_${m.nw}_ROW${m.row}_${m.act}_RP${m.rp}_SIM-${m.paramsHash}.zip`
+  const url = URL.createObjectURL(new Blob([zipSync(entries, { level: 6 })], { type: 'application/zip' }))
+  const a = Object.assign(document.createElement('a'), { href: url, download: zipName })
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export { stem as runStem }

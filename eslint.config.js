@@ -21,5 +21,14 @@ export default [
     },
   },
   { files: ['src/hrsim/sim.worker.js'], languageOptions: { globals: { ...globals.worker } } },
-  { files: ['scripts/**/*.mjs', 'tests/**/*.mjs', '*.config.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } } },
+  // pruebas de interfaz: corren en Node y evalúan funciones dentro del navegador
+  { files: ['e2e/**/*.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node, ...globals.browser } } },
+  {
+    files: ['tests/components/**/*.jsx'],
+    languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.browser }, parserOptions: { ecmaFeatures: { jsx: true } } },
+    settings: { react: { version: '18.3' } },
+    plugins: { react },
+    rules: { ...react.configs['jsx-runtime'].rules, 'react/jsx-uses-vars': 'error' },
+  },
+  { files: ['scripts/**/*.mjs', 'tests/**/*.mjs', 'tests/**/setup.js', '*.config.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } } },
 ]

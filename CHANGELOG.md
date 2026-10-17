@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [0.3.0] — 2026-10-16
+
+### Agregado
+
+- Suite de pruebas completa (ver `docs/testing.md`): unitarias, invariantes, property-based (fast-check), metamórficas, analíticas, contratos de formato y fuzzing, rendimiento, componentes (Vitest), extremo a extremo y accesibilidad (Playwright + axe), multi-navegador, regresión visual, cobertura con umbral y mutación (Stryker).
+- `npm run bench` (línea base en `bench/baseline.json`) y `npm run sensitivity` (elasticidades, `docs/sensibilidad.md`).
+- Workflow semanal «Pruebas extendidas»; CI de PR con cobertura, componentes y E2E.
+- `?look=schem` abre el visor en estilo Esquemático.
+
+### Corregido
+
+- Capacidad del robot con «unidades por caja» ≠ 15 (motor 0.2.1).
+- Caída del simulador cuando el robot recoge la caja antes de que el trabajador llegue al punto de entrega.
+- «Exportar corridas» descarga un único `.zip` (antes 6 descargas, bloqueadas por el navegador).
+- Campos de parámetros: no aplican vacíos ni valores bajo su mínimo.
+- CSV malformados: mensaje claro (`FormatError`); tolera BOM, CRLF y espacios.
+- Accesibilidad: contraste (WCAG AA), etiqueta de la línea de tiempo, lista de Oclusión accesible por teclado.
+
 ## [0.2.0] — 2026-10-16
 
 ### Agregado
