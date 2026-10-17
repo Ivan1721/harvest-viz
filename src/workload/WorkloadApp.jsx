@@ -14,7 +14,7 @@ import { Detail, WorkerList } from './panels/Workers.jsx'
 import { play, setPlay, usePlayback } from './playback.js'
 import WorkloadScene from './WorkloadScene.jsx'
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
-import { downloadRun } from '../hrsim/export.js'
+import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
 import { Seg, f0, fmtT } from './ui.jsx'
 
@@ -29,7 +29,8 @@ export default function WorkloadApp({ modeSwitch }) {
   const [err, setErr] = useState(null)
   const [tab, setTab] = useState('resumen')
   const [preset, setPreset] = useState('iso')
-  const [look, setLook] = useState('real')
+  // ?look=schem abre en estilo Esquemático (más liviano: útil para figuras y equipos sin GPU)
+  const [look, setLook] = useState(() => (new URLSearchParams(window.location.search).get('look') === 'schem' ? 'schem' : 'real'))
   const [canopy, setCanopyState] = useState(0.42)
   const setCanopy = (v) => {
     play.canopy.v = v
@@ -203,7 +204,7 @@ export default function WorkloadApp({ modeSwitch }) {
           onRun: () => setSimNonce((n) => n + 1),
           busy: simBusy,
           info: simInfo,
-          onExport: source === 'sim' && (hr || ho) ? () => [ho, hr].forEach((r) => r && downloadRun(r)) : null,
+          onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
         }}
       />
 
@@ -295,7 +296,15 @@ export default function WorkloadApp({ modeSwitch }) {
           >
             {snap.playing ? '❚❚' : '▶'}
           </button>
-          <input type="range" min="0" max={tmax || 1} step="1" value={snap.t} onChange={(e) => seek(Number(e.target.value))} />
+          <input
+            type="range"
+            aria-label="Instante de la reproducción"
+            min="0"
+            max={tmax || 1}
+            step="1"
+            value={snap.t}
+            onChange={(e) => seek(Number(e.target.value))}
+          />
           <span className="small tl-t num">
             {fmtT(snap.t)} / {fmtT(tmax)}
           </span>

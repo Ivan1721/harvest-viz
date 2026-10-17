@@ -211,10 +211,12 @@ export class HRSim {
         if (reached) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
           else {
+            // punto de entrega = último punto de la ruta (w.box puede ser null si el robot ya recogió la caja)
+            const drop = w.route[w.route.length - 1]
             w.state = 9
             w.route = [w.start]
             w.routeIdx = 0
-            this.ev.crates.push({ h: w.h, x: w.box[0], y: w.box[1], placed: this.idx, picked: Infinity })
+            this.ev.crates.push({ h: w.h, x: drop[0], y: drop[1], placed: this.idx, picked: Infinity })
           }
         }
         if (loads && w.state === 9 && w.call && w.stage === 0) {
@@ -316,7 +318,7 @@ export class HRSim {
       dt = this.dt,
       NH = this.NH,
       W = this.W
-    const unit = p.boxUnits
+    const unit = p.maxProd // una caja = una bolsa llena (en MATLAB ROBOT_BOX_UNITS = capacidad de la bolsa = 15)
     const rpos = [this.rpose[0], this.rpose[1]]
     // detección de cajas
     const det = []

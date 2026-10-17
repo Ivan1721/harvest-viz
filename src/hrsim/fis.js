@@ -2,7 +2,7 @@
 // Réplica de evalfis para: and=min, or=max, imp=min, agg=max, defuzz=centroid, 101 puntos.
 // Soporta trimf y trapmf, que son las funciones de pertenencia de los .fis del robot.
 
-function mfFn(type, p) {
+export function mfFn(type, p) {
   if (type === 'trimf') {
     const [a, b, c] = p
     return (x) => {

@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.2.0'
+export const ENGINE_VERSION = '0.2.1'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -89,7 +89,7 @@ export const DEFAULTS = {
   // robot y protocolo del estudio (STUDY_HANDLING)
   robot: true,
   capacityBoxes: 68,
-  boxUnits: 15,
+
   loadTimePerBox: 3.6,
   unloadTimePerBox: 1.44,
   waypointTimeout: 60,

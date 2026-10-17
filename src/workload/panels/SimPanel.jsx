@@ -1,19 +1,48 @@
+import { useEffect, useState } from 'react'
 import { DEFAULTS } from '../../hrsim/common.js'
 
+/** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
+export function NumField({ value, onCommit, step, min = 0 }) {
+  const [text, setText] = useState(String(value))
+  useEffect(() => {
+    if (Number(text) !== value) setText(String(value))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+  const v = Number(text.trim())
+  const invalid = text.trim() === '' || !Number.isFinite(v) || v < min
+  return (
+    <input
+      type="number"
+      step={step}
+      min={min}
+      value={text}
+      aria-invalid={invalid}
+      style={invalid ? { borderColor: '#dc2626' } : undefined}
+      onChange={(e) => {
+        const t = e.target.value
+        setText(t)
+        const n = Number(t.trim())
+        if (t.trim() !== '' && Number.isFinite(n) && n >= min) onCommit(n)
+      }}
+    />
+  )
+}
+
 /* ---------------------------------------------------------------- parámetros del simulador */
+// [clave, etiqueta, paso, fuente/valor de MATLAB, mínimo válido]
 const PARAMS = [
-  ['walkSpeed', 'Velocidad de caminata (m/s)', 0.05, 'MATLAB: 0,75'],
-  ['ladderTime', 'Tiempo de escalera (s)', 0.5, 'MATLAB: 5'],
-  ['loadTimePerBox', 'Carga al robot (s/caja)', 0.1, 'Protocolo: 3,6 (worker_loads)'],
-  ['unloadTimePerBox', 'Descarga del robot (s/caja)', 0.1, 'Protocolo: 1,44'],
-  ['capacityBoxes', 'Capacidad del robot (cajas)', 1, 'Protocolo: 68'],
-  ['maxProd', 'Unidades por caja', 1, 'MATLAB: 15'],
-  ['maxBoxStopsPerLap', 'Paradas máx. por vuelta', 1, 'Protocolo: 10'],
-  ['waypointTimeout', 'Tiempo máx. en waypoint (s)', 5, 'Protocolo: 60'],
-  ['detectorRange', 'Alcance del detector (m)', 0.5, 'MATLAB: 3'],
-  ['boxRouteOffset', 'Desvío de ruta a caja (m)', 0.1, 'MATLAB: 1,2'],
-  ['metabolicMultiplier', 'Multiplicador metabólico', 0.05, '1 = costos del script'],
-  ['duration', 'Duración (s)', 60, 'Estudio: 2700 (45 min)'],
+  ['walkSpeed', 'Velocidad de caminata (m/s)', 0.05, 'MATLAB: 0,75', 0.05],
+  ['ladderTime', 'Tiempo de escalera (s)', 0.5, 'MATLAB: 5', 0],
+  ['loadTimePerBox', 'Carga al robot (s/caja)', 0.1, 'Protocolo: 3,6 (worker_loads)', 0],
+  ['unloadTimePerBox', 'Descarga del robot (s/caja)', 0.1, 'Protocolo: 1,44', 0],
+  ['capacityBoxes', 'Capacidad del robot (cajas)', 1, 'Protocolo: 68', 1],
+  ['maxProd', 'Unidades por caja', 1, 'MATLAB: 15', 1],
+  ['maxBoxStopsPerLap', 'Paradas máx. por vuelta', 1, 'Protocolo: 10', 1],
+  ['waypointTimeout', 'Tiempo máx. en waypoint (s)', 5, 'Protocolo: 60', 1],
+  ['detectorRange', 'Alcance del detector (m)', 0.5, 'MATLAB: 3', 0.1],
+  ['boxRouteOffset', 'Desvío de ruta a caja (m)', 0.1, 'MATLAB: 1,2', 0],
+  ['metabolicMultiplier', 'Multiplicador metabólico', 0.05, '1 = costos del script', 0],
+  ['duration', 'Duración (s)', 60, 'Estudio: 2700 (45 min)', 60],
 ]
 const COSTS = [
   ['walking', 'Caminar'],
@@ -32,17 +61,8 @@ const PERIODS = [
 
 export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
-  const num = (k, step) => (
-    <input
-      type="number"
-      step={step}
-      value={params[k]}
-      onChange={(e) => {
-        const v = Number(e.target.value)
-        if (Number.isFinite(v)) set(k, v)
-      }}
-    />
-  )
+  // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
+  const num = (k, step, min) => <NumField value={params[k]} step={step} min={min} onCommit={(v) => set(k, v)} />
   const changed = JSON.stringify(params) !== JSON.stringify(DEFAULTS_SIM)
   return (
     <section className="panel">
@@ -57,7 +77,7 @@ export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
           style={{ marginTop: 6 }}
           onClick={onExport}
           disabled={busy}
-          title="Descarga *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida"
+          title="Descarga un .zip con *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida"
         >
           Exportar corridas
         </button>
@@ -65,25 +85,17 @@ export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
       <details>
         <summary>Parámetros{changed ? ' (modificados)' : ''}</summary>
         <div className="params">
-          {PARAMS.map(([k, l, st, src]) => (
+          {PARAMS.map(([k, l, st, src, min]) => (
             <label key={k} title={src}>
               <span>{l}</span>
-              {num(k, st)}
+              {num(k, st, min)}
             </label>
           ))}
           <div className="note">Costos metabólicos (kcal/s)</div>
           {COSTS.map(([k, l]) => (
             <label key={k}>
               <span>{l}</span>
-              <input
-                type="number"
-                step="0.001"
-                value={params.costs[k]}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (Number.isFinite(v)) setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))
-                }}
-              />
+              <NumField value={params.costs[k]} step="0.001" min={0} onCommit={(v) => setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))} />
             </label>
           ))}
           <div className="note">Bajar escalera: el script actual usa 0,0923; el CSV de ejemplo se generó con 0,106145.</div>
@@ -91,14 +103,11 @@ export function SimPanel({ params, setParams, onRun, busy, info, onExport }) {
           {PERIODS.map(([k, l]) => (
             <label key={k}>
               <span>{l}</span>
-              <input
-                type="number"
-                step="0.25"
+              <NumField
                 value={params.prodPeriod[k]}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  if (v > 0) setParams((p) => ({ ...p, prodPeriod: { ...p.prodPeriod, [k]: v } }))
-                }}
+                step="0.25"
+                min={0.25}
+                onCommit={(v) => setParams((p) => ({ ...p, prodPeriod: { ...p.prodPeriod, [k]: v } }))}
               />
             </label>
           ))}

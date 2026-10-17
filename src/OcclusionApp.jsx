@@ -279,7 +279,7 @@ function Lists({ snap, onSelect }) {
           </button>
         ))}
       </div>
-      <div className="list">
+      <div className="list" tabIndex={0} role="region" aria-label="Lista de frutos y agentes">
         {tab === 'frutos' ? (
           rows.map(({ f, s }) => (
             <div key={f.id} className={`li ${snap.selected?.id === f.id ? 'sel' : ''}`} onClick={() => onSelect({ type: 'fruit', id: f.id })}>

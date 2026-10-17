@@ -29,9 +29,12 @@ function parseCSV(text) {
     .replace(/\r/g, '')
     .split('\n')
     .filter((l) => l.trim())
-  const head = lines[0].split(',')
+  const head = lines[0]
+    .replace(/^\uFEFF/, '')
+    .split(',')
+    .map((h) => h.trim())
   const col = Object.fromEntries(head.map((h, i) => [h, i]))
-  const rows = lines.slice(1).map((l) => l.split(',').map(Number))
+  const rows = lines.slice(1).map((l) => l.split(',').map((v) => (v.trim() === '' ? NaN : Number(v))))
   return { col, rows }
 }
 
@@ -161,9 +164,36 @@ function workerTrack(flags, base, box) {
   return out
 }
 
+/** Error de formato de un archivo de entrada: mensaje pensado para mostrarse al usuario. */
+export class FormatError extends Error {
+  constructor(msg) {
+    super(msg)
+    this.name = 'FormatError'
+  }
+}
+
+export const REQUIRED_COLUMNS = ['Time_s', 'Total_product_cargo', 'Total_product', 'Total_workload']
+
+/** Contrato del *_timeseries.csv de MATLAB: columnas, filas, tiempo creciente y valores numéricos. */
+export function validateTimeseries(col, rows) {
+  const missing = REQUIRED_COLUMNS.filter((c) => col[c] === undefined)
+  if (missing.length) throw new FormatError(`Al CSV le faltan columnas: ${missing.join(', ')}.`)
+  if (col.Workload_H1 === undefined || col.Production_H1 === undefined || col.ActivityFlag_H1 === undefined)
+    throw new FormatError('El CSV no tiene columnas por trabajador (Production_H1, Workload_H1, ActivityFlag_H1…).')
+  if (rows.length < 2) throw new FormatError('El CSV necesita al menos 2 filas de datos.')
+  const ncol = Object.keys(col).length
+  rows.forEach((r, i) => {
+    if (r.length !== ncol) throw new FormatError(`La fila ${i + 2} tiene ${r.length} valores y la cabecera ${ncol}.`)
+    if (r.some((v) => !Number.isFinite(v))) throw new FormatError(`La fila ${i + 2} tiene valores no numéricos.`)
+    if (i > 0 && !(r[col.Time_s] > rows[i - 1][col.Time_s])) throw new FormatError(`Time_s no es creciente en la fila ${i + 2}.`)
+  })
+}
+
 export function buildRun({ csvText, logText, name }) {
+  if (typeof csvText !== 'string' || !csvText.trim()) throw new FormatError('El CSV está vacío.')
   const meta = parseName(name) || { robot: !!logText, nw: 0, row: 3, act: 'mixed', rp: 0 }
   const { col, rows } = parseCSV(csvText)
+  validateTimeseries(col, rows)
   const n = rows.length
   const dt = n > 1 && rows[1][col.Time_s] > rows[0][col.Time_s] ? rows[1][col.Time_s] - rows[0][col.Time_s] : SIM_TICK
   meta.duration = rows[n - 1][col.Time_s]

@@ -1,9 +1,9 @@
 :root {
-  --blue: #2f6bff;
+  --blue: #1f56e8; /* contraste ≥ 4,5:1 sobre blanco y fondos claros (WCAG AA) */
   --orange: #ff8a1f;
   --green: #16a34a;
   --ink: #1c2540;
-  --muted: #6b7794;
+  --muted: #5b6680; /* contraste ≥ 4,5:1 (WCAG AA) */
   --card: rgba(255, 255, 255, 0.92);
   --line: #e3e8f4;
 }
@@ -109,7 +109,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   background: #eafaf0;
-  color: var(--green);
+  color: #15803d;
   padding: 6px 12px;
   border-radius: 999px;
   display: flex;
@@ -630,7 +630,7 @@ body {
   padding: 1px 6px;
 }
 .tag.sel {
-  background: #2f6bff;
+  background: var(--blue);
   color: #fff;
 }
 .wlist {
