@@ -174,11 +174,14 @@ const W_LABELS = [
 
 function Selector({ snap, version, onChange }) {
   const { mode, w } = snap.strategy
+  const wKey = w.join(',') // la instantánea trae un arreglo nuevo en cada cuadro: memorizar por su contenido
   const rows = useMemo(() => {
     const r = Object.entries(PRESETS).map(([k, p]) => ({ k, label: p.label, ...evaluate(p.w) }))
-    if (mode === 'custom') r.push({ k: 'custom', label: 'Personalizada', ...evaluate(w) })
+    if (mode === 'custom') r.push({ k: 'custom', label: 'Personalizada', ...evaluate(wKey.split(',').map(Number)) })
     return r
-  }, [mode, w.join(','), version])
+    // `version` cambia al cargar otro huerto (evaluate lee el huerto, que es mutable)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, wKey, version])
   const bestOcc = Math.min(...rows.map((r) => r.occ))
   const bestMove = Math.min(...rows.map((r) => r.move))
   return (
@@ -314,7 +317,7 @@ function Lists({ snap, onSelect }) {
 }
 
 export default function OcclusionApp({ modeSwitch }) {
-  const [snap, setSnap] = useState(snapshot())
+  const [snap, setSnap] = useState(snapshot)
   const [version, setVersion] = useState(0)
   const [toast, setToast] = useState(null)
   const [drag, setDrag] = useState(false)
@@ -353,6 +356,10 @@ export default function OcclusionApp({ modeSwitch }) {
     setToast({ ok: res.ok, msg: res.ok ? `${name}: ${res.msg}` : `${name}: ${res.msg}` })
   }
   const loadFile = (file) => file && file.text().then((t) => loadText(t, file.name))
+  const loadFileRef = useRef(loadFile)
+  useEffect(() => {
+    loadFileRef.current = loadFile
+  })
 
   useEffect(() => {
     const over = (e) => {
@@ -365,7 +372,7 @@ export default function OcclusionApp({ modeSwitch }) {
     const drop = (e) => {
       e.preventDefault()
       setDrag(false)
-      loadFile(e.dataTransfer.files?.[0])
+      loadFileRef.current(e.dataTransfer.files?.[0])
     }
     window.addEventListener('dragover', over)
     window.addEventListener('dragleave', leave)

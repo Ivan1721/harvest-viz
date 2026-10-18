@@ -2,6 +2,23 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [0.6.0] — 2026-10-18
+
+Migración de dependencias mayores (tanda 8 de la auditoría).
+
+### Cambiado
+
+- **React 19**, **react-three-fiber 9**, **drei 10** y **three.js 0.186**.
+- **Vite 8** (Rolldown): el build pasa de ~25 s a ~1 s; `@vitejs/plugin-react` 6, jsdom 29.
+- **ESLint 10** con `@eslint-react/eslint-plugin` (reemplaza a `eslint-plugin-react`, que no soporta ESLint 10) y `eslint-plugin-react-hooks` 7. Lint sin avisos: se corrigieron las 9 dependencias de hooks pendientes y un componente definido dentro de otro (`DataPanel`).
+- **Stryker 10** con runner TAP y cobertura por prueba. El motor tiene su propia configuración (`npm run test:mutation:engine`) con un oráculo rápido de sesiones de 5 min (`tests/mutation/`); corre en ~25 min.
+- Playwright 1.64, c8 12, cross-env 10, globals 17. Sombras con PCF (three.js retiró PCFSoft).
+
+### Corregido
+
+- Etiquetas de la escena (H1…, RB-01): `<Html>` de drei fallaba al desmontarse con React 19 (`removeChild`). Ahora una sola capa HTML por lienzo (`TagLayer`), sin una raíz de React por etiqueta.
+- `ErrorBoundary` se reinicia con `getDerivedStateFromProps` (antes `setState` en `componentDidUpdate`).
+
 ## [0.5.0] — 2026-10-17
 
 Correcciones de la auditoría profunda de la v0.4.0.

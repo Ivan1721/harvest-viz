@@ -7,12 +7,12 @@ import { Seg, Field, Tabs, Toast } from '../../src/workload/ui.jsx'
 afterEach(cleanup)
 
 function T() {
-  const [v, set] = useState('a')
+  const [v, setV] = useState('a')
   return (
     <Tabs
       label="Paneles"
       value={v}
-      onChange={set}
+      onChange={setV}
       options={[
         ['a', 'Uno'],
         ['b', 'Dos'],

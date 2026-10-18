@@ -1,6 +1,7 @@
 import { useRef, useState, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrthographicCamera, OrbitControls, Html, Line, RoundedBox } from '@react-three/drei'
+import { OrthographicCamera, OrbitControls, Line, RoundedBox } from '@react-three/drei'
+import { TagLayer } from './shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { orchard } from './data.js'
 import { sim, step, chosenFor, YIELD_DIST, SHOULDER_Y } from './sim.js'
@@ -147,6 +148,8 @@ const L1 = 1.3,
   L2 = 1.3
 const DARK = '#2b3447'
 
+const robotSub = () => (sim.robot.state === 'idle' ? ' · En espera' : ' · Cosechando')
+
 function Robot({ selected, onSelect }) {
   const root = useRef(),
     arm = useRef(),
@@ -289,11 +292,7 @@ function Robot({ selected, onSelect }) {
           </group>
         </group>
       </group>
-      <Html position={[0, 1.5, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="tag" style={{ borderColor: C.robot }}>
-          RB-01<span> · {sim.robot.state === 'idle' ? 'En espera' : 'Cosechando'}</span>
-        </div>
-      </Html>
+      <object3D position={[0, 1.5, 0]} userData={{ videoTag: () => `RB-01${robotSub()}`, tagSub: robotSub, tagColor: C.robot }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[0.95, 1.05, 48]} />
@@ -406,11 +405,7 @@ function Human({ selected, onSelect }) {
           <meshStandardMaterial color="#c8a36a" roughness={0.9} />
         </mesh>
       </group>
-      <Html position={[0, 2.05, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="tag" style={{ borderColor: C.human }}>
-          HU-01<span> · Operario</span>
-        </div>
-      </Html>
+      <object3D position={[0, 2.05, 0]} userData={{ videoTag: 'HU-01 · Operario', tagSub: ' · Operario', tagColor: C.human }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[0.5, 0.58, 40]} />
@@ -470,6 +465,8 @@ function World({ snap, onSelect, version }) {
       ;(m[l.tree] ||= []).push(l)
     })
     return m
+    // el huerto es mutable: `version` sube cada vez que se carga uno nuevo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version])
   return (
     <>
@@ -500,10 +497,11 @@ function World({ snap, onSelect, version }) {
 
 export default function Scene({ snap, onSelect, version }) {
   return (
-    <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }}>
+    <Canvas shadows="percentage" dpr={[1, 2]} gl={{ antialias: true, preserveDrawingBuffer: true }}>
       <OrthographicCamera makeDefault position={[6, 16, 9]} zoom={50} near={-50} far={100} />
       <OrbitControls target={[0, 1, 0]} enablePan minZoom={30} maxZoom={140} minPolarAngle={0.3} maxPolarAngle={1.2} />
       <World snap={snap} onSelect={onSelect} version={version} />
+      <TagLayer />
     </Canvas>
   )
 }

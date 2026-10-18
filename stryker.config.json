@@ -1,13 +1,10 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "Pruebas de mutación: introduce errores pequeños en el código y verifica que alguna prueba falle. Lento (≈1–2 h): se corre a demanda (npm run test:mutation) o en el workflow semanal, con caché incremental (solo re-evalúa lo que cambió).",
-  "testRunner": "command",
-  "commandRunner": {
-    "command": "node --test tests/unit/*.test.mjs tests/model/analytical.test.mjs tests/model/engine.test.mjs tests/model/engine-options.test.mjs tests/model/metamorphic.test.mjs tests/data/contracts.test.mjs"
-  },
-  "mutate": ["src/hrsim/engine.js", "src/hrsim/humanonly.js", "src/hrsim/fis.js", "src/hrsim/common.js", "src/workload/derive.js", "src/workload/run.js"],
-  "coverageAnalysis": "off",
-  "concurrency": 2,
+  "_comment": "Pruebas de mutación de las piezas puras (FIS, parámetros, series derivadas, lectura de CSV). Runner TAP con cobertura por prueba y caché incremental. El motor tiene su propia configuración (stryker.engine.config.json): instrumentado corre ~25 veces más lento.",
+  "testRunner": "tap",
+  "mutate": ["src/hrsim/fis.js", "src/hrsim/common.js", "src/workload/derive.js", "src/workload/run.js"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 4,
   "timeoutMS": 30000,
   "reporters": ["html", "clear-text", "progress"],
   "htmlReporter": {
@@ -20,5 +17,9 @@
   },
   "tempDirName": ".stryker-tmp",
   "incremental": true,
-  "incrementalFile": "reports/stryker-incremental.json"
+  "incrementalFile": "reports/stryker-incremental.json",
+  "tap": {
+    "testFiles": ["tests/unit/{fis,derive,geometry,interp,limits}.test.mjs", "tests/model/analytical.test.mjs", "tests/data/contracts.test.mjs"],
+    "nodeArgs": ["--test-reporter=tap"]
+  }
 }

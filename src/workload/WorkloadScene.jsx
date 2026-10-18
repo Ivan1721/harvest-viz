@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrthographicCamera, OrbitControls, Html, Line } from '@react-three/drei'
+import { OrthographicCamera, OrbitControls, Line } from '@react-three/drei'
+import { TagLayer } from '../shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
 import { FLAG, onboard } from './run.js'
@@ -29,7 +30,6 @@ function Worker({ w, run, onSelect, selected, real }) {
     lift = useRef(),
     ladder = useRef(),
     picker = useRef(),
-    tag = useRef(),
     disc = useRef()
   const refs = { body: useRef(), legL: useRef(), legR: useRef(), armL: useRef(), armR: useRef(), vest: useRef(), fill: useRef() }
   // protocolo worker_loads (el del estudio): camina con las manos vacias hasta la caja, la carga al robot
@@ -72,8 +72,7 @@ function Worker({ w, run, onSelect, selected, real }) {
     refs.legL.current.rotation.z = s * 0.6
     refs.legR.current.rotation.z = -s * 0.6
     // brazos: ciclo de cosecha (alcanzar, arrancar, llevar a la bolsa), balanceo al caminar, caja al frente al acarrear
-    let tL = 0,
-      tR = 0
+    let tL, tR
     if (flag === 1 || flag === 5) {
       const u = (anim.t * 0.42 + w.h * 0.173) % 1
       tL = 2.3
@@ -113,7 +112,6 @@ function Worker({ w, run, onSelect, selected, real }) {
       ladder.current.visible = hz > 0.05 || flag === 5 || flag === 4
     }
     if (picker.current) picker.current.visible = flag === 1
-    if (tag.current) tag.current.className = 'tag small' + (selected ? ' sel' : '')
   })
   return (
     <group
@@ -149,13 +147,8 @@ function Worker({ w, run, onSelect, selected, real }) {
             </mesh>
           </group>
         )}
-        {/* ancla de la etiqueta para la exportación de video (las etiquetas HTML no quedan en el lienzo) */}
-        <object3D position={[0, 2.1, 0]} userData={{ videoTag: `H${w.h}` }} />
-        <Html position={[0, 2.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-          <div ref={tag} className="tag small">
-            H{w.h}
-          </div>
-        </Html>
+        {/* etiqueta (capa HTML en pantalla y exportación de video) */}
+        <object3D position={[0, 2.1, 0]} userData={{ videoTag: `H${w.h}`, tagClass: selected ? 'small sel' : 'small' }} />
       </group>
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
@@ -177,7 +170,7 @@ const WZ = ROBOT.W / 2 - ROBOT.tireW / 2 // centro de rueda a lo ancho (±0,565 
 function RobotCarrier({ run, onSelect, selected }) {
   const root = useRef(),
     load = useRef(),
-    lab = useRef(),
+    lab = useRef('RB-01'),
     zr = useRef([])
   const wheels = useRef([])
   const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
@@ -215,7 +208,7 @@ function RobotCarrier({ run, onSelect, selected }) {
     else sh.v = Math.max(target, sh.v - (15 / 1.44) * dts)
     sh.t = play.t
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / ROBOT.capacity))
-    if (lab.current) lab.current.textContent = `RB-01 · a bordo ${Math.round(sh.v)} / ${ROBOT.capacity}`
+    lab.current = `RB-01 · a bordo ${Math.round(sh.v)} / ${ROBOT.capacity}`
   })
   return (
     <group
@@ -290,14 +283,7 @@ function RobotCarrier({ run, onSelect, selected }) {
         <cylinderGeometry args={[0.025, 0.025, 0.5, 10]} />
         <meshStandardMaterial color="#2b3447" />
       </mesh>
-      <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current?.textContent || 'RB-01', videoAccent: true }} />
-      <Html position={[0, 1.7, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="tag" style={{ borderColor: '#2f6bff' }}>
-          <span ref={lab} style={{ color: 'inherit', fontWeight: 700 }}>
-            RB-01
-          </span>
-        </div>
-      </Html>
+      <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current, videoAccent: true, tagColor: '#2f6bff' }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
           <ringGeometry args={[1.0, 1.1, 40]} />
@@ -551,13 +537,14 @@ function CamRig({ preset }) {
 
 export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real' }) {
   return (
-    <Canvas shadows dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => onSelect(null)}>
+    <Canvas shadows="percentage" dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => onSelect(null)}>
       <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80} far={150} />
       <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
       <CamRig preset={preset} />
       <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} />
       {perfEnabled() && <PerfProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />}
       <RecorderProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />
+      <TagLayer />
     </Canvas>
   )
 }

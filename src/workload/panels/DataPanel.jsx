@@ -1,7 +1,7 @@
 import { fmtT } from '../ui.jsx'
 
-export function DataPanel({ ho, hr }) {
-  const Item = ({ run, label }) =>
+function Item({ run, label }) {
+  return (
     run && (
       <div className="ds">
         <div className="row-between">
@@ -17,6 +17,10 @@ export function DataPanel({ ho, hr }) {
         </div>
       </div>
     )
+  )
+}
+
+export function DataPanel({ ho, hr }) {
   return (
     <>
       <Item run={ho} label="Solo humano" />

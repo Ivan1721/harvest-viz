@@ -451,6 +451,18 @@ body {
   color: var(--green);
 }
 
+.tag-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+.tag-layer .tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
 .tag {
   background: #fff;
   border: 1.5px solid;

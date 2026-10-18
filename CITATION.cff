@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: 'Si usas este software, por favor cítalo así.'
 title: 'HarvestView (harvest-viz): visor 3D y simulador de cosecha colaborativa humano-robot'
-version: 0.5.0
+version: 0.6.0
 date-released: 2026-10-16
 repository-code: 'https://github.com/Ivan1721/harvest-viz'
 authors:

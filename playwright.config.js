@@ -7,6 +7,8 @@ const chromium = {
     ...devices['Desktop Chrome'],
     viewport: { width: 1500, height: 900 },
     launchOptions: {
+      // PW_CHROMIUM: usar un Chromium ya instalado (p. ej. contenedores sin descarga de navegadores)
+      executablePath: process.env.PW_CHROMIUM || undefined,
       args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
     },
   },

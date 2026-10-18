@@ -21,7 +21,7 @@ export function Validation({ ho, hr, cfg, params, base }) {
   const [ms, setMs] = useState(null)
   useEffect(() => {
     loadMS(base).then(setMs)
-  }, [])
+  }, [base])
   const std = JSON.stringify({ ...params, duration: 0 }) === JSON.stringify({ ...DEFAULTS_SIM, duration: 0 }) && params.duration === DEFAULTS_SIM.duration
   const block = (run, kind, label) => {
     const ref = ms && cfg && ms[`${kind}|${cfg.nw}|${cfg.row}|${cfg.act}|${cfg.rp}`]

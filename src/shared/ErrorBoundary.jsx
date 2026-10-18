@@ -4,16 +4,17 @@ import React from 'react'
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { error: null }
+    this.state = { error: null, resetKey: props.resetKey }
   }
   static getDerivedStateFromError(error) {
     return { error }
   }
+  // un cambio de resetKey (otra corrida, otro modo) limpia el error
+  static getDerivedStateFromProps(props, state) {
+    return props.resetKey !== state.resetKey ? { error: null, resetKey: props.resetKey } : null
+  }
   componentDidCatch(error, info) {
     console.error(`[ErrorBoundary] ${this.props.label || ''}`, error, info.componentStack)
-  }
-  componentDidUpdate(prev) {
-    if (this.state.error && prev.resetKey !== this.props.resetKey) this.setState({ error: null })
   }
   render() {
     if (!this.state.error) return this.props.children
