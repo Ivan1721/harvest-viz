@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutación del motor (engine.js, humanonly.js) con pruebas cortas (sesiones de minutos, no de 45): npm run test:mutation:engine. Lento; a demanda.",
+  "testRunner": "tap",
+  "mutate": ["src/hrsim/engine.js", "src/hrsim/humanonly.js"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 4,
+  "timeoutMS": 60000,
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "reports/mutation-engine/index.html"
+  },
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  },
+  "tempDirName": ".stryker-tmp",
+  "incremental": true,
+  "incrementalFile": "reports/stryker-engine-incremental.json",
+  "tap": {
+    "testFiles": ["tests/model/{analytical,engine}.test.mjs", "tests/mutation/*.test.mjs"],
+    "nodeArgs": ["--test-reporter=tap"]
+  }
+}

@@ -8,10 +8,15 @@ export default defineConfig({
   test: { environment: 'jsdom', include: ['tests/components/**/*.test.jsx'], setupFiles: ['tests/components/setup.js'], globals: false },
   build: {
     chunkSizeWarningLimit: 800, // three.js minificado pesa ~680 kB por sí solo
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // three.js y react-three en un chunk propio: se cachean entre despliegues y entre modos
-        manualChunks: { three: ['three'], r3f: ['@react-three/fiber', '@react-three/drei'] },
+        codeSplitting: {
+          groups: [
+            { name: 'three', test: /node_modules[\\/]three[\\/]/, priority: 2 },
+            { name: 'r3f', test: /node_modules[\\/]@react-three[\\/]/, priority: 1 },
+          ],
+        },
       },
     },
   },

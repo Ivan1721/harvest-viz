@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 // Colores por escenario (validados con la paleta de referencia: azul y naranja, ranuras 1 y 2)
 export const SC = { ho: { label: 'Solo humano', color: '#eb6834' }, hr: { label: 'Humano-robot', color: '#2a78d6' } }
@@ -22,8 +22,8 @@ export function LineChart({ title, unit, series, tmax, t, onSeek, height = 120, 
     B = 18
   const [hover, setHover] = useState(null)
   const ymax = useMemo(() => nice(Math.max(1e-9, ...series.map((s) => Math.max(...s.y)))), [series])
-  const px = (tt) => L + (tt / (tmax || 1)) * (W - L - R)
-  const py = (v) => H - B - (v / ymax) * (H - B - T)
+  const px = useCallback((tt) => L + (tt / (tmax || 1)) * (W - L - R), [tmax])
+  const py = useCallback((v) => H - B - (v / ymax) * (H - B - T), [ymax, H])
   const paths = useMemo(
     () =>
       series.map((s) => {
@@ -32,7 +32,7 @@ export function LineChart({ title, unit, series, tmax, t, onSeek, height = 120, 
         for (let k = 0; k < s.t.length; k += step) d += `${k ? 'L' : 'M'}${px(s.t[k]).toFixed(1)},${py(s.y[k]).toFixed(1)}`
         return d
       }),
-    [series, ymax, tmax],
+    [series, px, py],
   )
   const at = (s, tt) => s.y[Math.min(s.t.length - 1, Math.max(0, Math.round(tt / (s.t[1] - s.t[0] || 1))))]
   const cur = Number.isFinite(hover ?? t) ? (hover ?? t) : 0

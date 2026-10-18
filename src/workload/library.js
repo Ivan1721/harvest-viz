@@ -27,8 +27,7 @@ export async function loadManifest(base) {
 // Construye (y guarda en caché) la corrida de una entrada del catálogo
 export async function realize(entry, base) {
   if (cache.has(entry.id)) return cache.get(entry.id)
-  let csvText,
-    logText = null
+  let csvText, logText
   if (entry.text) {
     csvText = entry.text.csv
     logText = entry.text.log

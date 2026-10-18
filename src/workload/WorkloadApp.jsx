@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
 import { SC } from './charts.jsx'
@@ -21,8 +21,9 @@ import { ACT_LABEL } from './spec.js'
 import { Seg, Tabs, Toast, f0, fmtT } from './ui.jsx'
 
 /* ---------------------------------------------------------------- aplicación */
+const base = import.meta.env.BASE_URL // constante del build (ruta de publicación)
+
 export default function WorkloadApp({ modeSwitch }) {
-  const base = import.meta.env.BASE_URL
   const [lib, setLib] = useState([])
   const [cfg, setCfg] = useState(null)
   // parámetros de URL: ?view=ho|hr|cmp, ?speed=1…120, ?perf=1 (diagnóstico), ?look=schem
@@ -46,6 +47,9 @@ export default function WorkloadApp({ modeSwitch }) {
   const [simBusy, setSimBusy] = useState(false)
   const [simInfo, setSimInfo] = useState(null)
   const [simNonce, setSimNonce] = useState(0)
+  // los parámetros se aplican al pulsar «Simular» (simNonce), no en cada tecla: el efecto los lee de una ref
+  const paramsRef = useRef(params)
+  paramsRef.current = params
   const snap = usePlayback()
   useEffect(() => {
     const sp = Number(qs.get('speed'))
@@ -87,14 +91,14 @@ export default function WorkloadApp({ modeSwitch }) {
     return () => {
       alive = false
     }
-  }, [eHO?.id, eHR?.id, source])
+  }, [cfg, eHO, eHR, source]) // eHO/eHR son objetos estables de `lib` (cambian solo si cambia la configuración)
 
   useEffect(() => {
     if (!cfg || source !== 'sim') return
     let alive = true
     setSimBusy(true)
     setErr(null)
-    runSimulation({ ...params, ...cfg })
+    runSimulation({ ...paramsRef.current, ...cfg })
       .then(({ ho, hr, ms }) => {
         if (!alive) return
         setRuns({ ho, hr })
@@ -117,7 +121,7 @@ export default function WorkloadApp({ modeSwitch }) {
       cancelSimulation()
       setSimBusy(false)
     }
-  }, [source, cfg?.nw, cfg?.row, cfg?.act, cfg?.rp, simNonce])
+  }, [source, cfg, simNonce])
 
   const { ho, hr } = runs
   const vis = { ho: (view === 'ho' || view === 'cmp') && ho, hr: (view === 'hr' || view === 'cmp') && hr }
