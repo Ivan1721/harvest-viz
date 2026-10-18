@@ -59,6 +59,8 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
 | `scripts/`      | Comparaciones y benchmark contra salidas de MATLAB fuera del repo                                            |
 | `public/data/`  | Corridas de ejemplo y `matlab_summary.json` (referencia de la regresión)                                     |
 
+**Simulaciones guardadas.** Con `npm run dev`, cada simulación del visor se guarda en `simulaciones/` (carpeta local, fuera de git): `motor-<versión>/<config>_SIM-<hash>/` con los CSV de HO y HR en formato MATLAB, poses y `meta.json`, más `simulaciones/indice.csv` con una fila por simulación. Una simulación repetida (misma versión del motor y mismos parámetros) no se duplica. Carpeta configurable con `HV_SIM_DIR`; `HV_SAVE_SIMS=0` lo desactiva. El sitio publicado, `vite preview`, las pruebas y GitHub Actions no guardan nada.
+
 **Flujo de trabajo.** Cambios en una rama y Pull Request contra `main`: el workflow `CI` corre lint, formato, pruebas, cobertura, build e interfaz (Playwright). Al fusionar en `main` corre lo mismo y, solo si todo pasa, publica en GitHub Pages. Las acciones están fijadas por SHA y Dependabot propone actualizaciones mensuales. Si un cambio altera resultados del simulador, sube `ENGINE_VERSION` (`src/hrsim/common.js`) y anota el motivo en `CHANGELOG.md`. Para regenerar la referencia: `node scripts/build_matlab_summary.mjs <carpeta NuevaVersion>`.
 
 **Copias del visor.** Este repositorio es la única fuente. `WorkloadProductionSim` lo incluye como submódulo en `viz/` (`git submodule update --remote viz` para actualizarlo).

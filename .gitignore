@@ -14,3 +14,6 @@ coverage/
 # videos exportados y registros locales
 *.mp4
 *.log
+
+# simulaciones guardadas por `npm run dev` (scripts/vite-save-sims.js)
+simulaciones/

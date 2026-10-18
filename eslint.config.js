@@ -41,7 +41,7 @@ export default [
     languageOptions: { ...jsx, globals: { ...globals.browser } },
   },
   {
-    files: ['scripts/**/*.mjs', 'tests/**/*.mjs', 'tests/**/setup.js', '*.config.js'],
+    files: ['scripts/**/*.{js,mjs}', 'tests/**/*.mjs', 'tests/**/setup.js', '*.config.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } },
   },
 ]

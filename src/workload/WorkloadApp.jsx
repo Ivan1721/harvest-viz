@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
+import { saveSimulation } from './saveSim.js'
 import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
@@ -108,6 +109,10 @@ export default function WorkloadApp({ modeSwitch }) {
           `Simulado en ${Math.round(ms)} ms · carga total ${f0(hr.series.work[hr.n - 1])} kcal (HR) vs ${f0(ho.series.work[ho.n - 1])} kcal (HO) · ${s.handoffs} entregas a robot`,
         )
         setPlay({ t: 0, playing: true, selected: null })
+        // con `npm run dev`: copia en la carpeta local del proyecto (no bloquea ni falla la simulación)
+        saveSimulation(ho, hr).then((r) => {
+          if (r && alive) setSimInfo((t) => `${t} · ${r.existed ? 'ya guardada' : 'guardada'} en ${r.dir}`)
+        })
       })
       .catch((e) => {
         if (alive && e.name !== 'AbortError') setErr(e.message)
