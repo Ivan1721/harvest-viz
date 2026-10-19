@@ -12,6 +12,7 @@ import { parseFis, evalFis } from './fis.js'
 import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 import { buildHuerto } from './huertos/index.js'
 import { protectionDistance } from './ssm.js'
+import { Cosecha, rutaCalles } from './huertos/rectangular.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -46,6 +47,8 @@ export class HRSim {
     this.type = type
     this.ladder = ladder
     this.W = W
+    // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
+    this.cosecha = huerto.calles ? new Cosecha(huerto, W) : null
     // --- ruta base del robot ---
     const lap = huerto.vueltaRobot
     this.baseRoute = []
@@ -103,10 +106,41 @@ export class HRSim {
     this.events.push({ idx: this.idx + 1, t: this.idx * this.dt, msg })
   }
 
-  _boxPos(pose) {
+  /** Camino de a hasta b: por calles en huertos generados; en línea recta en matlab-2026 (como MATLAB). */
+  _path(a, b) {
+    return this.cosecha ? rutaCalles(this.huerto, a, b) : [[b[0], b[1]]]
+  }
+
+  /** El lado del árbol se agotó: baja de la escalera si hace falta y camina al siguiente árbol de su tramo. */
+  _leaveTree(w) {
+    if (w.ladder === 1) {
+      w.goNext = true
+      w.state = 2
+    } else this._goNextTree(w)
+  }
+
+  _goNextTree(w) {
+    w.goNext = false
+    const spot = this.cosecha.next(w)
+    if (!spot) {
+      w.state = 15 // sin fruta en su tramo ni tramos libres
+      return
+    }
+    w.state = 13
+    w.route = this._path(w.pose, spot)
+    w.routeIdx = 0
+    w.start = [spot[0], spot[1]]
+  }
+
+  _boxPos(pose, w) {
     const p = this.p
     let hxy = [pose[0], pose[1]]
-    if (p.placement === 'tree_point') {
+    if (this.cosecha) {
+      hxy = this.cosecha.drop(w)
+      // la caja queda sobre la ruta del robot (calle en la que cabe) o junto a ella, en la boca de la calle
+      const near0 = nearestOnPolyline(hxy, this.baseRoute)
+      if (Math.hypot(hxy[0] - near0[0], hxy[1] - near0[1]) < 1e-6) return hxy
+    } else if (p.placement === 'tree_point') {
       let bi = 0,
         bd = Infinity
       this.trees.forEach((t, i) => {
@@ -173,7 +207,7 @@ export class HRSim {
       if (w.ladder === 1) w.state = 12
       else {
         w.state = 10
-        w.route = [w.target]
+        w.route = this._path(w.pose, w.target)
         w.routeIdx = 0
       }
     }
@@ -182,7 +216,8 @@ export class HRSim {
         const prevProd = w.prod
         w.cont += 1
         if (w.cont >= w.tInc) {
-          w.prod = prevProd + p.costProduction * dt
+          // huertos generados: no se cosecha más fruta de la que queda en el lado del árbol
+          w.prod = prevProd + (this.cosecha ? this.cosecha.take(w, p.costProduction * dt) : p.costProduction * dt)
           w.last = w.prod
           w.cont = 0
         } else w.prod = w.last
@@ -190,7 +225,7 @@ export class HRSim {
           w.prod = maxProd
           w.last = maxProd
           w.state = w.ladder === 1 ? 2 : 6
-        }
+        } else if (this.cosecha && this.cosecha.empty(w)) this._leaveTree(w)
         w.work += w.cost * dt
         w.flag = 1
         if (loads && w.state === 1 && w.call && w.stage === 0) startHandoff()
@@ -200,8 +235,9 @@ export class HRSim {
         w.work += C.ladderDown * dt
         w.flag = 4
         if (w.ladderCount >= p.ladderTime) {
-          w.state = 6
           w.ladderCount = 0
+          if (w.goNext) this._goNextTree(w)
+          else w.state = 6
         } else w.ladderCount += dt
         break
       case 6: {
@@ -209,11 +245,11 @@ export class HRSim {
           w.prod = 0
           w.last = 0
           w.nBoxes += 1
-          w.box = this._boxPos(w.pose)
+          w.box = this._boxPos(w.pose, w)
           w.prodBox = maxProd * w.nBoxes
         } else w.prod = w.last
         w.flag = 3
-        w.route = [[w.box[0], w.box[1]]]
+        w.route = this._path(w.pose, w.box)
         w.routeIdx = 0
         w.ladderAfter = w.ladder
         w.state = 8
@@ -230,7 +266,7 @@ export class HRSim {
             // punto de entrega = último punto de la ruta (w.box puede ser null si el robot ya recogió la caja)
             const drop = w.route[w.route.length - 1]
             w.state = 9
-            w.route = [w.start]
+            w.route = this._path(drop, w.start)
             w.routeIdx = 0
             this.ev.crates.push({ h: w.h, x: drop[0], y: drop[1], placed: this.idx, picked: Infinity })
           }
@@ -261,18 +297,39 @@ export class HRSim {
           w.target = [w.box[0], w.box[1]]
           w.stage = 1
           w.state = 10
-          w.route = [w.target]
+          w.route = this._path(w.pose, w.target)
           w.routeIdx = 0
         }
         break
       }
+      case 13: {
+        // camina por la calle al siguiente árbol de su tramo
+        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], p.walkSpeed, dt)
+        w.pose = pose
+        w.work += C.walking * dt
+        w.flag = 2
+        if (reached) {
+          if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
+          else {
+            w.pose[2] = Math.atan2(w.tree[1] - w.pose[1], w.tree[0] - w.pose[0])
+            w.state = w.ladder === 1 ? 7 : 1
+          }
+        }
+        if (loads && w.state === 13 && w.call && w.stage === 0) startHandoff()
+        break
+      }
+      case 15:
+        // sin fruta que cosechar: espera (y sigue atendiendo al robot si lo llama)
+        w.flag = 0
+        if (loads && w.call && w.stage === 0) startHandoff()
+        break
       case 12:
         w.work += C.ladderDown * dt
         w.flag = 4
         if (w.ladderCount >= p.ladderTime) {
           w.ladderCount = 0
           w.state = 10
-          w.route = [w.target]
+          w.route = this._path(w.pose, w.target)
           w.routeIdx = 0
         } else w.ladderCount += dt
         break
@@ -299,7 +356,7 @@ export class HRSim {
           w.stage = 0
           w.ladderAfter = w.ladder
           w.state = 9
-          w.route = [w.start]
+          w.route = this._path(w.pose, w.start)
           w.routeIdx = 0
         }
         break

@@ -3,7 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera, OrbitControls, Line } from '@react-three/drei'
 import { TagLayer } from '../shared/TagLayer.jsx'
 import * as THREE from 'three'
-import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
+import { MAP, toW, setMap } from './spec.js'
+import { sceneGeometry } from './geometry.js'
 import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
 import { protectionDistance } from '../hrsim/ssm.js'
@@ -408,7 +409,8 @@ function Boxes({ run, real }) {
 }
 
 const PILE = Array.from({ length: 60 }, (_, k) => [(k % 10) * 0.48 - 2.2, Math.floor(k / 30) * 0.34, (Math.floor(k / 10) % 3) * 0.42 - 0.4])
-function CargoPile({ run, real }) {
+function CargoPile({ run, real, geom }) {
+  const CARGO = geom.cargo
   const [cx, , cz] = toW((CARGO.x[0] + CARGO.x[1]) / 2, (CARGO.y[0] + CARGO.y[1]) / 2)
   return (
     <group>
@@ -432,32 +434,33 @@ function CargoPile({ run, real }) {
   )
 }
 
-// posiciones y semillas de los árboles (las mismas que antes usaba cada AvocadoTree / BigTree)
-const TREES = Object.entries(ROWS).flatMap(([r, R]) =>
-  R.x.map((tx, i) => {
-    const [x, , z] = toW(tx, R.y)
-    return { x, z, seed: +r * 7 + i }
-  }),
-)
-
-function Ground({ run, real }) {
-  const trees = TREES
+function Ground({ run, real, geom }) {
+  // árboles en coordenadas de mundo (dependen del mapa activo)
+  const trees = useMemo(
+    () =>
+      geom.trees.map((t) => {
+        const [x, , z] = toW(t.x, t.y)
+        return { x, z, seed: t.seed }
+      }),
+    [geom],
+  )
   const route = useMemo(
     () =>
-      routeLoop(run.meta.row).map(([x, y]) => {
+      geom.route.map(([x, y]) => {
         const p = toW(x, y)
         return [p[0], 0.05, p[2]]
       }),
-    [run.meta.row],
+    [geom],
   )
+  const big = Math.max(MAP.w, MAP.h) * 2 + 20
   return (
     <group>
       {real ? (
-        <RealGround row={run.meta.row} />
+        <RealGround geom={geom} />
       ) : (
         <>
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[80, 80]} />
+            <planeGeometry args={[big, big]} />
             <meshStandardMaterial color="#f1f5fd" />
           </mesh>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
@@ -466,14 +469,16 @@ function Ground({ run, real }) {
           </mesh>
         </>
       )}
-      <Orchard trees={trees} R={CANOPY_R} real={real} canopy={play.canopy} />
+      <Orchard trees={trees} R={geom.R} real={real} canopy={play.canopy} />
       {run.robot && <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />}
     </group>
   )
 }
 
-function World({ run, selected, onSelect, version, look }) {
+function World({ run, selected, onSelect, version, look, geom }) {
   const real = look === 'real'
+  // la sombra cubre todo el huerto (el del estudio mide ~30 m; uno generado, ~100 m)
+  const sh = Math.max(22, Math.max(MAP.w, MAP.h) / 2 + 6)
   return (
     <>
       {real ? <SkyBackground /> : <color attach="background" args={['#e9eefb']} />}
@@ -488,12 +493,12 @@ function World({ run, selected, onSelect, version, look }) {
             shadow-mapSize={[2048, 2048]}
             shadow-bias={-0.0004}
             shadow-normalBias={0.04}
-            shadow-camera-left={-26}
-            shadow-camera-right={26}
-            shadow-camera-top={26}
-            shadow-camera-bottom={-26}
+            shadow-camera-left={-sh}
+            shadow-camera-right={sh}
+            shadow-camera-top={sh}
+            shadow-camera-bottom={-sh}
             shadow-camera-near={0.5}
-            shadow-camera-far={90}
+            shadow-camera-far={Math.max(90, 2 * sh + 40)}
           />
         </>
       ) : (
@@ -504,16 +509,16 @@ function World({ run, selected, onSelect, version, look }) {
             intensity={1.4}
             castShadow
             shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-22}
-            shadow-camera-right={22}
-            shadow-camera-top={22}
-            shadow-camera-bottom={-22}
+            shadow-camera-left={-sh}
+            shadow-camera-right={sh}
+            shadow-camera-top={sh}
+            shadow-camera-bottom={-sh}
           />
         </>
       )}
       <Clock run={run} />
-      <Ground run={run} real={real} />
-      <CargoPile run={run} real={real} />
+      <Ground run={run} real={real} geom={geom} />
+      <CargoPile run={run} real={real} geom={geom} />
       {run.robot && <Intent run={run} />}
       <Boxes run={run} real={real} />
       {run.workers.map((w) => (
@@ -530,10 +535,11 @@ const PRESETS = {
   side: { pos: [0, 8, 40], zoom: 25 },
 }
 
-function CamRig({ preset }) {
+function CamRig({ preset, extent = 30 }) {
   const { camera, controls, size } = useThree()
-  const raw = Math.min(size.width / 880, size.height / 600)
-  const fit = Math.max(0.3, Math.min(1.5, raw))
+  // el encuadre de los presets está hecho para el mapa del estudio (~30 m); un huerto más grande se aleja en proporción
+  const raw = Math.min(size.width / 880, size.height / 600) * Math.min(1, 30 / extent)
+  const fit = Math.max(0.08, Math.min(1.5, raw))
   const st = useRef({ preset: null, raw, moved: false })
   // ¿movió el usuario la cámara desde el último encuadre? (entonces un cambio de tamaño no debe perder su vista)
   React.useEffect(() => {
@@ -566,12 +572,15 @@ function CamRig({ preset }) {
 }
 
 export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real' }) {
+  const geom = sceneGeometry(run.meta)
+  setMap(geom.limites) // antes de dibujar: toW() usa el mapa activo
+  const extent = Math.max(geom.limites.w, geom.limites.h)
   return (
     <Canvas shadows="percentage" dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => onSelect(null)}>
-      <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80} far={150} />
-      <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={10} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
-      <CamRig preset={preset} />
-      <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} />
+      <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80 - extent} far={150 + 2 * extent} />
+      <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={(10 * 30) / Math.max(30, extent)} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
+      <CamRig preset={preset} extent={extent} />
+      <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} geom={geom} />
       {perfEnabled() && <PerfProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />}
       <RecorderProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />
       <TagLayer />

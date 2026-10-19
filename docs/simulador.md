@@ -26,7 +26,22 @@ Los parámetros se aplican en orden `DEFAULTS → perfil → opciones explícita
 
 ## Sistemas de huerto
 
-El motor recibe el huerto como dato (`src/hrsim/huertos/`): árboles y su carga de fruta, puestos de los cosecheros, acopio, pose inicial y vuelta base del robot, límites del mapa, grafo de calles y terreno. El parámetro `huerto` elige el sistema; hoy existe `matlab-2026`, la geometría fija del estudio (3 hileras × 4 árboles, carga infinita, desplazamientos en línea recta), que el visor también lee desde ahí. Los huertos generados (palta tradicional, alta densidad, ladera) se agregan en las fases siguientes según la especificación H0.
+El motor recibe el huerto como dato (`src/hrsim/huertos/`): árboles y su carga de fruta, puestos de los cosecheros, acopio, pose inicial y vuelta base del robot, límites del mapa, grafo de calles y terreno. El parámetro `huerto` elige el sistema (en el visor: Simulador → Huerto):
+
+| Sistema                  | Qué es                                                                                                                                                                                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matlab-2026`            | La geometría fija del estudio (3 hileras × 4 árboles, carga infinita, desplazamientos en línea recta). La réplica de MATLAB y la regresión usan siempre este.                                                                                                                                                           |
+| `palta-tradicional` (H2) | Cuartel de 1 ha generado (`huertos/rectangular.js`): 16 hileras × 15 árboles en marco 6 × 6 m, copa de 2,5 m de radio y 6 m de alto, 42 kg por árbol (10.100 kg/ha, ODEPA 2025), cabeceras de 6 m y acopio al centro de la cabecera inferior. Parámetros editables en `huertoParams` (Simulador → Parámetros → Huerto). |
+
+Reglas de los huertos generados (especificación H0), iguales en Humano-robot y Solo humano:
+
+- **Tramos**: los cosecheros trabajan por parejas en una calle, cada uno en el lado de hilera que da a ella, empezando por la calle frente al acopio y hacia afuera. Si hay más cosecheros que lados de hilera (30), cada lado se parte en tramos. Quien termina su tramo toma el tramo libre más cercano.
+- **Agotamiento**: cada árbol tiene la mitad de su carga en cada lado. Al vaciar su lado, el cosechero (bajando de la escalera si la usa) camina por la calle al siguiente árbol de su tramo (estado 13; estado 15 si ya no queda fruta). La fruta se conserva: cosechada + restante = inicial.
+- **Calles**: cosecheros y robot se mueven por el eje de las calles y por las cabeceras (`rutaCalles`), nunca a través de las copas.
+- **Caja**: si el robot cabe en la calle (ancho libre ≥ 1,38 m + 0,5 m de holgura), la caja queda en el eje de la calle frente al árbol y el robot recorre las calles ocupadas en zigzag. Si no cabe (palta tradicional: 1 m libre), el cosechero lleva la caja a la boca de su calle en la cabecera inferior y el robot recorre esa cabecera, ida y vuelta, por un carril a un tercio de su ancho (gira en U sin acercarse a las copas).
+- **Unidades**: 1 unidad = 1 kg y la caja es de 15 kg. El ritmo de cosecha (`prodPeriod` 60 / 90 / 75 s por kg en suelo / escalera / vara, la misma proporción que en MATLAB) está calibrado para que una cuadrilla mixta rinda 320–420 kg por cosechero en 8 h (373 kg con 12 cosecheros). Por actividad: suelo ~450, vara ~360, escalera ~310 kg.
+
+Simplificaciones de H2: la caja siempre va a la cabecera inferior (la del acopio; en 45 min los cosecheros no pasan del tercer árbol); la capacidad del robot sigue en 68 cajas; terreno plano. Alta densidad (H3), ladera (H4) y otras frutas (H5) usan el mismo generador.
 
 ## Métricas de fluidez y seguridad (fase 2)
 

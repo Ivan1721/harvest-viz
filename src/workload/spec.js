@@ -59,5 +59,11 @@ export function boxXY(base, row, mode = 'route_corridor') {
   return [q[0] + off * ux, q[1] + off * uy]
 }
 
-// Mapa → mundo 3D (X derecha, Z hacia el observador, Y arriba)
+// Mapa → mundo 3D (X derecha, Z hacia el observador, Y arriba), centrado en el mapa de la corrida que se ve
 export const toW = (x, y) => [x - MAP.w / 2, 0, -(y - MAP.h / 2)]
+
+/** Cambia el mapa activo (huertos generados de otro tamaño). Las dos escenas de una comparación comparten huerto. */
+export function setMap(lim) {
+  MAP.w = lim.w
+  MAP.h = lim.h
+}

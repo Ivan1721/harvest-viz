@@ -74,15 +74,20 @@ export const LIMITS = { maxDuration: 4 * 3600, maxWorkers: 48, minDt: 0.05, maxD
 export function resolveParams(opts = {}, extra = {}) {
   const profile = opts.profile ?? DEFAULTS.profile
   if (!PROFILES[profile]) throw new Error(`Parámetro inválido: perfil "${profile}" desconocido (${Object.keys(PROFILES).join(', ')})`)
+  const sis = SISTEMAS[opts.huerto ?? PROFILES[profile].params.huerto ?? DEFAULTS.huerto]
   const p = {
     ...DEFAULTS,
     ...PROFILES[profile].params,
+    ...(sis?.params || {}),
     ...extra,
     ...opts,
     profile,
     costs: { ...DEFAULTS.costs, ...(opts.costs || {}) },
-    prodPeriod: { ...DEFAULTS.prodPeriod, ...(opts.prodPeriod || {}) },
+    prodPeriod: { ...DEFAULTS.prodPeriod, ...(sis?.params?.prodPeriod || {}), ...(opts.prodPeriod || {}) },
   }
+  // parámetros del generador: solo en huertos generados (matlab-2026 no los tiene: su hash no cambia)
+  if (sis?.generador) p.huertoParams = { ...sis.generador, ...(opts.huertoParams || {}) }
+  else delete p.huertoParams
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -94,6 +99,7 @@ export function resolveParams(opts = {}, extra = {}) {
   if (![1, 2, 3].includes(p.row)) bad(`row debe ser 1, 2 o 3 (es ${p.row})`)
   if (![0, 1].includes(p.rp)) bad(`rp debe ser 0 o 1 (es ${p.rp})`)
   if (!SISTEMAS[p.huerto]) bad(`sistema de huerto "${p.huerto}" desconocido (${Object.keys(SISTEMAS).join(', ')})`)
+  if (p.huertoParams) validarRectangular(p.huertoParams)
   if (!(p.dt >= LIMITS.minDt && p.dt <= LIMITS.maxDt)) bad(`dt debe estar entre ${LIMITS.minDt} y ${LIMITS.maxDt} s (es ${p.dt})`)
   if (!(p.duration > 0 && p.duration <= LIMITS.maxDuration)) bad(`duration debe estar entre 0 y ${LIMITS.maxDuration} s (es ${p.duration})`)
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
@@ -140,9 +146,12 @@ export const PROFILES = {
   hri: { label: 'HRI (en desarrollo)', params: { ssm: { enabled: true }, fixRecallLoop: true } },
 }
 
-/** Parámetros completos de un perfil (lo que muestra el formulario al elegirlo). */
-export const profileDefaults = (profile) => {
-  const d = structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, profile })
+/** Parámetros completos de un perfil y un sistema de huerto (lo que muestra el formulario al elegirlos). */
+export const profileDefaults = (profile, huerto = DEFAULTS.huerto) => {
+  const sis = SISTEMAS[huerto]
+  const d = structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, ...(sis.params || {}), profile, huerto })
+  d.prodPeriod = { ...DEFAULTS.prodPeriod, ...(sis.params?.prodPeriod || {}) }
+  if (sis.generador) d.huertoParams = { ...sis.generador }
   if (d.ssm) d.ssm = { ...SSM_DEFAULTS, enabled: false, ...d.ssm }
   return d
 }
@@ -196,6 +205,7 @@ export const DEFAULTS = {
 export { R3, TREE_X, TREES_ALL, OFFS_RP0, OFFS_RP1 } from './huertos/matlab2026.js'
 import { SSM_DEFAULTS } from './ssm.js'
 import { SISTEMAS, buildHuerto } from './huertos/index.js'
+import { validarRectangular } from './huertos/rectangular.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

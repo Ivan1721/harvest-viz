@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { PROFILES, profileDefaults } from '../../hrsim/common.js'
+import { SISTEMAS } from '../../hrsim/huertos/index.js'
+import { ROBOT_ANCHO, HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
 import { Field, Seg } from '../ui.jsx'
-import { t, useLang } from '../../i18n/index.js'
+import { fmtNum, t, useLang } from '../../i18n/index.js'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
 export function NumField({ value, onCommit, step, min = 0, max = Infinity, label }) {
@@ -69,6 +71,17 @@ const SSM = [
   ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
   ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
 ]
+// parámetros del generador de huertos (H2): [clave, etiqueta, paso, mínimo, máximo, entero]
+const HUERTO = [
+  ['hileras', 'Hileras', 1, 2, 200, true],
+  ['arbolesPorHilera', 'Árboles por hilera', 1, 2, 200, true],
+  ['calle', 'Distancia entre hileras (m)', 0.5, 1, 20],
+  ['sobreHilera', 'Distancia sobre la hilera (m)', 0.5, 0.5, 20],
+  ['radioCopa', 'Radio de copa (m)', 0.1, 0.2, 9],
+  ['altura', 'Altura del árbol (m)', 0.5, 0.5, 12],
+  ['cargaArbol', 'Carga por árbol (kg)', 1, 0, 500],
+  ['cabecera', 'Ancho de cabecera (m)', 0.5, 3, 20],
+]
 const PERIODS = [
   [1, 'Suelo'],
   [2, 'Escalera'],
@@ -80,8 +93,10 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
   const num = (k, step, min, max, label) => <NumField value={params[k]} step={step} min={min} max={max} label={label} onCommit={(v) => set(k, v)} />
-  const base = profileDefaults(params.profile)
+  const base = profileDefaults(params.profile, params.huerto)
   const changed = JSON.stringify(params) !== JSON.stringify(base)
+  const hp = params.huertoParams
+  const libre = hp ? hp.calle - 2 * hp.radioCopa : null
   return (
     <section className="panel">
       <h4>{t('Simulador')}</h4>
@@ -89,10 +104,33 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
         <Seg
           size="mini"
           value={params.profile}
-          onChange={(p) => setParams(profileDefaults(p))}
+          onChange={(p) => setParams(profileDefaults(p, params.huerto))}
           options={Object.entries(PROFILES).map(([k, v]) => [k, k === 'matlab-2026' ? 'MATLAB 2026' : 'HRI', false, t(v.label)])}
         />
       </Field>
+      <Field label={t('Huerto')}>
+        <Seg
+          size="mini"
+          value={params.huerto}
+          onChange={(h) => {
+            setParams(profileDefaults(params.profile, h))
+            onRun()
+          }}
+          options={Object.entries(SISTEMAS).map(([k, v]) => [k, k === 'matlab-2026' ? t('Estudio') : t('Palta trad.'), false, t(v.label)])}
+        />
+      </Field>
+      {hp && (
+        <div className="note" data-testid="huerto-info">
+          {t('{n} árboles · {w} × {h} m · calle libre {l} m', {
+            n: hp.hileras * hp.arbolesPorHilera,
+            w: fmtNum(hp.hileras * hp.calle, { maximumFractionDigits: 1 }),
+            h: fmtNum(2 * hp.cabecera + hp.arbolesPorHilera * hp.sobreHilera, { maximumFractionDigits: 1 }),
+            l: fmtNum(libre, { maximumFractionDigits: 2 }),
+          })}
+          {' · '}
+          {libre >= ROBOT_ANCHO + HOLGURA_CALLE ? t('el robot entra a las calles') : t('el robot no cabe en las calles: recorre la cabecera')}
+        </div>
+      )}
       {params.profile !== 'matlab-2026' && (
         <div className="note">
           {t('{p}: extiende la réplica de MATLAB con consideraciones de interacción humano-robot.', { p: t(PROFILES[params.profile].label) })}
@@ -154,6 +192,25 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
               />
             </label>
           ))}
+          {hp && (
+            <>
+              <div className="note">{t('Huerto (generador)')}</div>
+              {HUERTO.map(([k, l, st, min, max, int]) => (
+                <label key={k}>
+                  <span>{t(l)}</span>
+                  <NumField
+                    value={hp[k]}
+                    step={st}
+                    min={min}
+                    max={max}
+                    label={t(l)}
+                    onCommit={(v) => (!int || Number.isInteger(v)) && setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, [k]: v } }))}
+                  />
+                </label>
+              ))}
+              {2 * hp.radioCopa >= hp.calle && <div className="note warn">{t('Las copas de hileras vecinas se tocan: no queda calle para caminar.')}</div>}
+            </>
+          )}
           {params.ssm && (
             <>
               <div className="note">{t('Seguridad: velocidad y separación (ISO/TS 15066)')}</div>

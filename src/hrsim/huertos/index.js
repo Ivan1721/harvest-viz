@@ -1,5 +1,6 @@
 // Sistemas de huerto: el motor recibe el huerto como dato (ver docs/simulador.md, «Sistemas de huerto»).
 import { huertoMatlab2026 } from './matlab2026.js'
+import { generarRectangular, PALTA_TRADICIONAL } from './rectangular.js'
 
 /**
  * @typedef {object} Huerto
@@ -16,8 +17,19 @@ import { huertoMatlab2026 } from './matlab2026.js'
  * @property {{pendiente:number}} terreno  pendiente en %
  */
 
+/**
+ * Sistemas disponibles. Los generados tienen `generador` (valores de partida de huertoParams) y `params`
+ * (parámetros del cultivo que reemplazan a DEFAULTS: DEFAULTS → perfil → sistema → opciones).
+ */
 export const SISTEMAS = {
   'matlab-2026': { label: 'MATLAB 2026 (mapa del estudio)', build: huertoMatlab2026 },
+  'palta-tradicional': {
+    label: 'Palta tradicional (6 × 6 m, 1 ha)',
+    generador: PALTA_TRADICIONAL,
+    // 1 unidad = 1 kg; caja de 15 kg. Ritmo calibrado a 320–420 kg por cosechero en 8 h (ver docs/simulador.md)
+    params: { prodPeriod: { 1: 60, 2: 90, 3: 75 } },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-tradicional' }),
+  },
 }
 
 /** Huerto de una simulación a partir de sus parámetros resueltos. */

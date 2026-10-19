@@ -46,6 +46,7 @@ const INDEX_HEAD = [
   'HR_entregado_zona_u',
   'HR_entregas_robot',
   'perfil',
+  'huerto',
 ]
 // métricas de fluidez y seguridad (fase 2): vienen ya calculadas desde el visor (fluencyIndex en src/workload/hri.js)
 export const FLUENCY_COLS = [
@@ -74,7 +75,13 @@ export function writeSimulation(root, body, now = new Date()) {
   if (!meta || !Array.isArray(files) || !files.length) throw new Error('Simulación sin archivos')
   const ver = `motor-${safe(meta.engineVersion || 'desconocido')}`
   const profile = safe(meta.profile || 'matlab-2026')
-  const name = safe(`${meta.nw}_ROW${meta.row}_${meta.act}_RP${meta.rp}_SIM-${meta.paramsHash}`)
+  const huerto = meta.huerto || 'matlab-2026'
+  // huertos generados: la fila y la disposición del estudio no aplican; el nombre lleva el sistema de huerto
+  const name = safe(
+    huerto === 'matlab-2026'
+      ? `${meta.nw}_ROW${meta.row}_${meta.act}_RP${meta.rp}_SIM-${meta.paramsHash}`
+      : `${meta.nw}_${huerto}_${meta.act}_SIM-${meta.paramsHash}`,
+  )
   const dir = path.join(root, ver, profile, name)
   const existed = fs.existsSync(path.join(dir, '.completo'))
   if (!existed) {
@@ -113,6 +120,7 @@ export function writeSimulation(root, body, now = new Date()) {
       hr.TotalProductionCargoZone ?? '',
       hr.handoffs ?? '',
       profile,
+      huerto,
       ...FLUENCY_COLS.map((c) => hr[c] ?? ''),
     ]
     fs.appendFileSync(idx, row.join(',') + '\n')

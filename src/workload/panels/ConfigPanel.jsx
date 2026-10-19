@@ -37,6 +37,8 @@ export function ConfigPanel({
   const sim = source === 'sim'
   const acts = sim ? ACTS : ACTS.filter((a) => lib.some((e) => e.act === a))
   const opt = (k, all) => (sim ? all : uniq(k))
+  // huertos generados: la fila y la disposición del estudio no aplican
+  const generated = sim && simProps?.params?.huerto && simProps.params.huerto !== 'matlab-2026'
   return (
     <aside className="wb-left">
       <section className="panel">
@@ -54,18 +56,28 @@ export function ConfigPanel({
       <section className="panel">
         <h4>{t('Configuración')}</h4>
         <Field label={t('Trabajadores')}>
-          <Seg value={cfg?.nw} options={opt('nw', [4, 6, 8, 10, 12, 16, 20]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('nw', v)} />
+          <Seg
+            value={cfg?.nw}
+            options={opt('nw', generated ? [4, 8, 12, 16, 24, 32] : [4, 6, 8, 10, 12, 16, 20]).map((v) => [v, String(v)])}
+            onChange={(v) => pickCfg('nw', v)}
+          />
         </Field>
-        <Field label={t('Fila de cultivo')}>
-          <Seg value={cfg?.row} options={opt('row', [1, 2, 3]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('row', v)} />
-        </Field>
+        {!generated && (
+          <Field label={t('Fila de cultivo')}>
+            <Seg value={cfg?.row} options={opt('row', [1, 2, 3]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('row', v)} />
+          </Field>
+        )}
         <Field label={t('Actividad')}>
           <Seg value={cfg?.act} options={acts.map((a) => [a, t(ACT_LABEL[a])])} onChange={(v) => pickCfg('act', v)} />
         </Field>
-        <Field label={t('Disposición (RP)')}>
-          <Seg value={cfg?.rp} options={opt('rp', [0, 1]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('rp', v)} />
-        </Field>
-        {sim ? (
+        {!generated && (
+          <Field label={t('Disposición (RP)')}>
+            <Seg value={cfg?.rp} options={opt('rp', [0, 1]).map((v) => [v, String(v)])} onChange={(v) => pickCfg('rp', v)} />
+          </Field>
+        )}
+        {generated ? (
+          <div className="note">{t('Huerto generado: los cosecheros trabajan por parejas en las calles frente al acopio y avanzan por la hilera.')}</div>
+        ) : sim ? (
           <div className="note">{t('Cualquier combinación se simula en tu navegador con el modelo de MATLAB.')}</div>
         ) : (
           <div className="note">
