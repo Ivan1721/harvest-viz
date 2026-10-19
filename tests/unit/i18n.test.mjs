@@ -41,7 +41,7 @@ test('en el navegador: ?lang= manda, luego lo guardado; avisa a los suscritos al
     m.setLang('en')
     assert.equal(calls, 1)
     assert.equal(store['hv-lang'], 'en')
-    assert.equal(document.documentElement.lang, 'en')
+    assert.equal(globalThis.document.documentElement.lang, 'en')
     off()
     m.setLang('es')
     assert.equal(calls, 1, 'tras desuscribirse no avisa')
