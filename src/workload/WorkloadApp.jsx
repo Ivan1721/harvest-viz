@@ -333,7 +333,12 @@ export default function WorkloadApp({ modeSwitch }) {
               seek(((e.clientX - r.left) / r.width) * tmax)
             }}
           >
-            <div className="heat" style={{ background: heatGradient(hr.hri) }} />
+            <div className="heat" style={{ background: heatGradient(hr.hri) }}>
+              {/* paradas de seguridad (fase 3, perfil hri) */}
+              {hr.hri.fluency?.safetyStops.map((e, k) => (
+                <i key={k} className="ssm-mark" style={{ left: `${(e.t0 / tmax) * 100}%` }} title={t('Parada de seguridad')} />
+              ))}
+            </div>
             <span className="small muted">{t('Proximidad robot–humano')}</span>
           </div>
         )}

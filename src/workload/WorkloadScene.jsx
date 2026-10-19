@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import { MAP, ROWS, CARGO, CANOPY_R, routeLoop, toW } from './spec.js'
 import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
+import { protectionDistance } from '../hrsim/ssm.js'
 import { Person, Crate, CrateReal, CrateSet, Ladder } from '../shared/models.jsx'
 import { RealGround, SkyBackground } from '../shared/realistic.jsx'
 import { Orchard } from '../shared/orchard.jsx'
@@ -177,6 +178,9 @@ function RobotCarrier({ run, onSelect, selected }) {
   const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
   const shown = useRef({ v: 0, t: 0 }),
     rtmp = useRef([0, 0, 0])
+  const prot = useRef(),
+    warn = useRef()
+  const ssm = run.meta?.params?.ssm?.enabled ? run.meta.params.ssm : null
   useFrame(() => {
     const smp = sampleAt(run.n, run.dt, play.t),
       i = smp.i
@@ -200,6 +204,18 @@ function RobotCarrier({ run, onSelect, selected }) {
     s.h = h
     wheels.current.forEach((m, k) => m && (m.rotation.y = -(k % 2 === 0 ? s.angR : s.angL)))
     zr.current.forEach((m) => m && (m.visible = play.zones))
+    // campos de seguridad (fase 3, perfil hri): radio según la velocidad del tick, color según el estado
+    if (ssm && run.hri) {
+      const v = run.hri.vInst[i],
+        rs = run.robot.status ? run.robot.status[i] : 0
+      const sp = protectionDistance(v, ssm)
+      prot.current.scale.set(sp, sp, 1)
+      warn.current.scale.set(sp + ssm.warn, sp + ssm.warn, 1)
+      prot.current.material.color.set(rs === 3 ? '#dc2626' : '#f59e0b')
+      prot.current.material.opacity = rs === 3 ? 0.95 : 0.6
+      warn.current.material.color.set(rs === 4 ? '#8b5cf6' : '#94a3b8')
+      warn.current.material.opacity = rs === 4 ? 0.9 : 0.4
+    }
     // la carga a bordo cambia con la tasa de carga (3,6 s por caja) y de descarga (1,44 s por caja), no de golpe
     const target = onboard(run, i),
       sh = shown.current,
@@ -231,6 +247,19 @@ function RobotCarrier({ run, onSelect, selected }) {
           </mesh>
         </group>
       ))}
+      {ssm && (
+        <>
+          {/* campo de protección S_p(v) y de advertencia S_p(v) + margen; anillos de radio 1 escalados cada cuadro */}
+          <mesh ref={prot} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+            <ringGeometry args={[0.96, 1, 72]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.6} depthTest={false} />
+          </mesh>
+          <mesh ref={warn} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.081, 0]}>
+            <ringGeometry args={[0.975, 1, 72]} />
+            <meshBasicMaterial color="#94a3b8" transparent opacity={0.4} depthTest={false} />
+          </mesh>
+        </>
+      )}
       {/* campo de detección (FOV 120°, 3 m) y LIDAR (±90°, 1.5 m) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <circleGeometry args={[3, 28, -Math.PI / 3, (2 * Math.PI) / 3]} />

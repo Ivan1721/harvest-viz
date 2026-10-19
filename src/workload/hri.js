@@ -52,7 +52,7 @@ function handoffMask(w, n, dt) {
   return m
 }
 
-export function analyzeHRI(run, ssm = SSM_DEFAULTS) {
+export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
   const n = run.n,
     nw = run.workers.length,
     DT = run.dt
@@ -195,13 +195,15 @@ export function analyzeHRI(run, ssm = SSM_DEFAULTS) {
   const nHandoffs = encounters.filter((e) => e.verdict === 'traspaso de caja').length
 
   // --- Fluidez y seguridad (fase 2) ---
-  const st = run.robot.status // estado del robot por tick (solo motor JS): 0 se mueve, 1 espera al trabajador, 2 descarga/carga
+  // estado del robot por tick (solo motor JS): 0 se mueve, 1 espera al trabajador, 2 descarga/carga,
+  // 3 parada de seguridad, 4 velocidad reducida por seguridad (los dos últimos solo en el perfil hri)
+  const st = run.robot.status
   const T = n * DT
   const robotTime = st
     ? (() => {
-        const c = [0, 0, 0]
-        for (let i = 0; i < n; i++) if (st[i] <= 2) c[st[i]]++
-        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, exact: true }
+        const c = [0, 0, 0, 0, 0]
+        for (let i = 0; i < n; i++) if (st[i] <= 4) c[st[i]]++
+        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, exact: true }
       })()
     : (() => {
         let m = 0
@@ -228,19 +230,30 @@ export function analyzeHRI(run, ssm = SSM_DEFAULTS) {
         return { h: w.h, s: c * DT, frac: c / n }
       })
     : null
-  // distancia de protección S_p(v): ticks con el robot en movimiento y un trabajador (que no está cargando) más cerca
+  // distancia de protección S_p(v_c): ticks con el robot en movimiento y un trabajador (que no está cargando su caja)
+  // más cerca que S_p de su velocidad de ACERCAMIENTO a ese trabajador (ISO/TS 15066: componente hacia la persona)
   const minMov = [] // distancia mínima a trabajadores (sin traspasos) en cada tick de movimiento
   const inSp = new Uint8Array(n),
-    who = new Int16Array(n).fill(-1)
-  for (let i = 0; i < n; i++) {
+    who = new Int16Array(n).fill(-1),
+    vcAt = new Float32Array(n)
+  for (let i = 1; i < n; i++) {
     if (!moving(i)) continue
-    const sp = protectionDistance(vInst[i], ssm)
+    const ddx = rp[i * 3] - rp[(i - 1) * 3],
+      ddy = rp[i * 3 + 1] - rp[(i - 1) * 3 + 1]
     let m = 1e9
     for (let k = 0; k < nw; k++) {
       if (isHandoff(k, i)) continue
+      const w = run.workers[k]
       const d = dist[i * nw + k]
       if (d < m) m = d
-      if (d < sp && (who[i] < 0 || d < dist[i * nw + who[i]])) who[i] = k
+      const ux = w.track[i * 4] - rp[(i - 1) * 3],
+        uy = w.track[i * 4 + 1] - rp[(i - 1) * 3 + 1],
+        du = Math.hypot(ux, uy)
+      const vc = du > 1e-9 ? Math.max(0, (ddx * ux + ddy * uy) / du / DT) : vInst[i]
+      if (d < protectionDistance(vc, ssm) && (who[i] < 0 || d < dist[i * nw + who[i]])) {
+        who[i] = k
+        vcAt[i] = vc
+      }
     }
     if (m < 1e9) minMov.push(m)
     if (who[i] >= 0) inSp[i] = 1
@@ -249,10 +262,12 @@ export function analyzeHRI(run, ssm = SSM_DEFAULTS) {
     let best = a
     for (let i = a; i <= b; i++) if (dist[i * nw + who[i]] < dist[best * nw + who[best]]) best = i
     const k = who[best]
-    return { t0: a * DT, dur: (b - a + 1) * DT, h: run.workers[k].h, minD: dist[best * nw + k], v: vInst[best], sp: protectionDistance(vInst[best], ssm) }
+    return { t0: a * DT, dur: (b - a + 1) * DT, h: run.workers[k].h, minD: dist[best * nw + k], v: vcAt[best], sp: protectionDistance(vcAt[best], ssm) }
   })
+  const safetyStops = st ? spans(n, (i) => st[i] === 3).map(([a, b]) => ({ t0: a * DT, dur: (b - a + 1) * DT })) : []
   const fluency = {
     exact: !!st,
+    safetyStops,
     robotTime,
     robotWait,
     boxWait: { mean: assign.mean, p90: assign.p90, max: assign.max },
@@ -276,6 +291,9 @@ export function fluencyIndex(a) {
     HR_robot_mov_pct: r(f.robotTime.move * 100, 1),
     HR_robot_espera_pct: r(f.robotTime.wait != null ? f.robotTime.wait * 100 : null, 1),
     HR_robot_detenido_pct: r(f.robotTime.stop != null ? f.robotTime.stop * 100 : null, 1),
+    HR_robot_parada_seg_pct: r(f.robotTime.safety != null ? f.robotTime.safety * 100 : null, 1),
+    HR_robot_lento_pct: r(f.robotTime.slow != null ? f.robotTime.slow * 100 : null, 1),
+    HR_paradas_seg: f.exact ? f.safetyStops.length : '',
     HR_espera_robot_s: r(f.robotWait?.total, 1),
     HR_espera_caja_media_s: r(f.boxWait.mean, 1),
     HR_espera_caja_p90_s: r(f.boxWait.p90, 1),

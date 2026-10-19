@@ -11,6 +11,11 @@
 import { parseFis, evalFis } from './fis.js'
 import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 import { buildHuerto } from './huertos/index.js'
+import { protectionDistance } from './ssm.js'
+
+// estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
+// en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
+const ATTENDING = new Set([10, 11, 12])
 export { DEFAULTS }
 
 // Radios y tiempos fijos del MATLAB (HumanRobot_Sim.m), con nombre para leer el código
@@ -69,6 +74,10 @@ export class HRSim {
     this.events = []
     this.ev = { picks: [], boxes: [], unloads: [], crates: [] }
     this.rstatus = 0
+    // seguridad SSM (fase 3, perfil hri)
+    this.ssmStopped = false
+    this.ssmClear = 0
+    this.ssmStops = 0
     // --- registro ---
     this.rec = {
       t: [],
@@ -484,7 +493,9 @@ export class HRSim {
     let timedOut = false
     const sameTarget = this.wpTimeoutTarget && this.wpTimeoutTarget[0] === g[0] && this.wpTimeoutTarget[1] === g[1]
     const nowIdx = this.idx + 1
-    if (!sameTarget || this.holdSteps > 0 || this.waiting) {
+    // ir lento por seguridad no cuenta como «atascado» en el waypoint; una parada de seguridad sí: si se prolonga
+    // más que waypointTimeout, el robot salta al siguiente waypoint (la misma recuperación que ya tiene el MATLAB)
+    if (!sameTarget || this.holdSteps > 0 || this.waiting || this.rstatus === 4) {
       this.wpTimeoutTarget = [g[0], g[1]]
       this.wpTimeoutStart = nowIdx
     } else if ((nowIdx - this.wpTimeoutStart) * dt > p.waypointTimeout) {
@@ -516,12 +527,63 @@ export class HRSim {
     } else if (this.waiting) {
       wxv = wyv = wth = 0
       this.rstatus = 1
+    } else if (p.ssm?.enabled) {
+      const k = this._ssmScale(wxv, wyv)
+      if (k === 0) {
+        wxv = wyv = wth = 0
+        this.rstatus = 3
+      } else if (k < 1) {
+        wxv *= k
+        wyv *= k
+        wth *= k
+        this.rstatus = 4
+      }
     }
     // la integración usa pose(:,idx-1) sin recorte, igual que el MATLAB
     const nx = this.rpose[0] + wxv * dt,
       ny = this.rpose[1] + wyv * dt,
       nth = this.rpose[2] + wth * dt
     this.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
+  }
+
+  /**
+   * Monitorización de velocidad y separación (fase 3). Devuelve el factor de escala de la velocidad comandada:
+   * 0 = parada de protección, (0, 1) = velocidad reducida, 1 = sin cambio.
+   * Como en ISO/TS 15066, la velocidad que cuenta es la del robot HACIA cada trabajador (componente de acercamiento,
+   * ≥ 0): alejarse o pasar de lado no agranda la distancia exigida. Un trabajador a distancia d es seguro si
+   * d ≥ S_p(v_c) + v_c·dt (el término v_c·dt cubre lo que el robot se acerca dentro del tick).
+   */
+  _ssmScale(vx, vy) {
+    const s = this.p.ssm,
+      dt = this.dt,
+      [rx, ry] = this.rpose
+    const vCmd = Math.hypot(vx, vy)
+    const kSlow = vCmd > s.vSlow ? s.vSlow / vCmd : 1
+    const near = this.W.map((w) => {
+      const dx = w.pose[0] - rx,
+        dy = w.pose[1] - ry,
+        d = Math.hypot(dx, dy)
+      // velocidad de acercamiento con la velocidad comandada completa (a escala k se acerca k·vc)
+      const vc = d > 1e-9 ? Math.max(0, (vx * dx + vy * dy) / d) : vCmd
+      return { d, vc, attending: ATTENDING.has(w.state) }
+    })
+    const safe = (k) => near.every((q) => q.attending || q.d >= protectionDistance(k * q.vc, s) + k * q.vc * dt)
+    // reanudación: el campo de protección (a velocidad lenta) debe estar libre durante tResume
+    if (this.ssmStopped) {
+      this.ssmClear = safe(kSlow) ? this.ssmClear + dt : 0
+      if (this.ssmClear + 1e-9 < s.tResume) return 0
+      this.ssmStopped = false
+    }
+    // campo de advertencia: cualquiera (también quien viene a cargar) dentro de S_p(v_c) + margen → velocidad lenta
+    const k = near.some((q) => q.d < protectionDistance(q.vc, s) + s.warn) ? kSlow : 1
+    // campo de protección: parada
+    if (!safe(k)) {
+      this.ssmStopped = true
+      this.ssmClear = 0
+      this.ssmStops++
+      return 0
+    }
+    return k
   }
 
   step() {
@@ -568,6 +630,7 @@ export class HRSim {
       handoffs: this.handoffCount,
       waypointSkips: this.skips,
       capacityBlocked: this.capacityBlocked,
+      ...(this.p.ssm?.enabled ? { safetyStops: this.ssmStops } : {}),
     }
   }
 }
