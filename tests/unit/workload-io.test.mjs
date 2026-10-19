@@ -179,3 +179,11 @@ test('cliente del simulador: resultado, error, caída, cancelación y tiempo má
   await assert.rejects(b, { name: 'TimeoutError' })
   cancelSimulation() // sin simulación pendiente: no hace nada
 })
+
+test('mapa a mundo 3D y franja de proximidad de la línea de tiempo', async () => {
+  const { toW, MAP } = await import('../../src/workload/spec.js')
+  assert.deepEqual(toW(MAP.w / 2, MAP.h / 2), [0, 0, -0])
+  const { heatGradient } = await import('../../src/workload/hri.js')
+  const g = heatGradient({ minD: Float32Array.from({ length: 240 }, (_, i) => (i < 120 ? 0.3 : 9)) }, 4)
+  assert.match(g, /linear-gradient/)
+})

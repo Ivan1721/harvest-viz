@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { fmtNum, useLang } from '../i18n/index.js'
 
 // Colores por escenario (validados con la paleta de referencia: azul y naranja, ranuras 1 y 2)
 export const SC = { ho: { label: 'Solo humano', color: '#eb6834' }, hr: { label: 'Humano-robot', color: '#2a78d6' } }
@@ -20,6 +21,7 @@ export function LineChart({ title, unit, series, tmax, t, onSeek, height = 120, 
     R = 8,
     T = 8,
     B = 18
+  useLang()
   const [hover, setHover] = useState(null)
   const ymax = useMemo(() => nice(Math.max(1e-9, ...series.map((s) => Math.max(...s.y)))), [series])
   const px = useCallback((tt) => L + (tt / (tmax || 1)) * (W - L - R), [tmax])
@@ -62,7 +64,7 @@ export function LineChart({ title, unit, series, tmax, t, onSeek, height = 120, 
           <g key={f}>
             <line x1={L} x2={W - R} y1={py(f * ymax)} y2={py(f * ymax)} stroke="var(--grid)" strokeWidth="1" />
             <text x={L - 4} y={py(f * ymax) + 3} textAnchor="end" className="axis">
-              {(f * ymax).toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+              {fmtNum(f * ymax, { maximumFractionDigits: 0 })}
             </text>
           </g>
         ))}
@@ -84,7 +86,7 @@ export function LineChart({ title, unit, series, tmax, t, onSeek, height = 120, 
         {series.map((s) => (
           <span key={s.key}>
             <i style={{ background: s.color }} />
-            {s.name} <b>{at(s, cur).toLocaleString('es-CL', { maximumFractionDigits: digits })}</b>
+            {s.name} <b>{fmtNum(at(s, cur), { maximumFractionDigits: digits })}</b>
           </span>
         ))}
         <span className="muted">

@@ -5,6 +5,7 @@ import { TagLayer } from './shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { orchard } from './data.js'
 import { sim, step, chosenFor, YIELD_DIST, SHOULDER_Y } from './sim.js'
+import { t } from './i18n/index.js'
 
 const C = {
   robot: '#2f6bff',
@@ -148,7 +149,8 @@ const L1 = 1.3,
   L2 = 1.3
 const DARK = '#2b3447'
 
-const robotSub = () => (sim.robot.state === 'idle' ? ' · En espera' : ' · Cosechando')
+const robotSub = () => ` · ${sim.robot.state === 'idle' ? t('En espera') : t('Cosechando')}`
+const humanSub = () => ` · ${t('Operario')}`
 
 function Robot({ selected, onSelect }) {
   const root = useRef(),
@@ -405,7 +407,7 @@ function Human({ selected, onSelect }) {
           <meshStandardMaterial color="#c8a36a" roughness={0.9} />
         </mesh>
       </group>
-      <object3D position={[0, 2.05, 0]} userData={{ videoTag: 'HU-01 · Operario', tagSub: ' · Operario', tagColor: C.human }} />
+      <object3D position={[0, 2.05, 0]} userData={{ videoTag: () => `HU-01${humanSub()}`, tagSub: humanSub, tagColor: C.human }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[0.5, 0.58, 40]} />

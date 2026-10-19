@@ -29,7 +29,7 @@ export const ENGINE_VERSION = '0.3.0'
  *   Se convierte a ticks con `dt`; MATLAB fija 16/24/20 ticks, así que con dt ≠ 0,25 s ambos modelos divergen a propósito.
  * @property {boolean} fixRecallLoop  corrige el bucle de re-llamada cuando el robot se llena (por defecto replica MATLAB)
  * @property {number} costProduction  ritmo base de cosecha [u/s] (nombre heredado de MATLAB; no es un costo)
- * @property {number} mapW  @property {number} mapH  tamaño del mapa [m]
+ * @property {string} huerto  sistema de huerto (huertos/index.js); define árboles, puestos, acopio, ruta y tamaño del mapa
  * @property {'tree_point'} placement  dónde deja el trabajador la caja
  * @property {number} frontLen  @property {number} rearLen  geometría de dirección del robot [m]
  * @property {number} lapRepeats  vueltas de la ruta base del robot
@@ -89,6 +89,7 @@ export function resolveParams(opts = {}, extra = {}) {
   if (!Number.isInteger(p.nw) || p.nw < 1 || p.nw > LIMITS.maxWorkers) bad(`nw debe ser un entero entre 1 y ${LIMITS.maxWorkers} (es ${p.nw})`)
   if (![1, 2, 3].includes(p.row)) bad(`row debe ser 1, 2 o 3 (es ${p.row})`)
   if (![0, 1].includes(p.rp)) bad(`rp debe ser 0 o 1 (es ${p.rp})`)
+  if (!SISTEMAS[p.huerto]) bad(`sistema de huerto "${p.huerto}" desconocido (${Object.keys(SISTEMAS).join(', ')})`)
   if (!(p.dt >= LIMITS.minDt && p.dt <= LIMITS.maxDt)) bad(`dt debe estar entre ${LIMITS.minDt} y ${LIMITS.maxDt} s (es ${p.dt})`)
   if (!(p.duration > 0 && p.duration <= LIMITS.maxDuration)) bad(`duration debe estar entre 0 y ${LIMITS.maxDuration} s (es ${p.duration})`)
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
@@ -140,8 +141,7 @@ export const DEFAULTS = {
   duration: 2700,
   dt: 0.25,
   // mapa (scene_spec.json)
-  mapW: 29.7414,
-  mapH: 25.7759,
+  huerto: 'matlab-2026', // sistema de huerto (huertos/index.js); el tamaño del mapa sale del huerto
   // trabajadores
   walkSpeed: 0.75,
   ladderTime: 5,
@@ -177,50 +177,9 @@ export const DEFAULTS = {
   prodPeriod: { 1: 4, 2: 6, 3: 5 }, // s por unidad cosechada: suelo, escalera, gancho (16/24/20 ticks de 0,25 s)
 }
 
-export const R3 = { 3: 19.5, 2: 12.5, 1: 5.7 }
-export const TREE_X = [4.5, 11.5, 18.3, 25.2]
-export const TREES_ALL = [
-  [4.5, 5.7],
-  [11.5, 5.7],
-  [18.3, 5.7],
-  [25.2, 5.7],
-  [4.5, 12.5],
-  [11.5, 12.5],
-  [18.3, 12.5],
-  [25.2, 12.5],
-  [4.5, 19.5],
-  [11.5, 19.5],
-  [18.5, 19.5],
-  [25.2, 19.5],
-]
-export const OFFS_RP0 = [
-  [-1.15, -1.1],
-  [1.15, -1.1],
-  [-1.15, 1.1],
-  [1.15, 1.1],
-  [0, -1.45],
-  [0, 1.45],
-  [-1.45, 0],
-  [1.45, 0],
-  [-0.85, -1.35],
-  [0.85, -1.35],
-  [-0.85, 1.35],
-  [0.85, 1.35],
-]
-export const OFFS_RP1 = [
-  [1.15, 1.1],
-  [-1.15, 1.1],
-  [1.15, -1.1],
-  [-1.15, -1.1],
-  [0, 1.45],
-  [0, -1.45],
-  [1.45, 0],
-  [-1.45, 0],
-  [0.85, 1.35],
-  [-0.85, 1.35],
-  [0.85, -1.35],
-  [-0.85, -1.35],
-]
+// geometría del mapa del estudio: vive en huertos/matlab2026.js (se re-exporta por compatibilidad)
+export { R3, TREE_X, TREES_ALL, OFFS_RP0, OFFS_RP1 } from './huertos/matlab2026.js'
+import { SISTEMAS, buildHuerto } from './huertos/index.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)
@@ -263,12 +222,8 @@ export function movePose(old, target, speed, dt) {
 }
 
 // Trabajadores: posición inicial, actividad (suelo / escalera / gancho), costo de cosecha y ritmo de producción
-export function initWorkers(p) {
+export function initWorkers(p, huerto = buildHuerto(p)) {
   const NH = p.nw
-  const rowY = R3[p.row]
-  const refTrees = TREE_X.map((x) => [x, rowY])
-  if (p.row === 3) refTrees[2][0] = 18.5
-  const offs = p.rp === 0 ? OFFS_RP0 : OFFS_RP1
   const k = p.costs,
     m = p.metabolicMultiplier
   const C = {
@@ -285,10 +240,8 @@ export function initWorkers(p) {
   const costH = { 1: C.harvestGround, 2: C.harvestLadder, 3: C.harvestPicker }
   const W = []
   for (let h = 0; h < NH; h++) {
-    const tree = refTrees[h % 4],
-      off = offs[Math.floor(h / 4) % offs.length]
-    const x = tree[0] + off[0],
-      y = tree[1] + off[1]
+    const { tree, start } = huerto.puestos[h]
+    const [x, y] = start
     W.push({
       h: h + 1,
       tree,

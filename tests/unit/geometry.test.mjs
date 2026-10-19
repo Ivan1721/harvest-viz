@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { hyp, nearestOnPolyline, movePose, paramsHash, assignActivities, initWorkers, DEFAULTS } from '../../src/hrsim/common.js'
+import { LIMITES } from '../../src/hrsim/huertos/matlab2026.js'
 
 test('hyp es la norma euclídea', () => {
   assert.equal(hyp(3, 4), 5)
@@ -49,7 +50,7 @@ test('initWorkers ubica a todos dentro del mapa con costo y ritmo según su acti
       const { W } = initWorkers({ ...DEFAULTS, nw: 24, row, rp, act: 'mixed' })
       assert.equal(W.length, 24)
       for (const w of W) {
-        assert.ok(w.start[0] > 0 && w.start[0] < DEFAULTS.mapW && w.start[1] > 0 && w.start[1] < DEFAULTS.mapH)
+        assert.ok(w.start[0] > 0 && w.start[0] < LIMITES.w && w.start[1] > 0 && w.start[1] < LIMITES.h)
         assert.ok(w.cost > 0 && w.tInc > 0)
       }
     }

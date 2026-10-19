@@ -32,7 +32,7 @@ export function checkInvariants(sim, { robot }) {
       if ((f === 4 || f === 5) && sim.ladder[h] !== 1) assert.fail(`H${h + 1} no usa escalera pero tiene bandera ${f} en t=${rec.t[i]}`)
       const x = rec.wx[h][i],
         y = rec.wy[h][i]
-      if (!(x >= 0 && x <= p.mapW && y >= 0 && y <= p.mapH)) assert.fail(`H${h + 1} fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
+      if (!(x >= 0 && x <= sim.huerto.limites.w && y >= 0 && y <= sim.huerto.limites.h)) assert.fail(`H${h + 1} fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
     }
   if (robot) {
     const cap = p.capacityBoxes * p.maxProd
@@ -43,7 +43,7 @@ export function checkInvariants(sim, { robot }) {
       if (!(o >= 0 && o <= cap + EPS)) assert.fail(`carga a bordo fuera de [0, ${cap}]: ${o}`)
       const x = rec.rx[i],
         y = rec.ry[i]
-      if (!(x >= 0 && x <= p.mapW && y >= 0 && y <= p.mapH)) assert.fail(`robot fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
+      if (!(x >= 0 && x <= sim.huerto.limites.w && y >= 0 && y <= sim.huerto.limites.h)) assert.fail(`robot fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
       if (i === 0) continue
       // el robot no pierde fruta: lo que baja a bordo aparece como entregado en el mismo tick
       const dOn = o - rec.onboard[i - 1],

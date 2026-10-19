@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { LineChart, SC } from '../charts.jsx'
 import { Seg, f0 } from '../ui.jsx'
+import { t as tr, fmtNum, useLang } from '../../i18n/index.js'
 
 /* ---------------------------------------------------------------- tabla comparativa */
 export function Compare({ ho, hr, t, mode, setMode }) {
+  useLang()
   const at = (run, f) => {
     if (!run) return null
     const i = mode === 'final' ? run.n - 1 : run.rowAt(t)
@@ -20,28 +22,28 @@ export function Compare({ ho, hr, t, mode, setMode }) {
   return (
     <div>
       <div className="row-between">
-        <b>Comparación</b>
+        <b>{tr('Comparación')}</b>
         <Seg
           size="mini"
           value={mode}
           onChange={setMode}
           options={[
-            ['now', 'Ahora'],
-            ['final', 'Final'],
+            ['now', tr('Ahora')],
+            ['final', tr('Final')],
           ]}
         />
       </div>
       <table className="cmp">
         <thead>
           <tr>
-            <th>Métrica</th>
+            <th>{tr('Métrica')}</th>
             <th>
               <i className="sw" style={{ background: SC.ho.color }} />
-              Sin robot
+              {tr('Sin robot')}
             </th>
             <th>
               <i className="sw" style={{ background: SC.hr.color }} />
-              Con robot
+              {tr('Con robot')}
             </th>
             <th>Δ</th>
           </tr>
@@ -50,17 +52,21 @@ export function Compare({ ho, hr, t, mode, setMode }) {
           {M.map(([name, unit, f, onlyHR, dg]) => {
             const a = at(ho, f),
               b = at(hr, f)
-            const fmt = (v) => (v == null ? '—' : dg ? v.toLocaleString('es-CL', { minimumFractionDigits: dg, maximumFractionDigits: dg }) : f0(v))
+            const fmt = (v) => (v == null ? '—' : dg ? fmtNum(v, { minimumFractionDigits: dg, maximumFractionDigits: dg }) : f0(v))
             const d = a != null && b != null && a > 0 ? ((b - a) / a) * 100 : null
             return (
               <tr key={name}>
                 <td style={{ whiteSpace: 'normal' }}>
-                  {name}
+                  {tr(name)}
                   <span className="muted small"> {unit}</span>
                 </td>
                 <td>{onlyHR ? '—' : fmt(a)}</td>
                 <td>{fmt(b)}</td>
-                <td>{d == null ? '—' : `${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1).replace('.', ',')} %`}</td>
+                <td>
+                  {d == null
+                    ? '—'
+                    : `${d >= 0 ? '+' : '−'}${fmtNum(Math.abs(d), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false })} %`}
+                </td>
               </tr>
             )
           })}
@@ -71,24 +77,39 @@ export function Compare({ ho, hr, t, mode, setMode }) {
 }
 
 export function Summary({ ho, hr, t, seek }) {
+  useLang()
   const [mode, setMode] = useState('final')
   const dur = Math.max(ho?.series.t[ho.n - 1] || 0, hr?.series.t[hr.n - 1] || 0)
   const ser = (key, fn) =>
     [
-      ho && { key: 'ho', name: SC.ho.label, color: SC.ho.color, t: ho.series.t, y: fn(ho) },
-      hr && { key: 'hr', name: SC.hr.label, color: SC.hr.color, t: hr.series.t, y: fn(hr) },
+      ho && { key: 'ho', name: tr(SC.ho.label), color: SC.ho.color, t: ho.series.t, y: fn(ho) },
+      hr && { key: 'hr', name: tr(SC.hr.label), color: SC.hr.color, t: hr.series.t, y: fn(hr) },
     ].filter(Boolean)
   return (
     <>
       {ho && hr && <Compare ho={ho} hr={hr} t={t} mode={mode} setMode={setMode} />}
-      {!(ho && hr) && <div className="note">Para comparar, carga o selecciona una configuración con corrida sin robot y con robot.</div>}
-      <LineChart title="Entrega a la zona de carga" unit="unidades acumuladas" series={ser('cargo', (r) => r.series.cargo)} tmax={dur} t={t} onSeek={seek} />
-      <LineChart title="Carga de trabajo del equipo" unit="kcal acumuladas" series={ser('work', (r) => r.series.work)} tmax={dur} t={t} onSeek={seek} />
+      {!(ho && hr) && <div className="note">{tr('Para comparar, carga o selecciona una configuración con corrida sin robot y con robot.')}</div>}
+      <LineChart
+        title={tr('Entrega a la zona de carga')}
+        unit={tr('unidades acumuladas')}
+        series={ser('cargo', (r) => r.series.cargo)}
+        tmax={dur}
+        t={t}
+        onSeek={seek}
+      />
+      <LineChart
+        title={tr('Carga de trabajo del equipo')}
+        unit={tr('kcal acumuladas')}
+        series={ser('work', (r) => r.series.work)}
+        tmax={dur}
+        t={t}
+        onSeek={seek}
+      />
       {hr && (
         <LineChart
-          title="Cultivo a bordo del robot"
-          unit="unidades"
-          series={[{ key: 'hr', name: 'A bordo', color: SC.hr.color, t: hr.series.t, y: hr.robot?.onboard || new Float32Array(hr.n) }]}
+          title={tr('Cultivo a bordo del robot')}
+          unit={tr('unidades')}
+          series={[{ key: 'hr', name: tr('A bordo'), color: SC.hr.color, t: hr.series.t, y: hr.robot?.onboard || new Float32Array(hr.n) }]}
           tmax={dur}
           t={t}
           onSeek={seek}

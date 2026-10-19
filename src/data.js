@@ -1,5 +1,6 @@
 // Datos del huerto: generación sintética, carga/exportación JSON, oclusión por punto de vista.
 // `orchard` es un objeto mutable: loadOrchard() reemplaza su contenido en sitio.
+import { t } from './i18n/index.js'
 
 function rng(seed) {
   let s = seed >>> 0
@@ -201,33 +202,34 @@ export const ORCHARD_LIMITS = { maxFruits: 2000, maxLeaves: 5000, maxTrees: 200,
 
 export function loadOrchard(json) {
   if (!json || !Array.isArray(json.fruits) || json.fruits.length === 0) {
-    return { ok: false, msg: 'El JSON debe tener un arreglo "fruits" no vacío.' }
+    return { ok: false, msg: t('El JSON debe tener un arreglo "fruits" no vacío.') }
   }
   const L = ORCHARD_LIMITS
-  if (json.fruits.length > L.maxFruits) return { ok: false, msg: `Demasiados frutos (${json.fruits.length}); el máximo es ${L.maxFruits}.` }
+  if (json.fruits.length > L.maxFruits)
+    return { ok: false, msg: t('Demasiados frutos ({n}); el máximo es {max}.', { n: json.fruits.length, max: L.maxFruits }) }
   if (Array.isArray(json.leaves) && json.leaves.length > L.maxLeaves)
-    return { ok: false, msg: `Demasiadas hojas (${json.leaves.length}); el máximo es ${L.maxLeaves}.` }
+    return { ok: false, msg: t('Demasiadas hojas ({n}); el máximo es {max}.', { n: json.leaves.length, max: L.maxLeaves }) }
   if (Array.isArray(json.trees) && json.trees.length > L.maxTrees)
-    return { ok: false, msg: `Demasiados árboles (${json.trees.length}); el máximo es ${L.maxTrees}.` }
+    return { ok: false, msg: t('Demasiados árboles ({n}); el máximo es {max}.', { n: json.trees.length, max: L.maxTrees }) }
   const num = (...v) => v.every((x) => Number.isFinite(x))
   if (Array.isArray(json.leaves)) {
     const bad = json.leaves.findIndex((l) => !l || !num(l.x, l.y, l.z, l.r) || l.r <= 0)
-    if (bad >= 0) return { ok: false, msg: `Hoja #${bad + 1}: x, y, z y r (> 0) deben ser números.` }
+    if (bad >= 0) return { ok: false, msg: t('Hoja #{n}: x, y, z y r (> 0) deben ser números.', { n: bad + 1 }) }
   }
   if (Array.isArray(json.trees)) {
     const bad = json.trees.findIndex((t) => !t || !num(t.cx, t.cz))
-    if (bad >= 0) return { ok: false, msg: `Árbol #${bad + 1}: cx y cz deben ser números.` }
+    if (bad >= 0) return { ok: false, msg: t('Árbol #{n}: cx y cz deben ser números.', { n: bad + 1 }) }
   }
   const fruits = []
   for (let i = 0; i < json.fruits.length; i++) {
     const s = json.fruits[i]
     if (![s.x, s.y, s.z].every((v) => Number.isFinite(v))) {
-      return { ok: false, msg: `Fruto #${i + 1}: x, y, z deben ser números.` }
+      return { ok: false, msg: t('Fruto #{n}: x, y, z deben ser números.', { n: i + 1 }) }
     }
     if (s.views && (!Array.isArray(s.views) || s.views.length > L.maxViews))
-      return { ok: false, msg: `Fruto #${i + 1}: views debe ser un arreglo de hasta ${L.maxViews} vistas.` }
+      return { ok: false, msg: t('Fruto #{n}: views debe ser un arreglo de hasta {max} vistas.', { n: i + 1, max: L.maxViews }) }
     if (s.views && !s.views.every((v) => Array.isArray(v.pos) && v.pos.length === 3 && v.pos.every(Number.isFinite))) {
-      return { ok: false, msg: `Fruto #${i + 1}: cada vista necesita pos:[x,y,z] numérico.` }
+      return { ok: false, msg: t('Fruto #{n}: cada vista necesita pos:[x,y,z] numérico.', { n: i + 1 }) }
     }
     const f = {
       id: String(s.id ?? `FR-${String(i + 1).padStart(2, '0')}`),
@@ -253,7 +255,12 @@ export function loadOrchard(json) {
   fruits.forEach((f, i) => computeFruit(f, leaves, fruits, i))
   assign(fruits)
   Object.assign(orchard, { trees, leaves, fruits, source: 'JSON cargado' })
-  return { ok: true, msg: `Cargados ${fruits.length} frutos${trees.length ? ` y ${trees.length} árboles` : ''}.` }
+  return {
+    ok: true,
+    msg: trees.length
+      ? t('Cargados {n} frutos y {trees} árboles.', { n: fruits.length, trees: trees.length })
+      : t('Cargados {n} frutos.', { n: fruits.length }),
+  }
 }
 
 export function exportOrchard() {

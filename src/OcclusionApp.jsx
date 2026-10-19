@@ -3,6 +3,7 @@ import Scene from './Scene.jsx'
 import { Tabs, Toast } from './workload/ui.jsx'
 import { orchard, loadOrchard, exportOrchard } from './data.js'
 import { sim, snapshot, resetSim, setStrategy, evaluate, chosenFor, PRESETS, STEPS } from './sim.js'
+import { t, useLang } from './i18n/index.js'
 
 const pct = (x) => `${Math.round(x * 100)}%`
 const clock = (t) => {
@@ -26,9 +27,10 @@ function Kpi({ icon, label, value, sub, tone }) {
 }
 
 function OccBars({ f, chosenIdx }) {
+  useLang()
   const vals = f.views.map((v) => v.occ)
   return (
-    <svg viewBox="0 0 250 46" width="100%" height="46" role="img" aria-label="Oclusión por punto de vista">
+    <svg viewBox="0 0 250 46" width="100%" height="46" role="img" aria-label={t('Oclusión por punto de vista')}>
       {vals.map((o, i) => {
         const w = 250 / vals.length
         const h = Math.max(2, o * 38)
@@ -44,6 +46,7 @@ function OccBars({ f, chosenIdx }) {
 }
 
 function Detail({ snap }) {
+  useLang()
   const sel = snap.selected
   const R = snap.robot,
     H = snap.human
@@ -60,45 +63,45 @@ function Detail({ snap }) {
       <div className="card detail">
         <div className="detail-head">
           <div>
-            <div className="muted">FRUTO · Árbol {Number(f.tree) + 1}</div>
+            <div className="muted">{t('FRUTO · Árbol {n}', { n: Number(f.tree) + 1 })}</div>
             <div className="detail-title">{f.id}</div>
           </div>
-          <span className={`pill ${mine ? 'blue' : 'orange'}`}>{mine ? 'Robot' : 'Humano'}</span>
+          <span className={`pill ${mine ? 'blue' : 'orange'}`}>{mine ? t('Robot') : t('Humano')}</span>
         </div>
-        {target.auto && <div className="hint">Objetivo actual del robot</div>}
+        {target.auto && <div className="hint">{t('Objetivo actual del robot')}</div>}
         <div className="row">
-          <span>Estado</span>
-          <b>{{ pending: 'Pendiente', claimed: 'En curso', done: 'Cosechado' }[s.state]}</b>
+          <span>{t('Estado')}</span>
+          <b>{t({ pending: 'Pendiente', claimed: 'En curso', done: 'Cosechado' }[s.state])}</b>
         </div>
         <div className="row">
-          <span>Oclusión media (todas las vistas)</span>
+          <span>{t('Oclusión media (todas las vistas)')}</span>
           <b>{pct(f.occ)}</b>
         </div>
         <div className="row">
-          <span>Vista elegida ({PRESETS[snap.strategy.mode]?.label ?? 'Personalizada'})</span>
+          <span>{t('Vista elegida ({strategy})', { strategy: t(PRESETS[snap.strategy.mode]?.label ?? 'Personalizada') })}</span>
           <b>
             #{ch.idx + 1} · occ {pct(ch.occ)}
           </b>
         </div>
         <div className="row">
-          <span>Mejor vista posible por oclusión</span>
+          <span>{t('Mejor vista posible por oclusión')}</span>
           <b className="good">{pct(f.best.occ)}</b>
         </div>
         <div className="row">
-          <span>Movimiento · extensión del brazo</span>
+          <span>{t('Movimiento · extensión del brazo')}</span>
           <b>
             {ch.move.toFixed(2)} m · {ch.reach.toFixed(2)} m
           </b>
         </div>
-        <div className="muted small">Oclusión por punto de vista ({f.views.length} candidatos)</div>
+        <div className="muted small">{t('Oclusión por punto de vista ({n} candidatos)', { n: f.views.length })}</div>
         <OccBars f={f} chosenIdx={ch.idx} />
         <div className="legend">
           <i style={{ background: 'hsl(120 70% 48%)' }} />
-          visible
+          {t('visible')}
           <i style={{ background: 'hsl(0 70% 48%)' }} />
-          ocluido
+          {t('ocluido')}
           <i className="best" />
-          vista elegida
+          {t('vista elegida')}
         </div>
       </div>
     )
@@ -108,28 +111,28 @@ function Detail({ snap }) {
       <div className="card detail">
         <div className="detail-head">
           <div>
-            <div className="muted">OPERARIO</div>
+            <div className="muted">{t('OPERARIO')}</div>
             <div className="detail-title">HU-01</div>
           </div>
-          <span className="pill orange">Humano</span>
+          <span className="pill orange">{t('Humano')}</span>
         </div>
         <div className="row">
-          <span>Estado</span>
+          <span>{t('Estado')}</span>
           <b>{H.status}</b>
         </div>
         <div className="row">
-          <span>Frutos cosechados</span>
+          <span>{t('Frutos cosechados')}</span>
           <b>{H.picked}</b>
         </div>
         <div className="row">
-          <span>Posición en carril</span>
+          <span>{t('Posición en carril')}</span>
           <b>x = {H.x.toFixed(1)} m</b>
         </div>
         <div className="row">
-          <span>Distancia al robot</span>
+          <span>{t('Distancia al robot')}</span>
           <b>{Math.hypot(R.x - H.x, R.z - H.z).toFixed(1)} m</b>
         </div>
-        <div className="hint">Recibe los frutos con mayor oclusión (difíciles para el robot).</div>
+        <div className="hint">{t('Recibe los frutos con mayor oclusión (difíciles para el robot).')}</div>
       </div>
     )
   }
@@ -137,31 +140,31 @@ function Detail({ snap }) {
     <div className="card detail">
       <div className="detail-head">
         <div>
-          <div className="muted">ROBOT MANIPULADOR</div>
+          <div className="muted">{t('ROBOT MANIPULADOR')}</div>
           <div className="detail-title">RB-01</div>
         </div>
-        <span className="pill blue">Robot</span>
+        <span className="pill blue">{t('Robot')}</span>
       </div>
       <div className="bar">
         <div style={{ width: pct(R.step < 0 ? 0 : (R.step + 1) / STEPS.length) }} />
       </div>
       <div className="row">
-        <span>Estado</span>
+        <span>{t('Estado')}</span>
         <b className={R.paused ? 'warn' : ''}>{R.status}</b>
       </div>
       <div className="row">
-        <span>Frutos cosechados</span>
+        <span>{t('Frutos cosechados')}</span>
         <b>{R.picked}</b>
       </div>
       <div className="row">
-        <span>Posición en carril</span>
+        <span>{t('Posición en carril')}</span>
         <b>x = {R.x.toFixed(1)} m</b>
       </div>
       <div className="row">
-        <span>Tiempo cedido al humano</span>
+        <span>{t('Tiempo cedido al humano')}</span>
         <b>{R.pausedTime.toFixed(1)} s</b>
       </div>
-      <div className="hint">Se pausa si el humano está a menos de 2 m.</div>
+      <div className="hint">{t('Se pausa si el humano está a menos de 2 m.')}</div>
     </div>
   )
 }
@@ -173,6 +176,7 @@ const W_LABELS = [
 ]
 
 function Selector({ snap, version, onChange }) {
+  useLang()
   const { mode, w } = snap.strategy
   const wKey = w.join(',') // la instantánea trae un arreglo nuevo en cada cuadro: memorizar por su contenido
   const rows = useMemo(() => {
@@ -187,8 +191,8 @@ function Selector({ snap, version, onChange }) {
   return (
     <div className="card selector">
       <div className="sel-head">
-        <b>Selector de punto de vista</b>
-        <span className="muted small">peso → costo</span>
+        <b>{t('Selector de punto de vista')}</b>
+        <span className="muted small">{t('peso → costo')}</span>
       </div>
       <div className="seg">
         {Object.entries(PRESETS).map(([k, p]) => (
@@ -200,13 +204,13 @@ function Selector({ snap, version, onChange }) {
               onChange()
             }}
           >
-            {p.label}
+            {t(p.label)}
           </button>
         ))}
       </div>
       {W_LABELS.map(([name, tip], i) => (
-        <label key={name} className="slider" title={tip}>
-          <span>{name}</span>
+        <label key={name} className="slider" title={t(tip)}>
+          <span>{t(name)}</span>
           <input
             type="range"
             min="0"
@@ -226,39 +230,40 @@ function Selector({ snap, version, onChange }) {
       <table className="cmp">
         <thead>
           <tr>
-            <th>Estrategia</th>
-            <th>Occ. media</th>
-            <th>Mov. medio</th>
+            <th>{t('Estrategia')}</th>
+            <th>{t('Occ. media')}</th>
+            <th>{t('Mov. medio')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.k} className={r.k === mode ? 'cur' : ''}>
-              <td>{r.label}</td>
+              <td>{t(r.label)}</td>
               <td className={r.occ === bestOcc ? 'good' : ''}>{pct(r.occ)}</td>
               <td className={r.move === bestMove ? 'good' : ''}>{r.move.toFixed(2)} m</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="muted small">Sobre los {rows[0]?.n} frutos del robot. Se aplica al siguiente fruto.</div>
+      <div className="muted small">{t('Sobre los {n} frutos del robot. Se aplica al siguiente fruto.', { n: rows[0]?.n })}</div>
     </div>
   )
 }
 
 function Pipeline({ snap }) {
+  useLang()
   const R = snap.robot
   return (
     <div className="card pipeline">
       <div className="pipeline-head">
-        <b>Ciclo de cosecha del robot</b>
-        <span className="muted">{R.targetId ? `Fruto ${R.targetId}` : 'Sin objetivo'}</span>
+        <b>{t('Ciclo de cosecha del robot')}</b>
+        <span className="muted">{R.targetId ? t('Fruto {id}', { id: R.targetId }) : t('Sin objetivo')}</span>
       </div>
       <div className="steps">
         {STEPS.map((s, i) => (
           <div key={s} className={`step ${i < R.step ? 'done' : i === R.step ? 'active' : ''}`}>
             <div className="dot">{i < R.step ? '✓' : i + 1}</div>
-            <div className="step-label">{s}</div>
+            <div className="step-label">{t(s)}</div>
           </div>
         ))}
       </div>
@@ -268,6 +273,7 @@ function Pipeline({ snap }) {
 }
 
 function Lists({ snap, onSelect }) {
+  useLang()
   const [tab, setTab] = useState('frutos')
   const rows = orchard.fruits
     .map((f) => ({ f, s: snap.fruits.find((x) => x.id === f.id) }))
@@ -277,22 +283,22 @@ function Lists({ snap, onSelect }) {
   return (
     <div className="card lists">
       <Tabs
-        label="Listas"
+        label={t('Listas')}
         value={tab}
         onChange={setTab}
         options={[
-          ['frutos', `Frutos ${snap.total - snap.done}`],
-          ['agentes', 'Agentes 2'],
+          ['frutos', t('Frutos {n}', { n: snap.total - snap.done })],
+          ['agentes', t('Agentes {n}', { n: 2 })],
         ]}
       />
-      <div className="list" tabIndex={0} role="region" aria-label="Lista de frutos y agentes">
+      <div className="list" tabIndex={0} role="region" aria-label={t('Lista de frutos y agentes')}>
         {tab === 'frutos' ? (
           rows.map(({ f, s }) => (
             <div key={f.id} className={`li ${snap.selected?.id === f.id ? 'sel' : ''}`} onClick={() => onSelect({ type: 'fruit', id: f.id })}>
               <span className={`dotc ${f.assignee === 'robot' ? 'blue' : 'orange'}`} />
               <b>{f.id}</b>
               <span className="muted grow">occ {pct(f.occ)}</span>
-              <span className={`tag-s ${s.state}`}>{{ pending: 'Pendiente', claimed: 'En curso', done: 'Listo' }[s.state]}</span>
+              <span className={`tag-s ${s.state}`}>{t({ pending: 'Pendiente', claimed: 'En curso', done: 'Listo' }[s.state])}</span>
             </div>
           ))
         ) : (
@@ -317,6 +323,7 @@ function Lists({ snap, onSelect }) {
 }
 
 export default function OcclusionApp({ modeSwitch }) {
+  useLang()
   const [snap, setSnap] = useState(snapshot)
   const [version, setVersion] = useState(0)
   const [toast, setToast] = useState(null)
@@ -344,7 +351,7 @@ export default function OcclusionApp({ modeSwitch }) {
     try {
       json = JSON.parse(text)
     } catch (e) {
-      setToast({ ok: false, msg: `${name}: JSON inválido (${e.message})` })
+      setToast({ ok: false, msg: `${name}: ${t('JSON inválido ({error})', { error: e.message })}` })
       return
     }
     const res = loadOrchard(json)
@@ -405,9 +412,9 @@ export default function OcclusionApp({ modeSwitch }) {
         </div>
         {modeSwitch}
         <div className="datasrc">
-          <span className="muted">Datos:</span> <b>{orchard.source}</b>
-          <button onClick={() => fileRef.current.click()}>📂 Cargar JSON</button>
-          <button onClick={exportJson}>⬇ Exportar</button>
+          <span className="muted">{t('Datos:')}</span> <b>{t(orchard.source)}</b>
+          <button onClick={() => fileRef.current.click()}>{`📂 ${t('Cargar JSON')}`}</button>
+          <button onClick={exportJson}>{`⬇ ${t('Exportar')}`}</button>
           <input
             ref={fileRef}
             type="file"
@@ -420,27 +427,27 @@ export default function OcclusionApp({ modeSwitch }) {
           />
         </div>
         <div className="site">
-          <b>Huerto Norte · Filas A–B</b>
-          <span className="muted"> {snap.total - snap.done} frutos pendientes</span>
+          <b>{t('Huerto Norte · Filas A–B')}</b>
+          <span className="muted"> {t('{n} frutos pendientes', { n: snap.total - snap.done })}</span>
         </div>
         <div className="live">
-          <i /> Simulación {clock(snap.t)}
+          <i /> {t('Simulación')} {clock(snap.t)}
         </div>
         <div className="user">
           <span className="avatar">IG</span>
           <div>
             <b>Ivan García</b>
-            <div className="muted small">Investigador · UNAB</div>
+            <div className="muted small">{t('Investigador · UNAB')}</div>
           </div>
         </div>
       </header>
 
       <div className="left-col">
         <div className="kpis">
-          <Kpi icon="🍈" label="Cosechados" value={`${snap.done} / ${snap.total}`} sub={`${pct(eff)} del huerto`} tone="#16a34a" />
-          <Kpi icon="🤖" label="Robot / Humano" value={`${snap.rp} / ${snap.hp}`} sub="frutos por agente" tone="#2f6bff" />
-          <Kpi icon="👁" label="Occ. al agarre" value={snap.pickOcc == null ? '—' : pct(snap.pickOcc)} sub="vista elegida (media)" tone="#ff8a1f" />
-          <Kpi icon="↔" label="Trayectoria" value={`${snap.travel.toFixed(0)} m`} sub="brazo, acumulada" tone="#8b5cf6" />
+          <Kpi icon="🍈" label={t('Cosechados')} value={`${snap.done} / ${snap.total}`} sub={t('{pct} del huerto', { pct: pct(eff) })} tone="#16a34a" />
+          <Kpi icon="🤖" label={t('Robot / Humano')} value={`${snap.rp} / ${snap.hp}`} sub={t('frutos por agente')} tone="#2f6bff" />
+          <Kpi icon="👁" label={t('Occ. al agarre')} value={snap.pickOcc == null ? '—' : pct(snap.pickOcc)} sub={t('vista elegida (media)')} tone="#ff8a1f" />
+          <Kpi icon="↔" label={t('Trayectoria')} value={`${snap.travel.toFixed(0)} m`} sub={t('brazo, acumulada')} tone="#8b5cf6" />
         </div>
         <Selector snap={snap} version={version} onChange={refresh} />
       </div>
@@ -456,7 +463,7 @@ export default function OcclusionApp({ modeSwitch }) {
             refresh()
           }}
         >
-          {snap.playing ? '⏸ Pausar' : '▶ Reanudar'}
+          {snap.playing ? `⏸ ${t('Pausar')}` : `▶ ${t('Reanudar')}`}
         </button>
         <button
           onClick={() => {
@@ -472,7 +479,7 @@ export default function OcclusionApp({ modeSwitch }) {
             refresh()
           }}
         >
-          ↺ Reiniciar
+          {`↺ ${t('Reiniciar')}`}
         </button>
       </div>
 
@@ -488,7 +495,7 @@ export default function OcclusionApp({ modeSwitch }) {
           {toast.msg}
         </Toast>
       )}
-      {drag && <div className="dropzone">Suelta el archivo JSON para cargar los datos</div>}
+      {drag && <div className="dropzone">{t('Suelta el archivo JSON para cargar los datos')}</div>}
     </div>
   )
 }
