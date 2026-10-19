@@ -13,6 +13,7 @@ import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers 
 import { buildHuerto } from './huertos/index.js'
 import { protectionDistance } from './ssm.js'
 import { Cosecha, rutaCalles } from './huertos/rectangular.js'
+import { paso } from './huertos/pendiente.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -258,9 +259,11 @@ export class HRSim {
         break
       }
       case 8: {
-        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], p.walkSpeed, dt)
+        // en ladera la velocidad y el gasto dependen de la pendiente del tramo (en plano: v = walkSpeed, k = 1)
+        const { v, k } = paso(this.huerto, w.pose, w.route[w.routeIdx], p.walkSpeed, true)
+        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], v, dt)
         w.pose = pose
-        w.work += C.walkingCarrying * dt
+        w.work += C.walkingCarrying * dt * k
         w.flag = 2
         if (reached) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
@@ -282,8 +285,9 @@ export class HRSim {
         break
       }
       case 9: {
-        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], p.walkSpeed, dt)
-        w.work += C.walking * dt
+        const { v, k } = paso(this.huerto, w.pose, w.route[w.routeIdx], p.walkSpeed)
+        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], v, dt)
+        w.work += C.walking * dt * k
         w.flag = 2
         if (reached) {
           if (w.routeIdx < w.route.length - 1) {
@@ -306,9 +310,10 @@ export class HRSim {
       }
       case 13: {
         // camina por la calle al siguiente árbol de su tramo
-        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], p.walkSpeed, dt)
+        const { v, k } = paso(this.huerto, w.pose, w.route[w.routeIdx], p.walkSpeed)
+        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], v, dt)
         w.pose = pose
-        w.work += C.walking * dt
+        w.work += C.walking * dt * k
         w.flag = 2
         if (reached) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
@@ -336,9 +341,10 @@ export class HRSim {
         } else w.ladderCount += dt
         break
       case 10: {
-        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], p.walkSpeed, dt)
+        const { v, k } = paso(this.huerto, w.pose, w.route[w.routeIdx], p.walkSpeed)
+        const { pose, reached } = movePose(w.pose, w.route[w.routeIdx], v, dt)
         w.pose = pose
-        w.work += C.walking * dt
+        w.work += C.walking * dt * k
         w.flag = 2
         if (reached) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
@@ -663,8 +669,16 @@ export class HRSim {
    * d ≥ S_p(v_c) + v_c·dt (el término v_c·dt cubre lo que el robot se acerca dentro del tick).
    */
   _ssmScale(vx, vy) {
-    const s = this.p.ssm,
-      dt = this.dt,
+    let s = this.p.ssm
+    // en ladera, cuesta abajo la frenada efectiva es a − g·senθ (θ: pendiente en la dirección de avance), con un piso
+    // del 10 % de a (con a = 1,5 m/s² y 20 % de pendiente, a − g·senθ sería negativa: el robot no podría detenerse)
+    if (this.huerto.terreno?.pendiente && this.huerto.z && Math.hypot(vx, vy) > 1e-9) {
+      const v = Math.hypot(vx, vy),
+        [rx0, ry0] = this.rpose
+      const S = this.huerto.z(rx0 + vx / v, ry0 + vy / v) - this.huerto.z(rx0, ry0)
+      if (S < 0) s = { ...s, a: Math.max(0.1 * s.a, s.a - 9.81 * (-S / Math.hypot(1, S))) }
+    }
+    const dt = this.dt,
       [rx, ry] = this.rpose
     const vCmd = Math.hypot(vx, vy)
     const kSlow = vCmd > s.vSlow ? s.vSlow / vCmd : 1

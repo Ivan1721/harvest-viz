@@ -43,6 +43,8 @@ export function sceneGeometry(meta) {
       trees: h.arboles.map((a, i) => ({ x: a.x, y: a.y, seed: i + 1 })),
       R,
       H: h.arboles[0]?.altura,
+      // ladera: el terreno es un plano inclinado a lo largo de las hileras (y); la escena entera se inclina ese ángulo
+      tilt: h.terreno?.pendiente ? (h.terreno.acopioEnCima ? -1 : 1) * Math.atan(h.terreno.pendiente / 100) : 0,
       // hileras verticales (paralelas al eje y)
       strips: rowsX.map((x) => ({ x0: x - R, x1: x + R, y0, y1 })),
       cargo: { wp: [ax, ay], x: [ax - 2.5, ax + 2.5], y: [0, Math.max(0.6, ay - 1.8)] },

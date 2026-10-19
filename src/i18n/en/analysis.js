@@ -166,4 +166,11 @@ export default {
   'perfil MATLAB 2026': 'MATLAB 2026 profile',
   'Palta alta dens.': 'High-dens. avocado',
   'Palta alta densidad (4 × 2 m, 1 ha)': 'High-density avocado (4 × 2 m, 1 ha)',
+  'Palta ladera': 'Hillside avocado',
+  'Palta en ladera (4 × 2 m, 20 %)': 'Hillside avocado (4 × 2 m, 20 %)',
+  'Pendiente a lo largo de las hileras (%)': 'Slope along the rows (%)',
+  'Acopio en la cima del cerro': 'Collection point at the hilltop',
+  'pendiente {p} %, acopio {d}': 'slope {p} %, collection point {d}',
+  'en la cima': 'at the top',
+  'al pie': 'at the foot',
 }

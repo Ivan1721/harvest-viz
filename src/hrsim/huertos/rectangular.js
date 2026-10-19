@@ -20,6 +20,8 @@ export const PALTA_TRADICIONAL = Object.freeze({
   cargaArbol: 42, // kg (10.100 kg/ha ÷ 240 árboles, ODEPA 2025)
   cabecera: 6, // m
   escalera: true, // árboles altos: parte de la cuadrilla cosecha con escalera
+  pendiente: 0, // % a lo largo de las hileras (camellones a favor de la pendiente)
+  acopioEnCima: false, // el acopio está al pie del cerro (false) o en la cima (true)
 })
 
 /** Palta alta densidad (H3): marco 4 × 2 m, árboles bajos (≤ 2 m) cosechados desde el suelo; el Warthog entra justo. */
@@ -33,7 +35,12 @@ export const PALTA_ALTA_DENSIDAD = Object.freeze({
   cargaArbol: 9, // kg (10.100 kg/ha ÷ 1.125 árboles)
   cabecera: 6,
   escalera: false,
+  pendiente: 0,
+  acopioEnCima: false,
 })
+
+/** Palta en ladera (H4): como la alta densidad, en una pendiente de 20 % (rango usual 15–30 %). */
+export const PALTA_LADERA = Object.freeze({ ...PALTA_ALTA_DENSIDAD, pendiente: 20 })
 
 /** Comprueba los parámetros del generador; lanza un Error legible. */
 export function validarRectangular(g) {
@@ -43,6 +50,8 @@ export function validarRectangular(g) {
   for (const k of ['calle', 'sobreHilera', 'altura', 'radioCopa', 'cabecera']) if (!(Number.isFinite(g[k]) && g[k] > 0)) bad(`${k} debe ser > 0`)
   if (!(Number.isFinite(g.cargaArbol) && g.cargaArbol >= 0)) bad('cargaArbol debe ser ≥ 0')
   if (typeof g.escalera !== 'boolean') bad('escalera debe ser true o false')
+  if (!(Number.isFinite(g.pendiente) && g.pendiente >= 0 && g.pendiente <= 60)) bad('pendiente debe estar entre 0 y 60 %')
+  if (typeof g.acopioEnCima !== 'boolean') bad('acopioEnCima debe ser true o false')
   for (const k of ['hileras', 'arbolesPorHilera']) if (!(Number.isInteger(g[k]) && g[k] >= 2 && g[k] <= 200)) bad(`${k} debe ser un entero entre 2 y 200`)
   if (2 * g.radioCopa >= g.calle) bad('radioCopa: las copas de dos hileras se tocan (2·radio ≥ calle), no queda calle para caminar')
   if (2 * g.radioCopa > g.sobreHilera + 1e-9 && g.radioCopa > g.calle) bad('radioCopa demasiado grande')
@@ -60,11 +69,15 @@ export function generarRectangular(g, { nw, sistema }) {
   const rowX = (r) => calle * (r + 0.5)
   const treeY = (t) => cabecera + sobreHilera * (t + 0.5)
   const arboles = []
+  const zOf = (y) => (g.acopioEnCima ? (g.pendiente / 100) * (h - y) : (g.pendiente / 100) * y)
   for (let r = 0; r < hileras; r++)
-    for (let t = 0; t < nA; t++) arboles.push({ x: rowX(r), y: treeY(t), z: 0, hilera: r, pos: t, altura: g.altura, radio: R, carga: g.cargaArbol })
+    for (let t = 0; t < nA; t++) arboles.push({ x: rowX(r), y: treeY(t), z: zOf(treeY(t)), hilera: r, pos: t, altura: g.altura, radio: R, carga: g.cargaArbol })
   const tree = (r, t) => r * nA + t
   const ejes = Array.from({ length: hileras - 1 }, (_, s) => calle * (s + 1))
   const acopio = [w / 2, cabecera / 2]
+  // terreno: plano inclinado a lo largo de las hileras; el acopio (cabecera inferior) queda al pie o en la cima
+  const sl = g.pendiente / 100
+  const z = (x, y) => (g.acopioEnCima ? sl * (h - y) : sl * y)
   const anchoLibre = calle - 2 * R
   const robotCabe = anchoLibre >= ROBOT_ANCHO + HOLGURA_CALLE
 
@@ -129,7 +142,8 @@ export function generarRectangular(g, { nw, sistema }) {
     inicioRobot: [acopio[0], acopio[1], 0],
     vueltaRobot,
     calles: { ejes, cabecera, yb, yt, robotCabe, anchoLibre, calle },
-    terreno: { pendiente: 0 },
+    terreno: { pendiente: g.pendiente, acopioEnCima: g.acopioEnCima },
+    z,
   }
 }
 

@@ -166,4 +166,11 @@ export default {
   'perfil MATLAB 2026': 'perfil MATLAB 2026',
   'Palta alta dens.': 'Abacate alta dens.',
   'Palta alta densidad (4 × 2 m, 1 ha)': 'Abacate alta densidade (4 × 2 m, 1 ha)',
+  'Palta ladera': 'Abacate encosta',
+  'Palta en ladera (4 × 2 m, 20 %)': 'Abacate em encosta (4 × 2 m, 20 %)',
+  'Pendiente a lo largo de las hileras (%)': 'Declive ao longo das fileiras (%)',
+  'Acopio en la cima del cerro': 'Ponto de coleta no topo do morro',
+  'pendiente {p} %, acopio {d}': 'declive {p} %, ponto de coleta {d}',
+  'en la cima': 'no topo',
+  'al pie': 'no pé',
 }

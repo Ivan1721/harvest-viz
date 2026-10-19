@@ -51,6 +51,15 @@ Cuando el robot entra a las calles (H3):
 
 Resultados de referencia (45 min, cuadrilla mixta): en 4 × 2 m el robot sube la cosecha 27 % con 12 cosecheros (1.360 → 1.734 kg) y 34 % con 24, con la misma carga metabólica; con 24 un solo robot no da abasto (1.530 kg en cajas esperando al final). En 3 × 3 m, donde no cabe, no aporta (−3 %), igual que en la palta tradicional.
 
+En ladera (H4), siempre como factor sobre el valor en plano (`huertos/pendiente.js`; con pendiente 0 todo da exactamente igual que en plano, verificado):
+
+- **Marcha**: función de Tobler (Tobler 1993, NCGIA Technical Report 93-1), v(S)/v(0) con v = 6·exp(−3,5·|S + 0,05|) km/h y S la pendiente del tramo (+ subiendo). A 20 %: 0,50 subiendo y 0,70 bajando.
+- **Gasto al caminar**: ecuación de Pandolf (Pandolf, Givoni y Goldman 1977, J. Appl. Physiol. 43(4):577–581), cociente M(G)/M(0) a la misma velocidad con W = 70 kg, L = 0 o 15 kg (caja) y η = 1,1 (camino de tierra); escala los costos de caminar de ISO 8996 del modelo. En bajada, factor 1 (Pandolf no la cubre bien; supuesto conservador). La cosecha en sí no cambia.
+- **Robot (fase 3)**: cuesta abajo la frenada efectiva es a − g·senθ. Con a = 1,5 m/s² y 20 % (θ ≈ 11,3°) da negativa; se usa un piso de 0,1·a, así que bajando con gente cerca el robot se detiene mucho antes. La velocidad máxima del robot en pendiente no cambia.
+- **Visor**: la escena completa se inclina con el terreno (los árboles quedan perpendiculares al suelo, una simplificación visual).
+
+Resultados de referencia (12 cosecheros, mixta, 45 min, acopio al pie): sin robot la ladera de 20 % baja la cosecha de 1.360 a 1.200 kg y sube el gasto de 1,60 a 2,19 kcal/kg; con robot se cosechan 1.672 kg a 1,40 kcal/kg (+39 % sobre sin robot). Con el acopio en la cima, sin robot el gasto sube a 2,55 kcal/kg (las cajas se suben) y el robot lo deja en 1,29.
+
 Simplificaciones de H2: la caja siempre va a la cabecera inferior (la del acopio; en 45 min los cosecheros no pasan del tercer árbol); la capacidad del robot sigue en 68 cajas; terreno plano. Alta densidad (H3), ladera (H4) y otras frutas (H5) usan el mismo generador.
 
 ## Métricas de fluidez y seguridad (fase 2)
