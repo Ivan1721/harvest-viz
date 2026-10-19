@@ -57,6 +57,18 @@ const COSTS = [
   ['ladderClimb', 'Subir escalera'],
   ['ladderDown', 'Bajar escalera'],
 ]
+// regla de seguridad SSM (fase 3, solo perfil hri): [clave, etiqueta, paso, fuente, mínimo]
+const SSM = [
+  ['vh', 'Velocidad humana supuesta v_h (m/s)', 0.1, 'ISO 13855: 1,6', 0.1],
+  ['Tr', 'Tiempo de reacción T_r (s)', 0.05, 'Campomaggiore et al. 2019: 0,10', 0],
+  ['a', 'Desaceleración de frenado a (m/s²)', 0.1, 'Supuesto: 1,5 (conservador: 1,0)', 0.1],
+  ['C', 'Intrusión antes de detectar C (m)', 0.05, 'Campomaggiore et al. 2019: 0,20', 0],
+  ['Zd', 'Incertidumbre del trabajador Z_d (m)', 0.01, 'Campomaggiore et al. 2019: 0,107', 0],
+  ['Zr', 'Incertidumbre del robot Z_r (m)', 0.01, 'Supuesto: 0,10', 0],
+  ['warn', 'Margen de advertencia (m)', 0.1, 'Supuesto: 1,0', 0],
+  ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
+  ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
+]
 const PERIODS = [
   [1, 'Suelo'],
   [2, 'Escalera'],
@@ -142,6 +154,25 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
               />
             </label>
           ))}
+          {params.ssm && (
+            <>
+              <div className="note">{t('Seguridad: velocidad y separación (ISO/TS 15066)')}</div>
+              <label>
+                <span>{t('Regla de seguridad activa')}</span>
+                <input
+                  type="checkbox"
+                  checked={params.ssm.enabled}
+                  onChange={(e) => setParams((p) => ({ ...p, ssm: { ...p.ssm, enabled: e.target.checked } }))}
+                />
+              </label>
+              {SSM.map(([k, l, st, src, min]) => (
+                <label key={k} title={t(src)}>
+                  <span>{t(l)}</span>
+                  <NumField value={params.ssm[k]} step={st} min={min} label={t(l)} onCommit={(v) => setParams((p) => ({ ...p, ssm: { ...p.ssm, [k]: v } }))} />
+                </label>
+              ))}
+            </>
+          )}
           <button className="btn" onClick={() => setParams(base)}>
             {params.profile === 'matlab-2026' ? t('Restablecer a MATLAB') : t('Restablecer perfil')}
           </button>

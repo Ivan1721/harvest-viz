@@ -83,6 +83,10 @@ export function resolveParams(opts = {}, extra = {}) {
     costs: { ...DEFAULTS.costs, ...(opts.costs || {}) },
     prodPeriod: { ...DEFAULTS.prodPeriod, ...(opts.prodPeriod || {}) },
   }
+  // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
+  const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
+  if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
+  else delete p.ssm
   const bad = (msg) => {
     throw new Error(`Parámetro inválido: ${msg}`)
   }
@@ -95,6 +99,10 @@ export function resolveParams(opts = {}, extra = {}) {
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
   for (const [k, v] of Object.entries(p.costs)) if (!(Number.isFinite(v) && v >= 0)) bad(`costs.${k} debe ser un número ≥ 0`)
   for (const k of ['walkSpeed', 'maxProd', 'capacityBoxes', 'maxBoxStopsPerLap']) if (!(p[k] > 0)) bad(`${k} debe ser > 0`)
+  if (p.ssm) {
+    for (const k of ['vh', 'a', 'vSlow']) if (!(Number.isFinite(p.ssm[k]) && p.ssm[k] > 0)) bad(`ssm.${k} debe ser > 0`)
+    for (const k of ['Tr', 'C', 'Zd', 'Zr', 'warn', 'tResume']) if (!(Number.isFinite(p.ssm[k]) && p.ssm[k] >= 0)) bad(`ssm.${k} debe ser ≥ 0`)
+  }
   return p
 }
 
@@ -126,11 +134,18 @@ export function paramsHash(obj) {
  */
 export const PROFILES = {
   'matlab-2026': { label: 'MATLAB 2026 (réplica validada)', params: {} },
-  hri: { label: 'HRI (en desarrollo)', params: {} },
+  // fase 3: monitorización de velocidad y separación (ISO/TS 15066) encendida. Además corrige el bucle de llamada de
+  // MATLAB (fixRecallLoop): un trabajador llamado por un robot lleno queda girando junto a él y, con la regla, el robot
+  // quedaría detenido para siempre. Con ssm.enabled = false y fixRecallLoop = false da lo mismo que matlab-2026.
+  hri: { label: 'HRI (en desarrollo)', params: { ssm: { enabled: true }, fixRecallLoop: true } },
 }
 
 /** Parámetros completos de un perfil (lo que muestra el formulario al elegirlo). */
-export const profileDefaults = (profile) => structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, profile })
+export const profileDefaults = (profile) => {
+  const d = structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, profile })
+  if (d.ssm) d.ssm = { ...SSM_DEFAULTS, enabled: false, ...d.ssm }
+  return d
+}
 
 export const DEFAULTS = {
   profile: 'matlab-2026',
@@ -179,6 +194,7 @@ export const DEFAULTS = {
 
 // geometría del mapa del estudio: vive en huertos/matlab2026.js (se re-exporta por compatibilidad)
 export { R3, TREE_X, TREES_ALL, OFFS_RP0, OFFS_RP1 } from './huertos/matlab2026.js'
+import { SSM_DEFAULTS } from './ssm.js'
 import { SISTEMAS, buildHuerto } from './huertos/index.js'
 
 export function hyp(a, b) {

@@ -59,18 +59,23 @@ test('robot y trabajador quietos a 1 m: zona personal con robot detenido, sin in
   assert.equal(f.p5Moving, null, 'sin ticks en movimiento')
 })
 
-test('robot a 1 m/s pasa junto al trabajador: tiempo dentro de S_p(1) = 2,07 m', () => {
-  // robot por y = 0 de x = 0 a 20 m; trabajador en (10, 1): dentro de S_p cuando |x − 10| < √(2,07² − 1)
+test('robot a 1 m/s pasa junto al trabajador: cuenta la velocidad de ACERCAMIENTO (ISO/TS 15066)', () => {
+  // robot por y = 0 de x = 0 a 20 m; trabajador en (10, 1). Se acerca con v_c = (10 − x)/√((10 − x)² + 1) y,
+  // una vez que lo pasa, se aleja (v_c = 0 → S_p(0) = 0,567 m < 1 m: ya no infringe)
   const n = 81
   const a = analyzeHRI(makeRun({ n, robotXY: (i) => [i * DT, 0], st: () => 0, wx: 10, wy: 1 }))
   const f = a.fluency
-  const half = Math.sqrt(protectionDistance(1) ** 2 - 1)
   let ticks = 0
-  for (let i = 1; i < n; i++) if (Math.abs(i * DT - 10) < half) ticks++
+  for (let i = 1; i < n; i++) {
+    const x0 = (i - 1) * DT,
+      x1 = i * DT
+    const vc = Math.max(0, (10 - x0) / Math.hypot(10 - x0, 1))
+    if (Math.hypot(10 - x1, 1) < protectionDistance(vc)) ticks++
+  }
+  assert.ok(ticks > 0)
   assert.equal(f.protection.n, 1, 'un solo evento continuo')
-  near(f.protection.s, ticks * DT)
-  near(f.protection.events[0].v, 1, 1e-5)
-  near(f.protection.events[0].minD, 1, 1e-5)
+  near(f.protection.s, ticks * DT, 1e-6)
+  assert.ok(f.protection.events[0].v <= 1 + 1e-6)
   assert.equal(f.protection.events[0].h, 1)
   assert.equal(f.robotTime.move, 1)
   near(a.perWorker[0].zoneMoving[1], a.perWorker[0].tPersonal) // todo el tiempo cerca fue en movimiento

@@ -1307,3 +1307,17 @@ table.mini td.num,
 table.mini th + th {
   text-align: right;
 }
+/* fase 3: marcas de parada de seguridad sobre la franja de proximidad */
+.heat {
+  position: relative;
+}
+.ssm-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: #7f1d1d;
+  border-radius: 1px;
+  pointer-events: none;
+}

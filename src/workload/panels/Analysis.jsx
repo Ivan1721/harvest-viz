@@ -154,6 +154,8 @@ const ROBOT_TIME = [
   ['move', 'En movimiento', '#2563eb'],
   ['wait', 'Esperando al trabajador', '#f59e0b'],
   ['stop', 'Descargando o cargando', '#94a3b8'],
+  ['safety', 'Parada de seguridad', '#dc2626'],
+  ['slow', 'Velocidad reducida por seguridad', '#8b5cf6'],
 ]
 
 // exposición por zona de Hall, total del equipo, separada en robot en movimiento / detenido
@@ -183,15 +185,16 @@ function ZoneSplit({ a }) {
   )
 }
 
-function Fluency({ a, seek, select }) {
+function Fluency({ a, run, seek, select }) {
   const f = a.fluency
+  const rule = !!run.meta?.params?.ssm?.enabled
   const rt = f.robotTime
   return (
     <>
       <div className="muted small">{t('Reparto del tiempo del robot')}</div>
       <div className="stackbar" role="img" aria-label={t('Reparto del tiempo del robot')}>
         {rt.exact ? (
-          ROBOT_TIME.map(([k, , c]) => <i key={k} style={{ width: `${rt[k] * 100}%`, background: c }} />)
+          ROBOT_TIME.filter(([k]) => rt[k] > 0).map(([k, , c]) => <i key={k} style={{ width: `${rt[k] * 100}%`, background: c }} />)
         ) : (
           <>
             <i style={{ width: `${rt.move * 100}%`, background: ROBOT_TIME[0][2] }} />
@@ -200,7 +203,7 @@ function Fluency({ a, seek, select }) {
         )}
       </div>
       {rt.exact ? (
-        ROBOT_TIME.map(([k, label, c]) => (
+        ROBOT_TIME.filter(([k]) => k === 'move' || k === 'wait' || k === 'stop' || rt[k] > 0).map(([k, label, c]) => (
           <div className="row" key={k}>
             <span>
               <i className="sw" style={{ background: c }} /> {t(label)}
@@ -262,8 +265,16 @@ function Fluency({ a, seek, select }) {
         </>
       )}
       <div className="muted small" style={{ marginTop: 8 }}>
-        {t('Seguridad (ISO/TS 15066, solo se mide)')}
+        {rule ? t('Seguridad (ISO/TS 15066, regla activa)') : t('Seguridad (ISO/TS 15066, solo se mide)')}
       </div>
+      {rule && (
+        <div className="row">
+          <span>{t('Paradas de seguridad')}</span>
+          <b>
+            {f.safetyStops.length} · {f.safetyStops.reduce((s, e) => s + e.dur, 0).toFixed(0)} s
+          </b>
+        </div>
+      )}
       <div className="row">
         <span>{t('Trabajador dentro de S_p(v) con el robot en movimiento')}</span>
         <b className={f.protection.n ? 'warn' : 'good'}>
