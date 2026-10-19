@@ -4,12 +4,13 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { writeSimulation, saveEnabled } from '../../scripts/vite-save-sims.js'
+import { writeSimulation, saveEnabled, FLUENCY_COLS } from '../../scripts/vite-save-sims.js'
 import { HOSim } from '../../src/hrsim/humanonly.js'
 import { HRSim } from '../../src/hrsim/engine.js'
 import { simToRun } from '../../src/hrsim/toRun.js'
 import { runFiles } from '../../src/hrsim/export.js'
 import { FIS } from '../helpers.mjs'
+import { analyzeHRI, fluencyIndex } from '../../src/workload/hri.js'
 
 const cfg = { nw: 2, row: 1, act: 'ground', rp: 0, duration: 60 }
 function body() {
@@ -18,7 +19,7 @@ function body() {
   const m = hr.meta
   return {
     meta: { profile: m.params.profile, nw: m.nw, row: m.row, act: m.act, rp: m.rp, engineVersion: m.engineVersion, paramsHash: m.paramsHash, duration: 60 },
-    summary: { ho: { TotalRecollectedCrops: 1 }, hr: { TotalRecollectedCrops: 2, handoffs: 0 } },
+    summary: { ho: { TotalRecollectedCrops: 1 }, hr: { TotalRecollectedCrops: 2, handoffs: 0, ...fluencyIndex(analyzeHRI(hr)) } },
     files: [...runFiles(ho), ...runFiles(hr)],
   }
 }
@@ -35,6 +36,12 @@ test('escribe la simulación en motor-<versión>/<config>_SIM-<hash>/ con un ín
   const idx = fs.readFileSync(path.join(root, 'indice.csv'), 'utf8').trim().split('\n')
   assert.equal(idx.length, 2)
   assert.match(idx[1], /,2,1,ground,0,60,/)
+  // columnas de la fase 2 al final, con valor
+  const head = idx[0].split(','),
+    row = idx[1].split(',')
+  assert.equal(row.length, head.length)
+  for (const c of FLUENCY_COLS) assert.ok(head.includes(c), c)
+  assert.notEqual(row[head.indexOf('HR_robot_mov_pct')], '')
   // la misma simulación (motor determinista) no se duplica
   assert.equal(writeSimulation(root, b).existed, true)
   assert.equal(fs.readFileSync(path.join(root, 'indice.csv'), 'utf8').trim().split('\n').length, 2)
@@ -77,7 +84,8 @@ test('el perfil separa carpetas y queda en el índice; un índice antiguo actual
   const r = writeSimulation(root, b)
   assert.match(r.dir, /\/hri\/2_ROW1_ground_RP0_SIM-/)
   const lines = fs.readFileSync(path.join(root, 'indice.csv'), 'utf8').trim().split('\n')
-  assert.ok(lines[0].endsWith(',perfil'))
+  const head = lines[0].split(',')
+  assert.ok(head.includes('perfil') && head.at(-1) === FLUENCY_COLS.at(-1))
   assert.equal(lines[1], 'viejo,0.2.0')
-  assert.ok(lines[2].endsWith(',hri'))
+  assert.equal(lines[2].split(',')[head.indexOf('perfil')], 'hri')
 })

@@ -1278,3 +1278,32 @@ details > summary {
   padding-left: 8px;
   padding-right: 8px;
 }
+
+/* fase 2: muestra de color en línea y tabla compacta (Interacción → Cortesía / Fluidez) */
+.sw {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+table.mini {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+table.mini th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 2px 4px;
+}
+table.mini td {
+  padding: 2px 4px;
+  border-top: 1px solid #eef2f8;
+}
+table.mini td.num,
+table.mini th + th {
+  text-align: right;
+}

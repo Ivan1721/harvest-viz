@@ -47,6 +47,23 @@ const INDEX_HEAD = [
   'HR_entregas_robot',
   'perfil',
 ]
+// métricas de fluidez y seguridad (fase 2): vienen ya calculadas desde el visor (fluencyIndex en src/workload/hri.js)
+export const FLUENCY_COLS = [
+  'HR_robot_mov_pct',
+  'HR_robot_espera_pct',
+  'HR_robot_detenido_pct',
+  'HR_espera_robot_s',
+  'HR_espera_caja_media_s',
+  'HR_espera_caja_p90_s',
+  'HR_atencion_media_s',
+  'HR_jain_espera',
+  'HR_jain_atencion',
+  'HR_dentro_Sp_s',
+  'HR_eventos_Sp',
+  'HR_dist_min_m',
+  'HR_dist_p5_mov_m',
+]
+INDEX_HEAD.push(...FLUENCY_COLS)
 
 /** Escribe una simulación (HO + HR) en `root`. Devuelve { dir, existed }. Exportada para pruebas. */
 export function writeSimulation(root, body, now = new Date()) {
@@ -93,6 +110,7 @@ export function writeSimulation(root, body, now = new Date()) {
       hr.TotalProductionCargoZone ?? '',
       hr.handoffs ?? '',
       profile,
+      ...FLUENCY_COLS.map((c) => hr[c] ?? ''),
     ]
     fs.appendFileSync(idx, row.join(',') + '\n')
   }
