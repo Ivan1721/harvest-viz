@@ -73,7 +73,9 @@ export function Validation({ ho, hr, cfg, params, base }) {
       </div>
       {!std && (
         <div className="note" style={{ color: 'var(--warn, #b45309)' }}>
-          Cambiaste parámetros respecto a MATLAB: una diferencia ahora es el efecto del cambio, no un error del modelo.
+          {params.profile === 'matlab-2026'
+            ? 'Cambiaste parámetros respecto a MATLAB: una diferencia ahora es el efecto del cambio, no un error del modelo.'
+            : 'Perfil HRI: el modelo extiende la réplica de MATLAB, así que una diferencia es el efecto de las consideraciones nuevas, no un error.'}
         </div>
       )}
       {block(ho, 'HO', 'Solo humano')}

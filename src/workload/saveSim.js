@@ -11,7 +11,16 @@ export async function saveSimulation(ho, hr) {
   try {
     const m = hr.meta
     const body = {
-      meta: { nw: m.nw, row: m.row, act: m.act, rp: m.rp, engineVersion: m.engineVersion, paramsHash: m.paramsHash, duration: m.params?.duration },
+      meta: {
+        profile: m.params?.profile ?? 'matlab-2026',
+        nw: m.nw,
+        row: m.row,
+        act: m.act,
+        rp: m.rp,
+        engineVersion: m.engineVersion,
+        paramsHash: m.paramsHash,
+        duration: m.params?.duration,
+      },
       summary: { ho: ho.summary, hr: { ...hr.summary } },
       files: [...runFiles(ho), ...runFiles(hr)],
     }

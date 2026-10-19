@@ -8,8 +8,8 @@ export const f1 = (v) => v.toLocaleString('es-CL', { minimumFractionDigits: 1, m
 export function Seg({ value, options, onChange, size, label }) {
   return (
     <div className={`seg ${size || ''}`} role="group" aria-label={label}>
-      {options.map(([k, l, dis]) => (
-        <button key={String(k)} className={value === k ? 'on' : ''} aria-pressed={value === k} disabled={dis} onClick={() => onChange(k)}>
+      {options.map(([k, l, dis, title]) => (
+        <button key={String(k)} className={value === k ? 'on' : ''} aria-pressed={value === k} disabled={dis} title={title} onClick={() => onChange(k)}>
           {l}
         </button>
       ))}

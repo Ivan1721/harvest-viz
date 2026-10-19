@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
 import { saveSimulation } from './saveSim.js'
+import { profileDefaults } from '../hrsim/common.js'
 import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
@@ -44,7 +45,8 @@ export default function WorkloadApp({ modeSwitch }) {
   }
   const [ov, setOvState] = useState({ zones: false, intent: false })
   const [source, setSourceState] = useState('data')
-  const [params, setParams] = useState(DEFAULTS_SIM)
+  // ?perfil=hri abre el simulador con el modelo extendido; por defecto, la réplica de MATLAB
+  const [params, setParams] = useState(() => (qs.get('perfil') === 'hri' ? profileDefaults('hri') : DEFAULTS_SIM))
   const [simBusy, setSimBusy] = useState(false)
   const [simInfo, setSimInfo] = useState(null)
   const [simNonce, setSimNonce] = useState(0)
@@ -189,7 +191,9 @@ export default function WorkloadApp({ modeSwitch }) {
             <span className="muted">
               {' '}
               · sesión de {fmtT(ref.series.t[ref.n - 1])}{' '}
-              {source === 'sim' ? ' · simulación en el navegador (réplica del modelo MATLAB)' : ' · reproducción de corridas del simulador MATLAB'}
+              {source === 'sim'
+                ? ` · simulación en el navegador (${runs.hr?.meta?.params?.profile === 'hri' ? 'perfil HRI' : 'réplica del modelo MATLAB'})`
+                : ' · reproducción de corridas del simulador MATLAB'}
             </span>
           )}
         </div>

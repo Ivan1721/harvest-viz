@@ -16,7 +16,7 @@ const CASES = [
   { nw: 5, row: 3, act: 'picker', rp: 0 },
   { nw: 8, row: 2, act: 'mixed', rp: 1 },
   { nw: 3, row: 1, act: 'mixed', rp: 0, capacityBoxes: 2, fixRecallLoop: true },
-].map((c) => ({ duration: 300, ...c }))
+].map((c) => ({ profile: 'matlab-2026', duration: 300, ...c }))
 
 const r6 = (x) => Math.round(x * 1e6) / 1e6
 const sum = (a) => r6(a.reduce((s, v) => s + v, 0))

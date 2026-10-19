@@ -13,7 +13,7 @@ const sample = FULL ? keys : keys.filter((k, i) => i % 12 === 0 || (k.startsWith
 
 for (const key of sample) {
   const [kind, nw, row, act, rp] = key.split('|')
-  const cfg = { nw: +nw, row: +row, act, rp: +rp }
+  const cfg = { profile: 'matlab-2026', nw: +nw, row: +row, act, rp: +rp } // siempre contra la réplica congelada
   const known = kind === 'HR' ? KNOWN_HR_DEVIATIONS.get(`${nw}|${row}|${act}|${rp}`) : undefined
   test(`${key}${known ? ' (desviación conocida)' : ''}`, () => {
     const s = norm((kind === 'HO' ? new HOSim(cfg) : new HRSim(cfg, FIS)).run().summary())

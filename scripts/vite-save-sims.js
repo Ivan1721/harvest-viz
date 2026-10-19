@@ -3,7 +3,8 @@
 // Cada simulación hecha en el visor se escribe en una carpeta del proyecto (por defecto `simulaciones/`):
 //   simulaciones/
 //     motor-0.3.0/
-//       12_ROW3_mixed_RP0_SIM-1a2b3c4d/     ← una carpeta por configuración + parámetros (paramsHash)
+//       matlab-2026/                        ← perfil de modelo (matlab-2026 = réplica validada, hri = extendido)
+//         12_ROW3_mixed_RP0_SIM-1a2b3c4d/   ← una carpeta por configuración + parámetros (paramsHash)
 //         HUMAN_ONLY_…_timeseries.csv · _poses.csv · _meta.json
 //         HUMAN_ROBOT_…_timeseries.csv · _poses.csv · _meta.json
 //     indice.csv                            ← una fila por simulación guardada (métricas principales)
@@ -44,6 +45,7 @@ const INDEX_HEAD = [
   'HR_carga_total_kcal',
   'HR_entregado_zona_u',
   'HR_entregas_robot',
+  'perfil',
 ]
 
 /** Escribe una simulación (HO + HR) en `root`. Devuelve { dir, existed }. Exportada para pruebas. */
@@ -51,8 +53,9 @@ export function writeSimulation(root, body, now = new Date()) {
   const { meta, files, summary = {} } = body || {}
   if (!meta || !Array.isArray(files) || !files.length) throw new Error('Simulación sin archivos')
   const ver = `motor-${safe(meta.engineVersion || 'desconocido')}`
+  const profile = safe(meta.profile || 'matlab-2026')
   const name = safe(`${meta.nw}_ROW${meta.row}_${meta.act}_RP${meta.rp}_SIM-${meta.paramsHash}`)
-  const dir = path.join(root, ver, name)
+  const dir = path.join(root, ver, profile, name)
   const existed = fs.existsSync(path.join(dir, '.completo'))
   if (!existed) {
     fs.mkdirSync(dir, { recursive: true })
@@ -63,13 +66,20 @@ export function writeSimulation(root, body, now = new Date()) {
     }
     fs.writeFileSync(path.join(dir, '.completo'), now.toISOString() + '\n')
     const idx = path.join(root, 'indice.csv')
-    if (!fs.existsSync(idx)) fs.writeFileSync(idx, INDEX_HEAD.join(',') + '\n')
+    const head = INDEX_HEAD.join(',')
+    if (!fs.existsSync(idx)) fs.writeFileSync(idx, head + '\n')
+    else {
+      // índice de una versión anterior (columnas de menos): se actualiza la cabecera; las filas viejas quedan sin perfil
+      const text = fs.readFileSync(idx, 'utf8'),
+        nl = text.indexOf('\n')
+      if (text.slice(0, nl) !== head) fs.writeFileSync(idx, head + text.slice(nl))
+    }
     const ho = summary.ho || {},
       hr = summary.hr || {}
     const row = [
       now.toISOString(),
       meta.engineVersion,
-      path.posix.join(ver, name),
+      path.posix.join(ver, profile, name),
       meta.nw,
       meta.row,
       meta.act,
@@ -82,6 +92,7 @@ export function writeSimulation(root, body, now = new Date()) {
       hr.TotalHumanWorkload ?? '',
       hr.TotalProductionCargoZone ?? '',
       hr.handoffs ?? '',
+      profile,
     ]
     fs.appendFileSync(idx, row.join(',') + '\n')
   }
