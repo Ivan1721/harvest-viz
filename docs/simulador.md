@@ -24,6 +24,10 @@ El motor tiene dos perfiles, elegibles en el panel Simulador («Modelo») o con 
 
 Los parámetros se aplican en orden `DEFAULTS → perfil → opciones explícitas` (`resolveParams`). El perfil queda en `meta.json`, en el `paramsHash` y en la carpeta de cada simulación guardada (`simulaciones/motor-<v>/<perfil>/…`).
 
+## Sistemas de huerto
+
+El motor recibe el huerto como dato (`src/hrsim/huertos/`): árboles y su carga de fruta, puestos de los cosecheros, acopio, pose inicial y vuelta base del robot, límites del mapa, grafo de calles y terreno. El parámetro `huerto` elige el sistema; hoy existe `matlab-2026`, la geometría fija del estudio (3 hileras × 4 árboles, carga infinita, desplazamientos en línea recta), que el visor también lee desde ahí. Los huertos generados (palta tradicional, alta densidad, ladera) se agregan en las fases siguientes según la especificación H0.
+
 ## Validación (métricas agregadas)
 
 Las referencias son los CSV resumen de MATLAB: 732 filas (principal, extended y scaling), que se reducen a **720 configuraciones únicas** (360 Solo humano + 360 Humano-robot) en `public/data/matlab_summary.json`.

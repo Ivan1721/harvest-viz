@@ -9,7 +9,8 @@
 //     10 camina al robot, 11 carga la caja, 12 baja escalera para atender al robot
 //   banderas de actividad (w_flag): 1 cosecha, 2 camina, 3 caja/carga, 4 baja escalera, 5 sube escalera
 import { parseFis, evalFis } from './fis.js'
-import { DEFAULTS, resolveParams, TREES_ALL, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
+import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
+import { buildHuerto } from './huertos/index.js'
 export { DEFAULTS }
 
 // Radios y tiempos fijos del MATLAB (HumanRobot_Sim.m), con nombre para leer el código
@@ -33,29 +34,23 @@ export class HRSim {
     this.N = Math.round(p.duration / dt) + 1
     this.idx = 0 // tick actual (0-based; el MATLAB usa 1-based)
     // --- trabajadores ---
-    const { W, C, type, ladder } = initWorkers(p)
+    const huerto = (this.huerto = buildHuerto(p))
+    this.trees = huerto.arboles.map((a) => [a.x, a.y])
+    const { W, C, type, ladder } = initWorkers(p, huerto)
     this.C = C
     this.type = type
     this.ladder = ladder
     this.W = W
     // --- ruta base del robot ---
-    const init = [15, 2],
-      cargo = [15, 2]
-    const gy = { 3: 24, 2: 16.2, 1: 9 }[p.row]
-    const goal1 = [8, gy],
-      goal2 = [15, gy],
-      goal3 = [22, gy],
-      ini1 = [8, 2],
-      ini2 = [22, 2]
-    const lap = [init, ini2, goal3, goal2, cargo, ini1, goal1, goal2, cargo]
+    const lap = huerto.vueltaRobot
     this.baseRoute = []
     for (let i = 0; i < p.lapRepeats; i++) for (const w of lap) this.baseRoute.push([w[0], w[1]])
-    this.cargoZone = cargo
-    this.initPose = [15, 2, 0]
+    this.cargoZone = [...huerto.acopio]
+    this.initPose = [...huerto.inicioRobot]
     // --- robot ---
     this.waypoints = this.baseRoute.map((w) => [w[0], w[1]])
     this.kWp = 1 // índice 0-based (MATLAB k=2)
-    this.rpose = [15, 2, 0]
+    this.rpose = [...huerto.inicioRobot]
     this.prodRobot = 0
     this.prodRobotTotal = 0
     this.holdSteps = 0
@@ -105,14 +100,14 @@ export class HRSim {
     if (p.placement === 'tree_point') {
       let bi = 0,
         bd = Infinity
-      TREES_ALL.forEach((t, i) => {
+      this.trees.forEach((t, i) => {
         const d = hyp(t[0] - hxy[0], t[1] - hxy[1])
         if (d < bd) {
           bd = d
           bi = i
         }
       })
-      hxy = TREES_ALL[bi]
+      hxy = this.trees[bi]
     }
     const near = nearestOnPolyline(hxy, this.baseRoute)
     let dx = hxy[0] - near[0],
@@ -470,7 +465,11 @@ export class HRSim {
     if (this.contaT === 1) this.timeT1 += 1
     if (this.timeT1 === UNLOAD_COOLDOWN_TICKS) this.contaT = 0
     // control hacia el waypoint actual
-    const cur = [Math.max(Math.min(this.rpose[0], p.mapW - 0.05), 0.05), Math.max(Math.min(this.rpose[1], p.mapH - 0.05), 0.05), this.rpose[2]]
+    const cur = [
+      Math.max(Math.min(this.rpose[0], this.huerto.limites.w - 0.05), 0.05),
+      Math.max(Math.min(this.rpose[1], this.huerto.limites.h - 0.05), 0.05),
+      this.rpose[2],
+    ]
     if (this.kWp > this.waypoints.length - 1) this.kWp = this.waypoints.length - 1
     const g = this.waypoints[this.kWp]
     const gx = g[0] - cur[0],
@@ -522,7 +521,7 @@ export class HRSim {
     const nx = this.rpose[0] + wxv * dt,
       ny = this.rpose[1] + wyv * dt,
       nth = this.rpose[2] + wth * dt
-    this.rpose = [Math.max(Math.min(nx, p.mapW - 0.05), 0.05), Math.max(Math.min(ny, p.mapH - 0.05), 0.05), nth]
+    this.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
   }
 
   step() {

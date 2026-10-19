@@ -3,6 +3,7 @@
 // Estados: 1 cosecha, 2 baja escalera, 3 camina cargando a la zona de carga, 4 descarga,
 //          5 vuelve al árbol, 7 sube escalera. Banderas: 1 cosecha, 2 camina, 3 descarga, 4 baja, 5 sube.
 import { resolveParams, initWorkers, movePose } from './common.js'
+import { buildHuerto } from './huertos/index.js'
 
 export class HOSim {
   constructor(opts = {}) {
@@ -11,12 +12,13 @@ export class HOSim {
       dt = (this.dt = p.dt)
     this.N = Math.round(p.duration / dt) + 1
     this.idx = 0
-    const { W, C, type, ladder } = initWorkers(p)
+    const huerto = (this.huerto = buildHuerto(p))
+    const { W, C, type, ladder } = initWorkers(p, huerto)
     this.W = W
     this.C = C
     this.type = type
     this.ladder = ladder
-    this.cargo = [15, 2]
+    this.cargo = [...huerto.acopio]
     this.delivered = 0
     this.rec = {
       t: [],

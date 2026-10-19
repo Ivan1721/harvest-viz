@@ -1,63 +1,23 @@
 // Geometría del escenario, extraída de scene_spec.json (HumanRobot_Sim.m / HumanOnly_Sim.m).
 // Unidades: metros; origen en la esquina inferior izquierda del mapa; +X derecha, +Y arriba.
-export const MAP = { w: 29.7414, h: 25.7759 }
+// La geometría del mapa del estudio vive en el huerto `matlab-2026` del motor (src/hrsim/huertos/matlab2026.js):
+// una sola fuente para el simulador y el visor.
+import { LIMITES, R3, TREE_X, GOAL_Y, OFFS_RP0, OFFS_RP1, huertoMatlab2026 } from '../hrsim/huertos/matlab2026.js'
+
+export const MAP = { ...LIMITES }
 export const CANOPY_R = 3.25
-export const ROWS = {
-  1: { y: 5.7, x: [4.5, 11.5, 18.3, 25.2], goalY: 9 },
-  2: { y: 12.5, x: [4.5, 11.5, 18.3, 25.2], goalY: 16.2 },
-  3: { y: 19.5, x: [4.5, 11.5, 18.5, 25.2], goalY: 24 },
-}
+export const ROWS = Object.fromEntries([1, 2, 3].map((r) => [r, { y: R3[r], x: TREE_X.map((x, i) => (r === 3 && i === 2 ? 18.5 : x)), goalY: GOAL_Y[r] }]))
 export const CARGO = { wp: [15, 2], x: [12.5, 17.5], y: [0, 1.5] }
 
 // Desplazamientos de los trabajadores respecto del árbol (layout 0 y su reflejo, layout 1)
-export const OFFSETS = [
-  [
-    [-1.15, -1.1],
-    [1.15, -1.1],
-    [-1.15, 1.1],
-    [1.15, 1.1],
-    [0, -1.45],
-    [0, 1.45],
-    [-1.45, 0],
-    [1.45, 0],
-    [-0.85, -1.35],
-    [0.85, -1.35],
-    [-0.85, 1.35],
-    [0.85, 1.35],
-  ],
-  [
-    [1.15, 1.1],
-    [-1.15, 1.1],
-    [1.15, -1.1],
-    [-1.15, -1.1],
-    [0, 1.45],
-    [0, -1.45],
-    [1.45, 0],
-    [-1.45, 0],
-    [0.85, 1.35],
-    [-0.85, 1.35],
-    [0.85, -1.35],
-    [-0.85, -1.35],
-  ],
-]
+export const OFFSETS = [OFFS_RP0, OFFS_RP1]
 
 export const MIX = ['ground', 'ground', 'ladder', 'ladder', 'picker', 'picker']
 export const ACT_LABEL = { ground: 'Suelo', ladder: 'Escalera', picker: 'Gancho', mixed: 'Mixta' }
 
 // Ruta del robot en una vuelta (HumanRobot_Sim.m:1039-1118)
 export function routeLoop(row) {
-  const Y = ROWS[row].goalY
-  return [
-    [15, 2],
-    [22, 2],
-    [22, Y],
-    [15, Y],
-    [15, 2],
-    [8, 2],
-    [8, Y],
-    [15, Y],
-    [15, 2],
-  ]
+  return huertoMatlab2026({ row, rp: 0, nw: 0 }).vueltaRobot.map((w) => [...w])
 }
 
 export function workerBase(h, row, rp) {
