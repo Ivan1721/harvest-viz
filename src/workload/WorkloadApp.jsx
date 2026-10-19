@@ -21,11 +21,13 @@ import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
 import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
 import { Seg, Tabs, Toast, f0, fmtT } from './ui.jsx'
+import { t, useLang } from '../i18n/index.js'
 
 /* ---------------------------------------------------------------- aplicación */
 const base = import.meta.env.BASE_URL // constante del build (ruta de publicación)
 
 export default function WorkloadApp({ modeSwitch }) {
+  useLang()
   const [lib, setLib] = useState([])
   const [cfg, setCfg] = useState(null)
   // parámetros de URL: ?view=ho|hr|cmp, ?speed=1…120, ?perf=1 (diagnóstico), ?look=schem
@@ -107,13 +109,12 @@ export default function WorkloadApp({ modeSwitch }) {
         setRuns({ ho, hr })
         setLoading(false)
         const s = hr.summary
-        setSimInfo(
-          `Simulado en ${Math.round(ms)} ms · carga total ${f0(hr.series.work[hr.n - 1])} kcal (HR) vs ${f0(ho.series.work[ho.n - 1])} kcal (HO) · ${s.handoffs} entregas a robot`,
-        )
+        // se guardan los valores (no el texto) para que el aviso siga el idioma activo
+        setSimInfo({ ms: Math.round(ms), hr: hr.series.work[hr.n - 1], ho: ho.series.work[ho.n - 1], n: s.handoffs })
         setPlay({ t: 0, playing: true, selected: null })
         // con `npm run dev`: copia en la carpeta local del proyecto (no bloquea ni falla la simulación)
         saveSimulation(ho, hr).then((r) => {
-          if (r && alive) setSimInfo((t) => `${t} · ${r.existed ? 'ya guardada' : 'guardada'} en ${r.dir}`)
+          if (r && alive) setSimInfo((i) => i && { ...i, saved: r })
         })
       })
       .catch((e) => {
@@ -176,7 +177,14 @@ export default function WorkloadApp({ modeSwitch }) {
   }
 
   const ref = hr || ho
-  const title = cfg ? `${cfg.nw} trabajadores · Fila ${cfg.row} · ${ACT_LABEL[cfg.act] || cfg.act} · Disposición ${cfg.rp}` : 'Sin datos'
+  const title = cfg
+    ? t('{nw} trabajadores · Fila {row} · {act} · Disposición {rp}', {
+        nw: cfg.nw,
+        row: cfg.row,
+        act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act,
+        rp: cfg.rp,
+      })
+    : t('Sin datos')
 
   return (
     <div className="wb">
@@ -190,10 +198,10 @@ export default function WorkloadApp({ modeSwitch }) {
           {ref && (
             <span className="muted">
               {' '}
-              · sesión de {fmtT(ref.series.t[ref.n - 1])}{' '}
+              · {t('sesión de {t}', { t: fmtT(ref.series.t[ref.n - 1]) })}{' '}
               {source === 'sim'
-                ? ` · simulación en el navegador (${runs.hr?.meta?.params?.profile === 'hri' ? 'perfil HRI' : 'réplica del modelo MATLAB'})`
-                : ' · reproducción de corridas del simulador MATLAB'}
+                ? ` · ${t('simulación en el navegador ({m})', { m: t(runs.hr?.meta?.params?.profile === 'hri' ? 'perfil HRI' : 'réplica del modelo MATLAB') })}`
+                : ` · ${t('reproducción de corridas del simulador MATLAB')}`}
             </span>
           )}
         </div>
@@ -227,14 +235,21 @@ export default function WorkloadApp({ modeSwitch }) {
           onRun: () => setSimNonce((n) => n + 1),
           onCancel: () => cancelSimulation(),
           busy: simBusy,
-          info: simInfo,
+          info:
+            simInfo &&
+            t('Simulado en {ms} ms · carga total {hr} kcal (HR) vs {ho} kcal (HO) · {n} entregas a robot', {
+              ms: simInfo.ms,
+              hr: f0(simInfo.hr),
+              ho: f0(simInfo.ho),
+              n: simInfo.n,
+            }) + (simInfo.saved ? ` · ${t(simInfo.saved.existed ? 'ya guardada en {dir}' : 'guardada en {dir}', { dir: simInfo.saved.dir })}` : ''),
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
         }}
         videoPanel={
           shown.length > 0 && (
             <VideoPanel
               tmax={tmax}
-              title={`${title}${source === 'sim' ? ' · simulación' : ' · MATLAB'}`}
+              title={`${title}${source === 'sim' ? ` · ${t('simulación')}` : ' · MATLAB'}`}
               fileStem={cfg ? `harvest-viz_${cfg.nw}_ROW${cfg.row}_${cfg.act}_RP${cfg.rp}_${view}` : 'harvest-viz'}
               disabled={loading || simBusy}
             />
@@ -246,10 +261,10 @@ export default function WorkloadApp({ modeSwitch }) {
       <main className="wb-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
         {!shown.length && (
           <div className="wb-empty panel">
-            <h3>Modo Workload</h3>
-            <p>Reproduce en 3D corridas del simulador MATLAB: huerto de 3 filas × 4 árboles, trabajadores y robot transportador.</p>
+            <h3>{t('Modo Workload')}</h3>
+            <p>{t('Reproduce en 3D corridas del simulador MATLAB: huerto de 3 filas × 4 árboles, trabajadores y robot transportador.')}</p>
             <p className="muted">
-              {loading ? 'Cargando corridas…' : 'No hay corridas incluidas. Carga el *_timeseries.csv (y el log del robot) desde el panel izquierdo.'}
+              {loading ? t('Cargando corridas…') : t('No hay corridas incluidas. Carga el *_timeseries.csv (y el log del robot) desde el panel izquierdo.')}
             </p>
           </div>
         )}
@@ -257,12 +272,12 @@ export default function WorkloadApp({ modeSwitch }) {
           (k) =>
             vis[k] && (
               <div key={k} className="wb-view">
-                <ErrorBoundary label={`la vista ${SC[k].label}`} resetKey={vis[k].entryId}>
+                <ErrorBoundary label={t('la vista {v}', { v: t(SC[k].label) })} resetKey={vis[k].entryId}>
                   <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
                 </ErrorBoundary>
                 <div className="wb-chip">
                   <i style={{ background: SC[k].color }} />
-                  {SC[k].label}
+                  {t(SC[k].label)}
                   <span className="muted"> · {fmtT(snap.t)}</span>
                 </div>
               </div>
@@ -273,15 +288,15 @@ export default function WorkloadApp({ modeSwitch }) {
 
       <aside className="wb-right">
         <Tabs
-          label="Paneles de análisis"
+          label={t('Paneles de análisis')}
           value={tab}
           onChange={setTab}
           options={[
-            ['resumen', 'Resumen'],
-            ['trab', 'Trabajadores'],
-            ['hri', 'Interacción'],
-            ...(source === 'sim' ? [['valid', 'Validación']] : []),
-            ['datos', 'Datos'],
+            ['resumen', t('Resumen')],
+            ['trab', t('Trabajadores')],
+            ['hri', t('Interacción')],
+            ...(source === 'sim' ? [['valid', t('Validación')]] : []),
+            ['datos', t('Datos')],
           ]}
         />
         <div className="wb-scroll">
@@ -312,27 +327,27 @@ export default function WorkloadApp({ modeSwitch }) {
         {hr?.hri && (
           <div
             className="heatwrap2"
-            title="Distancia mínima robot–humano: rojo < 0,45 m · naranja < 1,2 m · amarillo < 3,6 m"
+            title={t('Distancia mínima robot–humano: rojo < 0,45 m · naranja < 1,2 m · amarillo < 3,6 m')}
             onClick={(e) => {
               const r = e.currentTarget.getBoundingClientRect()
               seek(((e.clientX - r.left) / r.width) * tmax)
             }}
           >
             <div className="heat" style={{ background: heatGradient(hr.hri) }} />
-            <span className="small muted">Proximidad robot–humano</span>
+            <span className="small muted">{t('Proximidad robot–humano')}</span>
           </div>
         )}
         <div className="timeline2">
           <button
             className="btn icon"
             onClick={() => setPlay({ t: play.t >= tmax ? 0 : play.t, playing: !play.playing })}
-            aria-label={snap.playing ? 'Pausar' : 'Reproducir'}
+            aria-label={snap.playing ? t('Pausar') : t('Reproducir')}
           >
             {snap.playing ? '❚❚' : '▶'}
           </button>
           <input
             type="range"
-            aria-label="Instante de la reproducción"
+            aria-label={t('Instante de la reproducción')}
             min="0"
             max={tmax || 1}
             step="1"

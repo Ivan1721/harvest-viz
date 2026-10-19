@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PROFILES, profileDefaults } from '../../hrsim/common.js'
 import { Field, Seg } from '../ui.jsx'
+import { t, useLang } from '../../i18n/index.js'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
 export function NumField({ value, onCommit, step, min = 0, max = Infinity, label }) {
@@ -63,6 +64,7 @@ const PERIODS = [
 ]
 
 export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExport }) {
+  useLang()
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
   const num = (k, step, min, max, label) => <NumField value={params[k]} step={step} min={min} max={max} label={label} onCommit={(v) => set(k, v)} />
@@ -70,25 +72,27 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
   const changed = JSON.stringify(params) !== JSON.stringify(base)
   return (
     <section className="panel">
-      <h4>Simulador</h4>
-      <Field label="Modelo">
+      <h4>{t('Simulador')}</h4>
+      <Field label={t('Modelo')}>
         <Seg
           size="mini"
           value={params.profile}
           onChange={(p) => setParams(profileDefaults(p))}
-          options={Object.entries(PROFILES).map(([k, v]) => [k, k === 'matlab-2026' ? 'MATLAB 2026' : 'HRI', false, v.label])}
+          options={Object.entries(PROFILES).map(([k, v]) => [k, k === 'matlab-2026' ? 'MATLAB 2026' : 'HRI', false, t(v.label)])}
         />
       </Field>
       {params.profile !== 'matlab-2026' && (
-        <div className="note">{PROFILES[params.profile].label}: extiende la réplica de MATLAB con consideraciones de interacción humano-robot.</div>
+        <div className="note">
+          {t('{p}: extiende la réplica de MATLAB con consideraciones de interacción humano-robot.', { p: t(PROFILES[params.profile].label) })}
+        </div>
       )}
       {busy ? (
         <button className="btn" onClick={onCancel} data-testid="sim-cancel">
-          Simulando… · Cancelar
+          {t('Simulando… · Cancelar')}
         </button>
       ) : (
         <button className="btn" onClick={onRun} data-testid="sim-run">
-          Simular
+          {t('Simular')}
         </button>
       )}
       {info && <div className="note">{info}</div>}
@@ -98,32 +102,38 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
           style={{ marginTop: 6 }}
           onClick={onExport}
           disabled={busy}
-          title="Descarga un .zip con *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida"
+          title={t('Descarga un .zip con *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida')}
         >
-          Exportar corridas
+          {t('Exportar corridas')}
         </button>
       )}
       <details>
-        <summary data-testid="sim-params">Parámetros{changed ? ' (modificados)' : ''}</summary>
+        <summary data-testid="sim-params">{changed ? t('Parámetros (modificados)') : t('Parámetros')}</summary>
         <div className="params">
           {PARAMS.map(([k, l, st, src, min, max]) => (
-            <label key={k} title={src}>
-              <span>{l}</span>
-              {num(k, st, min, max, l)}
+            <label key={k} title={t(src)}>
+              <span>{t(l)}</span>
+              {num(k, st, min, max, t(l))}
             </label>
           ))}
-          <div className="note">Costos metabólicos (kcal/s)</div>
+          <div className="note">{t('Costos metabólicos (kcal/s)')}</div>
           {COSTS.map(([k, l]) => (
             <label key={k}>
-              <span>{l}</span>
-              <NumField value={params.costs[k]} step="0.001" min={0} label={l} onCommit={(v) => setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))} />
+              <span>{t(l)}</span>
+              <NumField
+                value={params.costs[k]}
+                step="0.001"
+                min={0}
+                label={t(l)}
+                onCommit={(v) => setParams((p) => ({ ...p, costs: { ...p.costs, [k]: v } }))}
+              />
             </label>
           ))}
-          <div className="note">Bajar escalera: el script actual usa 0,0923; el CSV de ejemplo se generó con 0,106145.</div>
-          <div className="note">Segundos por unidad cosechada</div>
+          <div className="note">{t('Bajar escalera: el script actual usa 0,0923; el CSV de ejemplo se generó con 0,106145.')}</div>
+          <div className="note">{t('Segundos por unidad cosechada')}</div>
           {PERIODS.map(([k, l]) => (
             <label key={k}>
-              <span>{l}</span>
+              <span>{t(l)}</span>
               <NumField
                 value={params.prodPeriod[k]}
                 step="0.25"
@@ -133,7 +143,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
             </label>
           ))}
           <button className="btn" onClick={() => setParams(base)}>
-            {params.profile === 'matlab-2026' ? 'Restablecer a MATLAB' : 'Restablecer perfil'}
+            {params.profile === 'matlab-2026' ? t('Restablecer a MATLAB') : t('Restablecer perfil')}
           </button>
         </div>
       </details>

@@ -2,6 +2,7 @@
 // Cada escena 3D publica sus métricas en window.__hvPerf[nombre] (las lee también scripts/bench-visual.mjs).
 import { useEffect, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
+import { t, fmtNum, useLang } from '../i18n/index.js'
 
 export const perfEnabled = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('perf')
 
@@ -36,18 +37,19 @@ export function PerfProbe({ name }) {
 
 /** Fuera del <Canvas>: tabla flotante con las métricas de cada escena. */
 export function PerfOverlay() {
+  useLang()
   const [rows, setRows] = useState({})
   useEffect(() => {
     const id = setInterval(() => setRows({ ...(window.__hvPerf || {}) }), 500)
     return () => clearInterval(id)
   }, [])
-  const f0 = (v) => (v == null ? '—' : Math.round(v).toLocaleString('es-CL'))
+  const f0 = (v) => (v == null ? '—' : fmtNum(Math.round(v)))
   return (
     <div className="perf-overlay" aria-live="off">
       {Object.entries(rows).map(([k, r]) => (
         <div key={k}>
-          <b>{k}</b> {f0(r.fps)} FPS · {(r.frameMs ?? 0).toFixed(1)} ms (p95 {(r.p95Ms ?? 0).toFixed(1)}) · {f0(r.calls)} draw calls · {f0(r.triangles)}{' '}
-          triángulos · dpr {r.dpr}
+          <b>{t(k)}</b> {f0(r.fps)} FPS · {(r.frameMs ?? 0).toFixed(1)} ms (p95 {(r.p95Ms ?? 0).toFixed(1)}) · {f0(r.calls)} draw calls · {f0(r.triangles)}{' '}
+          {t('triángulos')} · dpr {r.dpr}
         </div>
       ))}
     </div>

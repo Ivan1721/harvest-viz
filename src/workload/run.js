@@ -4,6 +4,7 @@
 // robot: interpolación lineal entre los eventos del log).
 import { MIX, workerBase, boxXY, CARGO } from './spec.js'
 import { ladderHeights, metabolicRate, rateScale } from './derive.js'
+import { fmtNum, t } from '../i18n/index.js'
 
 // Paso interno del simulador MATLAB: los índices `idx=` del log están en ticks de 0.25 s.
 // El CSV puede estar muestreado a otro paso (p. ej. 1 s en el estudio de 45 min): se deduce de Time_s.
@@ -34,12 +35,13 @@ function parseCSV(text) {
     .split('\n')
     .filter((l) => l.trim())
   if (lines.length - 1 > INPUT_LIMITS.maxRows)
-    throw new FormatError(`El CSV tiene ${(lines.length - 1).toLocaleString('es-CL')} filas; el máximo es ${INPUT_LIMITS.maxRows.toLocaleString('es-CL')}.`)
+    throw new FormatError(t('El CSV tiene {n} filas; el máximo es {max}.', { n: fmtNum(lines.length - 1), max: fmtNum(INPUT_LIMITS.maxRows) }))
   const head = lines[0]
     .replace(/^\uFEFF/, '')
     .split(',')
     .map((h) => h.trim())
-  if (head.length > INPUT_LIMITS.maxCols) throw new FormatError(`El CSV tiene ${head.length} columnas; el máximo es ${INPUT_LIMITS.maxCols}.`)
+  if (head.length > INPUT_LIMITS.maxCols)
+    throw new FormatError(t('El CSV tiene {n} columnas; el máximo es {max}.', { n: head.length, max: INPUT_LIMITS.maxCols }))
   const col = Object.fromEntries(head.map((h, i) => [h, i]))
   const rows = lines.slice(1).map((l) => l.split(',').map((v) => (v.trim() === '' ? NaN : Number(v))))
   return { col, rows }
@@ -184,20 +186,20 @@ export const REQUIRED_COLUMNS = ['Time_s', 'Total_product_cargo', 'Total_product
 /** Contrato del *_timeseries.csv de MATLAB: columnas, filas, tiempo creciente y valores numéricos. */
 export function validateTimeseries(col, rows) {
   const missing = REQUIRED_COLUMNS.filter((c) => col[c] === undefined)
-  if (missing.length) throw new FormatError(`Al CSV le faltan columnas: ${missing.join(', ')}.`)
+  if (missing.length) throw new FormatError(t('Al CSV le faltan columnas: {cols}.', { cols: missing.join(', ') }))
   if (col.Workload_H1 === undefined || col.Production_H1 === undefined || col.ActivityFlag_H1 === undefined)
-    throw new FormatError('El CSV no tiene columnas por trabajador (Production_H1, Workload_H1, ActivityFlag_H1…).')
-  if (rows.length < 2) throw new FormatError('El CSV necesita al menos 2 filas de datos.')
+    throw new FormatError(t('El CSV no tiene columnas por trabajador (Production_H1, Workload_H1, ActivityFlag_H1…).'))
+  if (rows.length < 2) throw new FormatError(t('El CSV necesita al menos 2 filas de datos.'))
   const ncol = Object.keys(col).length
   rows.forEach((r, i) => {
-    if (r.length !== ncol) throw new FormatError(`La fila ${i + 2} tiene ${r.length} valores y la cabecera ${ncol}.`)
-    if (r.some((v) => !Number.isFinite(v))) throw new FormatError(`La fila ${i + 2} tiene valores no numéricos.`)
-    if (i > 0 && !(r[col.Time_s] > rows[i - 1][col.Time_s])) throw new FormatError(`Time_s no es creciente en la fila ${i + 2}.`)
+    if (r.length !== ncol) throw new FormatError(t('La fila {i} tiene {n} valores y la cabecera {h}.', { i: i + 2, n: r.length, h: ncol }))
+    if (r.some((v) => !Number.isFinite(v))) throw new FormatError(t('La fila {i} tiene valores no numéricos.', { i: i + 2 }))
+    if (i > 0 && !(r[col.Time_s] > rows[i - 1][col.Time_s])) throw new FormatError(t('Time_s no es creciente en la fila {i}.', { i: i + 2 }))
   })
 }
 
 export function buildRun({ csvText, logText, name }) {
-  if (typeof csvText !== 'string' || !csvText.trim()) throw new FormatError('El CSV está vacío.')
+  if (typeof csvText !== 'string' || !csvText.trim()) throw new FormatError(t('El CSV está vacío.'))
   const meta = parseName(name) || { robot: !!logText, nw: 0, row: 3, act: 'mixed', rp: 0 }
   const { col, rows } = parseCSV(csvText)
   validateTimeseries(col, rows)

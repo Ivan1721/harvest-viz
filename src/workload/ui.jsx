@@ -1,8 +1,9 @@
+import { fmtNum, t, useLang } from '../i18n/index.js'
 import { useId } from 'react'
 export const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 export const ACT_COLOR = { ground: '#16a34a', ladder: '#8b5cf6', picker: '#ff8a1f' }
-export const f0 = (v) => Math.round(v).toLocaleString('es-CL')
-export const f1 = (v) => v.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+export const f0 = (v) => fmtNum(Math.round(v))
+export const f1 = (v) => fmtNum(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** Botones excluyentes. `label` (o el Field que lo envuelve) nombra el grupo para lectores de pantalla. */
 export function Seg({ value, options, onChange, size, label }) {
@@ -60,11 +61,12 @@ export function Tabs({ value, options, onChange, label, className = 'tabs' }) {
 
 /** Aviso flotante: los errores se anuncian de inmediato (role=alert), con botón para cerrar. */
 export function Toast({ kind = 'err', children, onClose }) {
+  useLang()
   return (
     <div className={`toast ${kind}`} role={kind === 'err' ? 'alert' : 'status'}>
       <span>{children}</span>
       {onClose && (
-        <button className="toast-x" aria-label="Cerrar aviso" onClick={onClose}>
+        <button className="toast-x" aria-label={t('Cerrar aviso')} onClick={onClose}>
           ×
         </button>
       )}

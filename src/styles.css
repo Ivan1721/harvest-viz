@@ -1268,3 +1268,13 @@ details > summary {
   width: min(420px, 90vw);
   background: var(--surface, #fff);
 }
+
+/* selector de idioma junto al selector de modo */
+.seg.modes.lang {
+  margin-left: 6px;
+}
+.seg.modes.lang button {
+  min-width: 34px;
+  padding-left: 8px;
+  padding-right: 8px;
+}

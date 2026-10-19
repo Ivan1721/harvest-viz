@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { play, anim } from './playback.js'
+import { t } from '../i18n/index.js'
 
 const scenes = new Map()
 
@@ -73,7 +74,7 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
       ib = order.indexOf(b[0])
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
   })
-  if (!list.length) throw new Error('No hay escenas para grabar.')
+  if (!list.length) throw new Error(t('No hay escenas para grabar.'))
   const n = list.length,
     head = Math.round(height * 0.07),
     cellW = Math.floor(width / n / 2) * 2,
@@ -104,7 +105,7 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
   const font = (px, w = 600) => `${w} ${Math.round(px)}px Inter, system-ui, sans-serif`
   try {
     for (let k = 0; k < frames; k++) {
-      if (signal?.aborted) throw Object.assign(new Error('Grabación cancelada'), { name: 'AbortError' })
+      if (signal?.aborted) throw Object.assign(new Error(t('Grabación cancelada')), { name: 'AbortError' })
       play.t = Math.min(t1, t0 + (k * speed) / fps)
       anim.t = before.anim + k / fps
       ctx.fillStyle = '#ffffff'
@@ -117,13 +118,13 @@ export async function recordVideo({ t0, t1, speed, fps, width, height, title, la
         if (labels[name]) {
           ctx.font = font(head * 0.32)
           ctx.fillStyle = '#1c2540'
-          ctx.fillText(labels[name], i * cellW + head * 0.35, head + head * 0.55)
+          ctx.fillText(t(labels[name]), i * cellW + head * 0.35, head + head * 0.55)
         }
       })
       // encabezado: título y reloj de la simulación
       ctx.fillStyle = '#1c2540'
       ctx.font = font(head * 0.36)
-      ctx.fillText(title || '', head * 0.35, head * 0.62)
+      ctx.fillText(title ? t(title) : '', head * 0.35, head * 0.62)
       ctx.textAlign = 'right'
       ctx.font = font(head * 0.36, 500)
       ctx.fillText(`${fmt(play.t)}  ·  ×${speed}`, width - head * 0.35, head * 0.62)

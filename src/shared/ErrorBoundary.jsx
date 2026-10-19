@@ -1,4 +1,5 @@
 import React from 'react'
+import { t } from '../i18n/index.js'
 
 /** Aísla errores de render: si una vista falla, muestra un aviso en vez de dejar la página en blanco. */
 export class ErrorBoundary extends React.Component {
@@ -20,10 +21,10 @@ export class ErrorBoundary extends React.Component {
     if (!this.state.error) return this.props.children
     return (
       <div className="panel" role="alert" style={{ margin: 16, padding: 16 }}>
-        <h4>No se pudo mostrar {this.props.label || 'esta vista'}</h4>
+        <h4>{t('No se pudo mostrar {label}', { label: this.props.label || t('esta vista') })}</h4>
         <div className="note">{String(this.state.error.message || this.state.error)}</div>
         <button className="btn" style={{ marginTop: 8 }} onClick={() => this.setState({ error: null })}>
-          Reintentar
+          {t('Reintentar')}
         </button>
       </div>
     )

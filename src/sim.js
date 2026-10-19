@@ -2,6 +2,7 @@
 // El robot elige el punto de vista según una estrategia parametrizable.
 // Si el humano se acerca al robot, el robot cede el paso.
 import { orchard } from './data.js'
+import { t } from './i18n/index.js'
 
 export const STEPS = ['Detección', 'Selección de vista', 'Aproximación', 'Agarre', 'Entrega']
 export const YIELD_DIST = 2.0
@@ -37,7 +38,7 @@ const newRobot = () => ({
   picked: 0,
   tip: homeFor(-6),
   goal: homeFor(-6),
-  status: 'Esperando tarea',
+  status: t('Esperando tarea'),
   step: -1,
   paused: false,
   pausedTime: 0,
@@ -46,7 +47,7 @@ const newRobot = () => ({
   occSum: 0,
   occN: 0,
 })
-const newHuman = () => ({ x: 5.5, z: 0.95, state: 'idle', targetId: null, timer: 0, picked: 0, heading: Math.PI / 2, status: 'Esperando tarea', walk: 0 })
+const newHuman = () => ({ x: 5.5, z: 0.95, state: 'idle', targetId: null, timer: 0, picked: 0, heading: Math.PI / 2, status: t('Esperando tarea'), walk: 0 })
 
 const byId = (id) => orchard.fruits.find((f) => f.id === id)
 const st = (id) => sim.fruits.find((f) => f.id === id)
@@ -124,20 +125,20 @@ export function step(rawDt) {
       R.chosen = null
       st(f.id).state = 'claimed'
     } else {
-      R.status = 'Sin frutos asignados'
+      R.status = t('Sin frutos asignados')
       R.step = -1
       R.goal = homeFor(R.x)
     }
   } else if (humanNear) {
     R.paused = true
     R.pausedTime += dt
-    R.status = 'Cede el paso: humano cerca'
+    R.status = t('Cede el paso: humano cerca')
   } else {
     const f = byId(R.targetId)
     R.timer += dt
     if (R.state === 'view') {
       R.step = 1
-      R.status = `Seleccionando mejor vista · ${f.id}`
+      R.status = t('Seleccionando mejor vista · {id}', { id: f.id })
       R.x = move(R.x, f.x - 0.1, 0.9 * dt)
       R.goal = homeFor(R.x)
       if (Math.abs(R.x - (f.x - 0.1)) < 0.02) {
@@ -147,7 +148,7 @@ export function step(rawDt) {
       }
     } else if (R.state === 'approach') {
       R.step = 2
-      R.status = `Aproximando cámara a la vista ${R.chosen.idx + 1}/${f.views.length} · ${f.id}`
+      R.status = t('Aproximando cámara a la vista {n}/{total} · {id}', { n: R.chosen.idx + 1, total: f.views.length, id: f.id })
       R.goal = R.chosen.view.pos
       if (R.timer > 1.6) {
         R.state = 'grasp'
@@ -155,7 +156,7 @@ export function step(rawDt) {
       }
     } else if (R.state === 'grasp') {
       R.step = 3
-      R.status = `Agarrando ${f.id}`
+      R.status = t('Agarrando {id}', { id: f.id })
       R.goal = [f.x, f.y, f.z]
       if (R.timer > 1.4) {
         st(f.id).state = 'done'
@@ -168,7 +169,7 @@ export function step(rawDt) {
       }
     } else if (R.state === 'deliver') {
       R.step = 4
-      R.status = 'Entregando a la caja'
+      R.status = t('Entregando a la caja')
       R.goal = homeFor(R.x)
       if (R.timer > 0.9) {
         R.state = 'idle'
@@ -189,7 +190,7 @@ export function step(rawDt) {
       H.state = 'walk'
       st(f.id).state = 'claimed'
     } else {
-      H.status = 'Sin frutos asignados · espera fuera del carril'
+      H.status = t('Sin frutos asignados · espera fuera del carril')
       if (Math.abs(7.5 - H.x) > 0.02) {
         H.x = move(H.x, 7.5, dt)
         H.heading = Math.PI / 2
@@ -199,7 +200,7 @@ export function step(rawDt) {
     }
   } else if (H.state === 'walk') {
     const f = byId(H.targetId)
-    H.status = `Caminando hacia ${f.id}`
+    H.status = t('Caminando hacia {id}', { id: f.id })
     const tz = f.side * 0.95
     H.heading = Math.atan2(Math.sign(f.x - H.x) || 0, 0.0001)
     H.x = move(H.x, f.x, dt)
@@ -211,7 +212,7 @@ export function step(rawDt) {
     }
   } else if (H.state === 'pick') {
     const f = byId(H.targetId)
-    H.status = `Cosechando ${f.id} (muy ocluido)`
+    H.status = t('Cosechando {id} (muy ocluido)', { id: f.id })
     H.heading = f.side > 0 ? Math.PI : 0
     H.timer += dt
     if (H.timer > 1.8) {
@@ -226,7 +227,7 @@ export function step(rawDt) {
   // ---------- Reinicio automático ----------
   if (sim.fruits.every((f) => f.state === 'done')) {
     sim.resetTimer += dt
-    R.status = H.status = 'Huerto completado'
+    R.status = H.status = t('Huerto completado')
     if (sim.resetTimer > 4) {
       const selected = sim.selected
       resetSim()

@@ -14,6 +14,7 @@ import { play, anim, advance } from './playback.js'
 import { sampleAt, trackAt } from './interp.js'
 import { PerfProbe, perfEnabled } from './perf.jsx'
 import { RecorderProbe } from './recorder.jsx'
+import { t } from '../i18n/index.js'
 const ease = (u) => u * u * (3 - 2 * u)
 const lerp = (a, b, u) => a + (b - a) * u
 const ramp = (u) => new THREE.Color().setHSL((1 - Math.min(1, Math.max(0, u))) * 0.33, 0.8, 0.5)
@@ -208,7 +209,7 @@ function RobotCarrier({ run, onSelect, selected }) {
     else sh.v = Math.max(target, sh.v - (15 / 1.44) * dts)
     sh.t = play.t
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / ROBOT.capacity))
-    lab.current = `RB-01 · a bordo ${Math.round(sh.v)} / ${ROBOT.capacity}`
+    lab.current = `RB-01 · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap: ROBOT.capacity })}`
   })
   return (
     <group
