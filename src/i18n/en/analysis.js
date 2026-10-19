@@ -164,4 +164,6 @@ export default {
     'Generated orchard: pickers work in pairs in the alleys facing the collection point and move along the row.',
   '{nw} trabajadores · {act} · {h}': '{nw} workers · {act} · {h}',
   'perfil MATLAB 2026': 'MATLAB 2026 profile',
+  'Palta alta dens.': 'High-dens. avocado',
+  'Palta alta densidad (4 × 2 m, 1 ha)': 'High-density avocado (4 × 2 m, 1 ha)',
 }

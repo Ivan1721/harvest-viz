@@ -262,6 +262,13 @@ export function initWorkers(p, huerto = buildHuerto(p)) {
     ladderDown: k.ladderDown * m,
   }
   const { type, ladder } = assignActivities(NH, p.act)
+  // huertos sin escalera (árboles bajos): quien iba a usarla cosecha desde el suelo
+  if (huerto.params?.escalera === false)
+    for (let h = 0; h < NH; h++)
+      if (type[h] === 2) {
+        type[h] = 1
+        ladder[h] = 0
+      }
   const tInc = { 1: Math.round(p.prodPeriod[1] / p.dt), 2: Math.round(p.prodPeriod[2] / p.dt), 3: Math.round(p.prodPeriod[3] / p.dt) }
   const costH = { 1: C.harvestGround, 2: C.harvestLadder, 3: C.harvestPicker }
   const W = []

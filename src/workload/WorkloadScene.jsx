@@ -469,7 +469,7 @@ function Ground({ run, real, geom }) {
           </mesh>
         </>
       )}
-      <Orchard trees={trees} R={geom.R} real={real} canopy={play.canopy} />
+      <Orchard trees={trees} R={geom.R} H={geom.H} real={real} canopy={play.canopy} />
       {run.robot && <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />}
     </group>
   )

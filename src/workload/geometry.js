@@ -42,6 +42,7 @@ export function sceneGeometry(meta) {
       limites: { ...h.limites },
       trees: h.arboles.map((a, i) => ({ x: a.x, y: a.y, seed: i + 1 })),
       R,
+      H: h.arboles[0]?.altura,
       // hileras verticales (paralelas al eje y)
       strips: rowsX.map((x) => ({ x0: x - R, x1: x + R, y0, y1 })),
       cargo: { wp: [ax, ay], x: [ax - 2.5, ax + 2.5], y: [0, Math.max(0.6, ay - 1.8)] },

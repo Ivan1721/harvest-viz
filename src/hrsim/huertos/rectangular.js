@@ -19,6 +19,20 @@ export const PALTA_TRADICIONAL = Object.freeze({
   radioCopa: 2.5, // m
   cargaArbol: 42, // kg (10.100 kg/ha ÷ 240 árboles, ODEPA 2025)
   cabecera: 6, // m
+  escalera: true, // árboles altos: parte de la cuadrilla cosecha con escalera
+})
+
+/** Palta alta densidad (H3): marco 4 × 2 m, árboles bajos (≤ 2 m) cosechados desde el suelo; el Warthog entra justo. */
+export const PALTA_ALTA_DENSIDAD = Object.freeze({
+  calle: 4,
+  sobreHilera: 2,
+  hileras: 25,
+  arbolesPorHilera: 45,
+  altura: 2,
+  radioCopa: 1,
+  cargaArbol: 9, // kg (10.100 kg/ha ÷ 1.125 árboles)
+  cabecera: 6,
+  escalera: false,
 })
 
 /** Comprueba los parámetros del generador; lanza un Error legible. */
@@ -28,6 +42,7 @@ export function validarRectangular(g) {
   }
   for (const k of ['calle', 'sobreHilera', 'altura', 'radioCopa', 'cabecera']) if (!(Number.isFinite(g[k]) && g[k] > 0)) bad(`${k} debe ser > 0`)
   if (!(Number.isFinite(g.cargaArbol) && g.cargaArbol >= 0)) bad('cargaArbol debe ser ≥ 0')
+  if (typeof g.escalera !== 'boolean') bad('escalera debe ser true o false')
   for (const k of ['hileras', 'arbolesPorHilera']) if (!(Number.isInteger(g[k]) && g[k] >= 2 && g[k] <= 200)) bad(`${k} debe ser un entero entre 2 y 200`)
   if (2 * g.radioCopa >= g.calle) bad('radioCopa: las copas de dos hileras se tocan (2·radio ≥ calle), no queda calle para caminar')
   if (2 * g.radioCopa > g.sobreHilera + 1e-9 && g.radioCopa > g.calle) bad('radioCopa demasiado grande')
@@ -84,9 +99,13 @@ export function generarRectangular(g, { nw, sistema }) {
   else if (robotCabe) {
     // zigzag por las calles ocupadas: sube por una, baja por la siguiente
     vueltaRobot = [[...acopio]]
+    // dentro de la calle, un waypoint cada PASO m: el controlador (que apunta al waypoint) corrige el desvío lateral
+    // tras el giro de entrada en pocos metros; con un solo waypoint al fondo de la calle rozaría las copas
+    const PASO = 3
     ocupadas.forEach((x, i) => {
       const [a, b] = i % 2 === 0 ? [yb, yt] : [yt, yb]
-      vueltaRobot.push([x, a], [x, b])
+      const n = Math.max(1, Math.round(Math.abs(b - a) / PASO))
+      for (let k = 0; k <= n; k++) vueltaRobot.push([x, a + ((b - a) * k) / n])
     })
     if (ocupadas.length % 2 === 1) vueltaRobot.push([ocupadas.at(-1), yb])
     vueltaRobot.push([...acopio])

@@ -131,3 +131,16 @@ test('huerto generado: palta tradicional se simula y se dibuja (H2)', async ({ p
   if (process.env.SHOT3) await page.screenshot({ path: process.env.SHOT3 })
   expect(errors).toEqual([])
 })
+
+test('palta alta densidad: el robot entra a las calles y no se ofrece la escalera (H3)', async ({ page }) => {
+  const errors = await openWorkload(page)
+  await useSimulator(page)
+  await page.getByRole('button', { name: 'Palta alta dens.', exact: true }).click()
+  await expect(page.getByTestId('huerto-info')).toContainText('el robot entra a las calles')
+  await page.getByText(/Simulado en \d+ ms/).waitFor({ timeout: 60_000 })
+  await pause(page)
+  await expect(page.getByRole('button', { name: 'Escalera', exact: true })).toHaveCount(0)
+  await setRange(page.locator('.timeline2 input[type=range]'), 900)
+  if (process.env.SHOT4) await page.screenshot({ path: process.env.SHOT4 })
+  expect(errors).toEqual([])
+})

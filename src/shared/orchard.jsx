@@ -33,35 +33,52 @@ function useInstances(ref, items) {
   }, [ref, items])
 }
 
+// El árbol modelo mide 3,25 m de radio de copa y ~5,6 m de alto (mapa del estudio). Otros huertos lo escalan:
+// k en planta (radio R) y ky en altura (H); sin H, la altura no cambia.
+const R0 = 3.25,
+  H0 = 5.6
+// huertos grandes (más de 400 árboles): menos piezas por árbol para que la escena siga fluida
+const MANY = 400
+
 /** trees: [{ x, z, seed }] en coordenadas de mundo. */
-export function Orchard({ trees, R = 3.25, real = true, canopy, opacity = 0.36 }) {
-  return real ? <RealOrchard trees={trees} R={R} canopy={canopy} /> : <SchematicOrchard trees={trees} R={R} opacity={opacity} />
+export function Orchard({ trees, R = R0, H, real = true, canopy, opacity = 0.36 }) {
+  return real ? <RealOrchard trees={trees} R={R} H={H} canopy={canopy} /> : <SchematicOrchard trees={trees} R={R} H={H} opacity={opacity} />
 }
 
-function RealOrchard({ trees, R, canopy }) {
+function RealOrchard({ trees, R, H, canopy }) {
   const parts = useMemo(() => {
+    const k = R / R0,
+      ky = H ? H / H0 : 1,
+      many = trees.length > MANY
     const blobs = [],
       fruits = [],
       limbs = [],
       trunks = []
     for (const t of trees) {
-      const a = avocadoParts(R, t.seed)
-      trunks.push({ pos: [t.x, 0.95, t.z] })
+      const a = avocadoParts(R0, t.seed)
+      trunks.push({ pos: [t.x, 0.95 * ky, t.z], scale: [Math.max(0.5, k), ky, Math.max(0.5, k)] })
       for (const l of a.limbs)
         limbs.push({
           pos: [
-            t.x + (Math.cos(l.a) * Math.sin(l.tilt) * l.len) / 2,
-            1.9 + (Math.cos(l.tilt) * l.len) / 2,
-            t.z + (Math.sin(l.a) * Math.sin(l.tilt) * l.len) / 2,
+            t.x + (k * (Math.cos(l.a) * Math.sin(l.tilt) * l.len)) / 2,
+            ky * (1.9 + (Math.cos(l.tilt) * l.len) / 2),
+            t.z + (k * (Math.sin(l.a) * Math.sin(l.tilt) * l.len)) / 2,
           ],
           rot: [Math.sin(l.a) * l.tilt, 0, -Math.cos(l.a) * l.tilt],
-          scale: [1, l.len, 1],
+          scale: [Math.max(0.5, k), l.len * Math.max(k, ky), Math.max(0.5, k)],
         })
-      for (const b of a.blobs) blobs.push({ pos: [t.x + b.x, b.y, t.z + b.z], scale: [b.r, b.r * b.sy, b.r], color: GREENS[b.c] })
-      for (const f of a.fruits) fruits.push({ pos: [t.x + f.x, f.y, t.z + f.z], rot: [0.3, f.rot, 0.2], scale: [0.04, 0.056, 0.04] })
+      a.blobs.forEach((b, i) => {
+        if (many && i % 2) return
+        const r = b.r * (many ? 1.2 : 1)
+        blobs.push({ pos: [t.x + k * b.x, ky * b.y, t.z + k * b.z], scale: [k * r, ky * r * b.sy, k * r], color: GREENS[b.c] })
+      })
+      a.fruits.forEach((f, i) => {
+        if (many && i % 4) return
+        fruits.push({ pos: [t.x + k * f.x, ky * f.y, t.z + k * f.z], rot: [0.3, f.rot, 0.2], scale: [0.04, 0.056, 0.04] })
+      })
     }
     return { blobs, fruits, limbs, trunks }
-  }, [trees, R])
+  }, [trees, R, H])
   const rB = useRef(),
     rF = useRef(),
     rL = useRef(),
@@ -101,20 +118,24 @@ function RealOrchard({ trees, R, canopy }) {
   )
 }
 
-function SchematicOrchard({ trees, R, opacity }) {
+function SchematicOrchard({ trees, R, H, opacity }) {
   const parts = useMemo(() => {
+    const k = R / R0,
+      ky = H ? H / H0 : 1,
+      many = trees.length > MANY
     const blobs = [],
       trunks = [],
       prints = []
     for (const t of trees) {
-      trunks.push({ pos: [t.x, 0.9, t.z] })
+      trunks.push({ pos: [t.x, 0.9 * ky, t.z], scale: [Math.max(0.5, k), ky, Math.max(0.5, k)] })
       prints.push({ pos: [t.x, 0.02, t.z], rot: [-Math.PI / 2, 0, 0], scale: [R, R, 1] })
-      bigTreeBlobs(R, t.seed).forEach((b, i) =>
-        blobs.push({ pos: [t.x + b.x, b.y, t.z + b.z], scale: [b.r, b.r * 0.82, b.r], color: i % 2 ? '#7fb97a' : '#69a863' }),
-      )
+      bigTreeBlobs(R0, t.seed).forEach((b, i) => {
+        if (many && i % 2) return
+        blobs.push({ pos: [t.x + k * b.x, ky * b.y, t.z + k * b.z], scale: [k * b.r, ky * b.r * 0.82, k * b.r], color: i % 2 ? '#7fb97a' : '#69a863' })
+      })
     }
     return { blobs, trunks, prints }
-  }, [trees, R])
+  }, [trees, R, H])
   const rB = useRef(),
     rT = useRef(),
     rP = useRef()

@@ -35,7 +35,9 @@ export function ConfigPanel({
   const fileRef = useRef()
   const uniq = (k) => [...new Set(lib.map((e) => e[k]))].sort((a, b) => (typeof a === 'number' ? a - b : String(a).localeCompare(String(b))))
   const sim = source === 'sim'
-  const acts = sim ? ACTS : ACTS.filter((a) => lib.some((e) => e.act === a))
+  // huertos sin escalera (árboles bajos): no se ofrece la actividad «Escalera»
+  const noLadder = sim && simProps?.params?.huertoParams?.escalera === false
+  const acts = (sim ? ACTS : ACTS.filter((a) => lib.some((e) => e.act === a))).filter((a) => !(noLadder && a === 'ladder'))
   const opt = (k, all) => (sim ? all : uniq(k))
   // huertos generados: la fila y la disposición del estudio no aplican
   const generated = sim && simProps?.params?.huerto && simProps.params.huerto !== 'matlab-2026'

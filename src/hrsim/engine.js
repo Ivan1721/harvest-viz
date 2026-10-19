@@ -217,7 +217,9 @@ export class HRSim {
         w.cont += 1
         if (w.cont >= w.tInc) {
           // huertos generados: no se cosecha más fruta de la que queda en el lado del árbol
-          w.prod = prevProd + (this.cosecha ? this.cosecha.take(w, p.costProduction * dt) : p.costProduction * dt)
+          // huertos generados: no se saca del árbol más de lo que cabe en la bolsa (el MATLAB recorta la bolsa y descarta
+          // el excedente; con fruta finita eso rompería la conservación)
+          w.prod = prevProd + (this.cosecha ? this.cosecha.take(w, Math.max(0, Math.min(p.costProduction * dt, maxProd - prevProd))) : p.costProduction * dt)
           w.last = w.prod
           w.cont = 0
         } else w.prod = w.last
@@ -371,6 +373,26 @@ export class HRSim {
     }
   }
 
+  /** Índice donde insertar un waypoint de caja: el del tramo de la ruta próxima más cercano a la caja. */
+  _insertAt(pos) {
+    const W = this.waypoints,
+      n = W.length
+    let best = this.kWp,
+      bd = Infinity,
+      a = [this.rpose[0], this.rpose[1]]
+    for (let k = 0; k < Math.min(60, n); k++) {
+      const j = (this.kWp + k) % n,
+        b = W[j]
+      const d = hyp(...(([x, y]) => [x - pos[0], y - pos[1]])(nearestOnPolyline(pos, [a, b])))
+      if (d < bd - 1e-9) {
+        bd = d
+        best = j
+      }
+      a = b
+    }
+    return best
+  }
+
   _detectBox(h) {
     // ObjectDetector: dentro del alcance y del campo de visión del cuerpo
     const w = this.W[h],
@@ -442,8 +464,12 @@ export class HRSim {
         const { h, pos } = e
         const exists = this.waypoints.some((q) => hyp(q[0] - pos[0], q[1] - pos[1]) < 0.05)
         if (!exists) {
-          const kk = Math.min(Math.max(this.kWp, 0), this.waypoints.length - 1)
+          let kk = Math.min(Math.max(this.kWp, 0), this.waypoints.length - 1)
+          // huertos generados: la caja se inserta en el tramo de la ruta que pasa por ella (no siempre antes del waypoint
+          // actual: con waypoints densos en la calle, eso haría volver al robot a un punto que ya quedó atrás)
+          if (this.cosecha) kk = this._insertAt(pos)
           this.waypoints.splice(kk, 0, [pos[0], pos[1]])
+          if (kk < this.kWp) this.kWp += 1 // la inserción quedó antes del waypoint actual (vuelta siguiente)
           this.log(
             `Robot detected BOX from h${h + 1} and inserted waypoint | box=[${pos[0].toFixed(2)} ${pos[1].toFixed(2)}] | dist=${e.dist.toFixed(2)} | inserted before k=${kk + 1} | total waypoints=${this.waypoints.length}`,
           )
@@ -462,6 +488,7 @@ export class HRSim {
       const hasRoom = this.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
       if (dist < PICKUP_RADIUS && !hasRoom) {
         this.capacityBlocked++
+        this.needUnload = true
         // MATLAB deja call=true aunque el robot ya no tenga espacio: el trabajador vuelve a girar y cargar
         // indefinidamente sin cosechar. Con fixRecallLoop se cancela la llamada (difiere de MATLAB).
         if (p.fixRecallLoop) w.call = false
@@ -516,8 +543,19 @@ export class HRSim {
         this.bBox[h] = 0
       }
     }
+    // huertos generados: con el robot lleno, va a descargar al acopio por las calles y vuelve a donde estaba
+    // (en el mapa del estudio la vuelta base ya pasa por la zona de carga a cada rato; en 1 ha, no)
+    if (this.cosecha && !this.goingToUnload && (this.needUnload || this.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
+      const here = [rpos[0], rpos[1]]
+      const detour = [...rutaCalles(this.huerto, here, this.cargoZone), ...rutaCalles(this.huerto, this.cargoZone, here)]
+      this.waypoints.splice(this.kWp, 0, ...detour)
+      this.goingToUnload = true
+      this.log(`Robot FULL | going to CARGO ZONE | ${detour.length} waypoints inserted`)
+    }
     // descarga en la zona de carga
     if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0) {
+      this.goingToUnload = false
+      this.needUnload = false
       this.lapBoxStops = 0
       this.log(`Robot reached CARGO ZONE | unloading ${this.prodRobot.toFixed(2)} crops | Prod_ROBOT_total before=${this.prodRobotTotal.toFixed(2)}`)
       // MATLAB suma UNLOAD_TIME_S (0 en el estudio) + tiempo por caja
@@ -537,15 +575,19 @@ export class HRSim {
       this.rpose[2],
     ]
     if (this.kWp > this.waypoints.length - 1) this.kWp = this.waypoints.length - 1
-    const g = this.waypoints[this.kWp]
-    const gx = g[0] - cur[0],
-      gy = g[1] - cur[1],
-      c = Math.cos(cur[2]),
+    const c = Math.cos(cur[2]),
       s = Math.sin(cur[2])
-    const xl = c * gx + s * gy,
+    let g, xl, yl, goalD, targetDir
+    const aim = () => {
+      g = this.waypoints[this.kWp]
+      const gx = g[0] - cur[0],
+        gy = g[1] - cur[1]
+      xl = c * gx + s * gy
       yl = -s * gx + c * gy // inv(T)*goal
-    const goalD = Math.hypot(xl, yl)
-    const targetDir = goalD < 1e-6 ? 0 : (-Math.atan2(yl, xl) * 180) / Math.PI
+      goalD = Math.hypot(xl, yl)
+      targetDir = goalD < 1e-6 ? 0 : (-Math.atan2(yl, xl) * 180) / Math.PI
+    }
+    aim()
     // timeout de waypoint
     let timedOut = false
     const sameTarget = this.wpTimeoutTarget && this.wpTimeoutTarget[0] === g[0] && this.wpTimeoutTarget[1] === g[1]
@@ -565,6 +607,16 @@ export class HRSim {
       if (this.kWp > this.waypoints.length - 1) this.kWp = 0
       const n = this.waypoints[this.kWp]
       this.log(`Next waypoint selected | k=${this.kWp + 1}/${this.waypoints.length} | target=[${n[0].toFixed(2)} ${n[1].toFixed(2)}]`)
+      // huertos generados: el control de este tick ya apunta al waypoint nuevo (y salta los que también están
+      // alcanzados). El MATLAB, en cambio, usa el waypoint recién alcanzado en ese tick; con waypoints densos en calles
+      // angostas eso hace girar al robot hacia un punto que quedó atrás.
+      if (this.cosecha) {
+        aim()
+        for (let k = 0; k < 4 && goalD < WAYPOINT_RADIUS; k++) {
+          this.kWp = (this.kWp + 1) % this.waypoints.length
+          aim()
+        }
+      }
     }
     const [wRef, vRef] = evalFis(this.fis, [goalD, targetDir])
     // FourWheelSteering, dirección frontal: v_x = vRef, v_y = 0.5 w L, giro w
