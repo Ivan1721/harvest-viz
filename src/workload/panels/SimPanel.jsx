@@ -71,6 +71,7 @@ const SSM = [
   ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
   ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
 ]
+const SHORT = { 'matlab-2026': 'Estudio', 'palta-tradicional': 'Palta trad.', 'palta-alta-densidad': 'Palta alta dens.' }
 // parámetros del generador de huertos (H2): [clave, etiqueta, paso, mínimo, máximo, entero]
 const HUERTO = [
   ['hileras', 'Hileras', 1, 2, 200, true],
@@ -116,7 +117,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
             setParams(profileDefaults(params.profile, h))
             onRun()
           }}
-          options={Object.entries(SISTEMAS).map(([k, v]) => [k, k === 'matlab-2026' ? t('Estudio') : t('Palta trad.'), false, t(v.label)])}
+          options={Object.entries(SISTEMAS).map(([k, v]) => [k, t(SHORT[k] || k), false, t(v.label)])}
         />
       </Field>
       {hp && (

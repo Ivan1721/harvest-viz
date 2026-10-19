@@ -5,7 +5,7 @@ import { HRSim } from '../../src/hrsim/engine.js'
 import { HOSim } from '../../src/hrsim/humanonly.js'
 import { resolveParams } from '../../src/hrsim/common.js'
 import { buildHuerto } from '../../src/hrsim/huertos/index.js'
-import { generarRectangular, rutaCalles, PALTA_TRADICIONAL, ROBOT_ANCHO } from '../../src/hrsim/huertos/rectangular.js'
+import { generarRectangular, rutaCalles, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, ROBOT_ANCHO } from '../../src/hrsim/huertos/rectangular.js'
 import { FIS } from '../helpers.mjs'
 
 const PALTA = { huerto: 'palta-tradicional' }
@@ -45,7 +45,7 @@ test('más cosecheros que lados de hilera: los lados se parten en tramos; la ré
 })
 
 test('robot que cabe en las calles: recorre en zigzag las calles ocupadas', () => {
-  const h = generarRectangular({ ...PALTA_TRADICIONAL, calle: 4, sobreHilera: 2, radioCopa: 1, hileras: 25, arbolesPorHilera: 45 }, { nw: 6, sistema: 'x' })
+  const h = generarRectangular(PALTA_ALTA_DENSIDAD, { nw: 6, sistema: 'x' })
   assert.equal(h.calles.robotCabe, true)
   const xs = new Set(h.vueltaRobot.slice(1, -1).map(([x]) => x))
   assert.equal(xs.size, 3, 'pasa por las 3 calles ocupadas')
@@ -77,13 +77,15 @@ test('caminos por calles: ningún tramo atraviesa una copa', () => {
     }
 })
 
-for (const [nw, act] of [
-  [12, 'mixed'],
-  [6, 'ladder'],
-  [34, 'ground'],
+for (const [huerto, nw, act] of [
+  ['palta-tradicional', 12, 'mixed'],
+  ['palta-tradicional', 6, 'ladder'],
+  ['palta-tradicional', 34, 'ground'],
+  ['palta-alta-densidad', 12, 'mixed'],
+  ['palta-alta-densidad', 24, 'picker'],
 ]) {
-  test(`simulación ${nw} cosecheros (${act}): la fruta se conserva, nadie cruza copas, el robot no entra a las calles`, () => {
-    const o = { ...PALTA, nw, act, duration: 2700 }
+  test(`${huerto}, ${nw} cosecheros (${act}): la fruta se conserva, nadie cruza copas, el robot no las roza`, () => {
+    const o = { huerto, nw, act, duration: 2700 }
     for (const s of [new HRSim(o, FIS).run(), new HOSim(o).run()]) {
       const sm = s.summary()
       assert.ok(
@@ -99,14 +101,48 @@ for (const [nw, act] of [
           for (const a of s.huerto.arboles) assert.ok(Math.hypot(a.x - x, a.y - y) >= 0.9 * R - 1e-6, `H${k + 1} dentro de una copa en t=${s.rec.t[i]}`)
         }
       if (s.rec.ry) {
-        assert.ok(Math.max(...s.rec.ry) <= s.huerto.calles.cabecera, 'el robot no sale de la cabecera')
-        // ni su carrocería (medio ancho 0,69 m) toca una copa, tampoco al girar en U
+        if (s.huerto.calles.robotCabe) assert.ok(Math.max(...s.rec.ry) > 50, 'el robot recorre las calles')
+        else assert.ok(Math.max(...s.rec.ry) <= s.huerto.calles.cabecera, 'el robot no sale de la cabecera')
+        // ni su carrocería (medio ancho 0,69 m) toca una copa: en la calle, al girar en U ni al entrar o salir
         for (let i = 0; i < s.rec.t.length; i += 2)
-          for (const a of s.huerto.arboles) assert.ok(Math.hypot(a.x - s.rec.rx[i], a.y - s.rec.ry[i]) - a.radio >= ROBOT_ANCHO / 2)
+          for (const a of s.huerto.arboles)
+            assert.ok(
+              Math.hypot(a.x - s.rec.rx[i], a.y - s.rec.ry[i]) - a.radio >= ROBOT_ANCHO / 2,
+              `robot a ${s.rec.rx[i].toFixed(2)}, ${s.rec.ry[i].toFixed(2)}`,
+            )
       }
     }
   })
 }
+
+test('palta alta densidad: 25 × 45 árboles, calle libre de 2 m (el robot entra), sin escalera', () => {
+  const p = resolveParams({ huerto: 'palta-alta-densidad', nw: 12, act: 'ladder' })
+  const h = buildHuerto(p)
+  assert.equal(h.arboles.length, 1125)
+  assert.deepEqual(h.limites, { w: 100, h: 102 })
+  assert.equal(h.calles.anchoLibre, 2)
+  assert.equal(h.calles.robotCabe, true)
+  const s = new HOSim({ ...p, duration: 60 })
+  assert.ok(
+    s.W.every((w) => w.ladder === 0),
+    'quien iba a usar escalera cosecha desde el suelo',
+  )
+  // variante 3 × 3: queda 1 m libre y el robot vuelve a la cabecera
+  assert.equal(generarRectangular({ ...PALTA_ALTA_DENSIDAD, calle: 3, sobreHilera: 3 }, { nw: 4, sistema: 'x' }).calles.robotCabe, false)
+})
+
+test('palta alta densidad: con el robot casi lleno va a descargar al acopio por las calles y vuelve', () => {
+  const s = new HRSim({ huerto: 'palta-alta-densidad', nw: 12, act: 'ground', duration: 2700, capacityBoxes: 6 }, FIS).run()
+  assert.ok(s.ev.unloads.filter((u) => u.amount > 0).length >= 5, 'varias descargas')
+  assert.ok(Math.max(...s.rec.onboard) <= 6 * 15)
+  assert.ok(s.events.some((e) => /Robot FULL/.test(e.msg)))
+})
+
+test('calibración palta alta densidad: 12 cosecheros (mixta, sin robot) rinden 1.000–1.600 kg por persona en 8 h', () => {
+  const s = new HOSim({ huerto: 'palta-alta-densidad', nw: 12, act: 'mixed', duration: 2700 }).run()
+  const kg8h = ((s.summary().TotalRecollectedCrops_crop_units / 12) * 8 * 3600) / 2700
+  assert.ok(kg8h >= 1000 && kg8h <= 1600, `${kg8h.toFixed(0)} kg/día`)
+})
 
 test('calibración: 12 cosecheros (mixta) rinden 320–420 kg por persona en 8 h', () => {
   const s = new HOSim({ ...PALTA, nw: 12, act: 'mixed', duration: 2700 }).run()

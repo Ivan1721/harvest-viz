@@ -164,4 +164,6 @@ export default {
     'Pomar gerado: os colhedores trabalham em duplas nas ruas em frente ao ponto de coleta e avançam pela fileira.',
   '{nw} trabajadores · {act} · {h}': '{nw} trabalhadores · {act} · {h}',
   'perfil MATLAB 2026': 'perfil MATLAB 2026',
+  'Palta alta dens.': 'Abacate alta dens.',
+  'Palta alta densidad (4 × 2 m, 1 ha)': 'Abacate alta densidade (4 × 2 m, 1 ha)',
 }
