@@ -89,3 +89,14 @@ test('un CSV malformado muestra un error legible y no rompe la página', async (
   await expect(page.locator('.toast.err')).toContainText(/faltan columnas/)
   await expect(page.getByText('Fuente', { exact: true })).toBeVisible()
 })
+
+test('pestaña Fluidez: reparto del tiempo del robot y seguridad medida (fase 2)', async ({ page }) => {
+  const errors = await openWorkload(page)
+  await useSimulator(page)
+  await page.getByRole('tab', { name: 'Interacción' }).click()
+  await page.getByRole('tab', { name: 'Fluidez' }).click()
+  await expect(page.getByText('Esperando al trabajador')).toBeVisible()
+  await expect(page.getByText(/dentro de S_p\(v\)/)).toBeVisible()
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: false })
+  expect(errors).toEqual([])
+})

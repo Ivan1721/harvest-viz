@@ -2,6 +2,7 @@
 // En el sitio publicado y en CI la constante es false y esta función no hace nada.
 /* global __HV_SAVE_SIMS__ */
 import { runFiles } from '../hrsim/export.js'
+import { fluencyIndex } from './hri.js'
 
 export const SAVE_ENABLED = typeof __HV_SAVE_SIMS__ !== 'undefined' && __HV_SAVE_SIMS__
 
@@ -21,7 +22,7 @@ export async function saveSimulation(ho, hr) {
         paramsHash: m.paramsHash,
         duration: m.params?.duration,
       },
-      summary: { ho: ho.summary, hr: { ...hr.summary } },
+      summary: { ho: ho.summary, hr: { ...hr.summary, ...fluencyIndex(hr.hri) } },
       files: [...runFiles(ho), ...runFiles(hr)],
     }
     const r = await fetch('/__hv/save-sim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
