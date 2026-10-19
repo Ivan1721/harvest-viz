@@ -14,6 +14,7 @@ export async function saveSimulation(ho, hr) {
     const body = {
       meta: {
         profile: m.params?.profile ?? 'matlab-2026',
+        huerto: m.params?.huerto ?? 'matlab-2026',
         nw: m.nw,
         row: m.row,
         act: m.act,

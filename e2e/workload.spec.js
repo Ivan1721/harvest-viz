@@ -117,3 +117,17 @@ test('perfil HRI: la regla de seguridad actúa y se ve (fase 3)', async ({ page 
   if (process.env.SHOT2) await page.screenshot({ path: process.env.SHOT2 })
   expect(errors).toEqual([])
 })
+
+test('huerto generado: palta tradicional se simula y se dibuja (H2)', async ({ page }) => {
+  const errors = await openWorkload(page)
+  await useSimulator(page)
+  await page.getByRole('button', { name: 'Palta trad.', exact: true }).click()
+  await expect(page.getByTestId('huerto-info')).toContainText('240')
+  await page.getByText(/Simulado en \d+ ms/).waitFor({ timeout: 60_000 })
+  await pause(page)
+  await expect(page.getByText(/Palta tradicional/).first()).toBeVisible()
+  await expect(page.getByText('Fila de cultivo')).toHaveCount(0)
+  await setRange(page.locator('.timeline2 input[type=range]'), 900)
+  if (process.env.SHOT3) await page.screenshot({ path: process.env.SHOT3 })
+  expect(errors).toEqual([])
+})

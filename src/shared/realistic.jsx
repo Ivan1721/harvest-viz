@@ -2,7 +2,6 @@
 // Todo procedural (sin assets externos). Las alturas del árbol son estimadas; ver docs/modelos_escenario.md.
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
-import { MAP, ROWS, CARGO, routeLoop } from '../workload/spec.js'
 
 const mulberry = (a) => () => {
   a |= 0
@@ -46,72 +45,82 @@ export function avocadoParts(R = 3.25, seed = 1) {
 }
 
 // ---- Suelo: textura procedural (pasto en calles, suelo bajo hileras, huellas del robot, grava en la zona de carga)
+// `geom` es la geometría de la escena (src/workload/geometry.js): mapa del estudio o huerto generado.
 const MARGIN = 8
-export function useGroundTexture(row) {
+export function useGroundTexture(geom) {
   const tex = useMemo(() => {
-    const PPM = 36,
-      W = Math.round((MAP.w + 2 * MARGIN) * PPM),
-      H = Math.round((MAP.h + 2 * MARGIN) * PPM)
+    const { limites: L, strips, trees, R, route, cargo } = geom
+    // ~36 px/m en el mapa del estudio; en huertos grandes se baja para no pasar de ~2400 px por lado
+    const PPM = Math.min(36, 2400 / (Math.max(L.w, L.h) + 2 * MARGIN)),
+      W = Math.round((L.w + 2 * MARGIN) * PPM),
+      H = Math.round((L.h + 2 * MARGIN) * PPM)
     const c = document.createElement('canvas')
     c.width = W
     c.height = H
     const g = c.getContext('2d'),
       rnd = mulberry(4242)
     const X = (x) => (x + MARGIN) * PPM,
-      Y = (y) => (MAP.h + MARGIN - y) * PPM
+      Y = (y) => (L.h + MARGIN - y) * PPM
     g.fillStyle = '#7f9a56'
     g.fillRect(0, 0, W, H)
     // franjas de corte de pasto en las calles
     for (let k = 0; k < 28; k++) {
       g.fillStyle = k % 2 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.03)'
-      g.fillRect(0, Y(MAP.h + MARGIN) + k * (H / 28), W, H / 28)
+      g.fillRect(0, k * (H / 28), W, H / 28)
     }
-    // suelo bajo las hileras (franja de 4,6 m) con mantillo
-    Object.values(ROWS).forEach((R) => {
-      const grad = g.createLinearGradient(0, Y(R.y + 2.5), 0, Y(R.y - 2.5))
+    // suelo bajo las hileras con mantillo y línea de riego por goteo
+    for (const st of strips) {
+      const horiz = st.x1 - st.x0 > st.y1 - st.y0
+      const grad = horiz ? g.createLinearGradient(0, Y(st.y1), 0, Y(st.y0)) : g.createLinearGradient(X(st.x0), 0, X(st.x1), 0)
       grad.addColorStop(0, 'rgba(120,92,58,0)')
       grad.addColorStop(0.22, 'rgba(142,112,74,0.7)')
       grad.addColorStop(0.78, 'rgba(142,112,74,0.7)')
       grad.addColorStop(1, 'rgba(120,92,58,0)')
       g.fillStyle = grad
-      g.fillRect(X(-MARGIN), Y(R.y + 2.5), W, 5 * PPM)
-      // línea de riego por goteo
+      g.fillRect(X(st.x0), Y(st.y1), (st.x1 - st.x0) * PPM, (st.y1 - st.y0) * PPM)
       g.strokeStyle = 'rgba(20,20,20,0.55)'
       g.lineWidth = 2
       g.beginPath()
-      g.moveTo(X(-MARGIN), Y(R.y - 0.7))
-      g.lineTo(X(MAP.w + MARGIN), Y(R.y - 0.7))
+      if (horiz) {
+        const y = (st.y0 + st.y1) / 2 - 0.7
+        g.moveTo(X(st.x0), Y(y))
+        g.lineTo(X(st.x1), Y(y))
+      } else {
+        const x = (st.x0 + st.x1) / 2 - 0.7
+        g.moveTo(X(x), Y(st.y0))
+        g.lineTo(X(x), Y(st.y1))
+      }
       g.stroke()
-      // sombra suave y hojarasca bajo cada árbol
-      R.x.forEach((tx) => {
-        const sh = g.createRadialGradient(X(tx), Y(R.y), 0, X(tx), Y(R.y), 3.9 * PPM)
-        sh.addColorStop(0, 'rgba(25,22,12,0.3)')
-        sh.addColorStop(0.7, 'rgba(25,22,12,0.16)')
-        sh.addColorStop(1, 'rgba(25,22,12,0)')
-        g.fillStyle = sh
-        g.beginPath()
-        g.arc(X(tx), Y(R.y), 3.9 * PPM, 0, Math.PI * 2)
-        g.fill()
-        for (let i = 0; i < 260; i++) {
-          const a = rnd() * 6.283,
-            d = Math.sqrt(rnd()) * 3.4
-          g.fillStyle = `rgba(${70 + rnd() * 50},${55 + rnd() * 30},${28},${0.35 + rnd() * 0.4})`
-          g.fillRect(X(tx + Math.cos(a) * d), Y(R.y + Math.sin(a) * d), 3, 2)
-        }
-      })
-    })
+    }
+    // sombra suave y hojarasca bajo cada árbol (menos hojas por árbol en huertos grandes)
+    const nLeaves = Math.max(30, Math.round(3000 / trees.length))
+    for (const t of trees) {
+      const sh = g.createRadialGradient(X(t.x), Y(t.y), 0, X(t.x), Y(t.y), 1.2 * R * PPM)
+      sh.addColorStop(0, 'rgba(25,22,12,0.3)')
+      sh.addColorStop(0.7, 'rgba(25,22,12,0.16)')
+      sh.addColorStop(1, 'rgba(25,22,12,0)')
+      g.fillStyle = sh
+      g.beginPath()
+      g.arc(X(t.x), Y(t.y), 1.2 * R * PPM, 0, Math.PI * 2)
+      g.fill()
+      for (let i = 0; i < nLeaves; i++) {
+        const a = rnd() * 6.283,
+          d = Math.sqrt(rnd()) * R
+        g.fillStyle = `rgba(${70 + rnd() * 50},${55 + rnd() * 30},${28},${0.35 + rnd() * 0.4})`
+        g.fillRect(X(t.x + Math.cos(a) * d), Y(t.y + Math.sin(a) * d), 3, 2)
+      }
+    }
     // huellas del robot sobre su ruta
-    const rt = routeLoop(row)
     g.strokeStyle = 'rgba(96,78,52,0.55)'
     g.lineWidth = 1.5 * PPM
     g.lineCap = 'round'
     g.lineJoin = 'round'
     g.beginPath()
-    rt.forEach(([x, y], i) => (i ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y))))
+    route.forEach(([x, y], i) => (i ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y))))
     g.stroke()
     // zona de carga: grava
     g.fillStyle = '#a79d88'
-    g.fillRect(X(CARGO.x[0] - 0.6), Y(CARGO.y[1] + 1.6), (CARGO.x[1] - CARGO.x[0] + 1.2) * PPM, (CARGO.y[1] - CARGO.y[0] + 2.2) * PPM)
+    g.fillRect(X(cargo.x[0] - 0.6), Y(cargo.y[1] + 1.6), (cargo.x[1] - cargo.x[0] + 1.2) * PPM, (cargo.y[1] - cargo.y[0] + 2.2) * PPM)
     // ruido de grano
     for (let i = 0; i < 90000; i++) {
       g.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.06)'
@@ -121,14 +130,15 @@ export function useGroundTexture(row) {
     t.colorSpace = THREE.SRGBColorSpace
     t.anisotropy = 8
     return t
-  }, [row])
-  // la textura es de ~1300×1200 px: liberarla en la GPU al cambiar de fila o desmontar
+  }, [geom])
+  // la textura pesa varios MB en la GPU: liberarla al cambiar de huerto o desmontar
   useEffect(() => () => tex.dispose(), [tex])
   return tex
 }
 
-export function RealGround({ row }) {
-  const tex = useGroundTexture(row)
+export function RealGround({ geom }) {
+  const tex = useGroundTexture(geom)
+  const L = geom.limites
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
@@ -136,7 +146,7 @@ export function RealGround({ row }) {
         <meshStandardMaterial color="#7f9a56" roughness={1} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[MAP.w + 2 * MARGIN, MAP.h + 2 * MARGIN]} />
+        <planeGeometry args={[L.w + 2 * MARGIN, L.h + 2 * MARGIN]} />
         <meshStandardMaterial map={tex} roughness={1} />
       </mesh>
     </group>

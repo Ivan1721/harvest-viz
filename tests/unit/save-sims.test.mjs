@@ -89,3 +89,18 @@ test('el perfil separa carpetas y queda en el índice; un índice antiguo actual
   assert.equal(lines[1], 'viejo,0.2.0')
   assert.equal(lines[2].split(',')[head.indexOf('perfil')], 'hri')
 })
+
+test('huerto generado: la carpeta lleva el sistema de huerto en vez de fila y disposición', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hv-sims-'))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const b = body()
+  b.meta.huerto = 'palta-tradicional'
+  const r = writeSimulation(root, b)
+  assert.match(r.dir, /\/2_palta-tradicional_ground_SIM-/)
+  const [head, row] = fs
+    .readFileSync(path.join(root, 'indice.csv'), 'utf8')
+    .trim()
+    .split('\n')
+    .map((l) => l.split(','))
+  assert.equal(row[head.indexOf('huerto')], 'palta-tradicional')
+})

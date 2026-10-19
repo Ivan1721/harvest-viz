@@ -4,6 +4,7 @@
 //          5 vuelve al árbol, 7 sube escalera. Banderas: 1 cosecha, 2 camina, 3 descarga, 4 baja, 5 sube.
 import { resolveParams, initWorkers, movePose } from './common.js'
 import { buildHuerto } from './huertos/index.js'
+import { Cosecha, rutaCalles } from './huertos/rectangular.js'
 
 export class HOSim {
   constructor(opts = {}) {
@@ -19,6 +20,8 @@ export class HOSim {
     this.type = type
     this.ladder = ladder
     this.cargo = [...huerto.acopio]
+    // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
+    this.cosecha = huerto.calles ? new Cosecha(huerto, W) : null
     this.delivered = 0
     this.rec = {
       t: [],
@@ -70,7 +73,8 @@ export class HOSim {
       case 1:
         w.cont += 1
         if (w.cont >= w.tInc) {
-          w.prod = Math.min(w.prod + p.costProduction * dt, p.maxProd)
+          const inc = Math.min(p.costProduction * dt, p.maxProd - w.prod)
+          w.prod = this.cosecha ? w.prod + this.cosecha.take(w, inc) : Math.min(w.prod + p.costProduction * dt, p.maxProd)
           w.last = w.prod
           w.cont = 0
         } else w.prod = w.last
@@ -79,6 +83,12 @@ export class HOSim {
         if (w.prod >= p.maxProd) {
           if (w.ladder === 1) w.state = 2
           else this._startTrip(w)
+        } else if (this.cosecha && this.cosecha.empty(w)) {
+          // el lado del árbol se agotó: baja de la escalera si hace falta y camina al siguiente árbol
+          if (w.ladder === 1) {
+            w.goNext = true
+            w.state = 2
+          } else this._goNextTree(w)
         }
         break
       case 2:
@@ -87,7 +97,8 @@ export class HOSim {
         w.timer += dt
         if (w.timer >= p.ladderTime) {
           w.timer = 0
-          this._startTrip(w)
+          if (w.goNext) this._goNextTree(w)
+          else this._startTrip(w)
         }
         break
       case 3:
@@ -116,7 +127,7 @@ export class HOSim {
           w.box = null
           w.timer = 0
           w.state = 5
-          w.route = [w.start]
+          w.route = this._path(w.pose, w.start)
           w.routeIdx = 0
         }
         break
@@ -134,6 +145,24 @@ export class HOSim {
             } else w.state = 1
           }
         }
+        break
+      case 13:
+        // camina por la calle al siguiente árbol de su tramo
+        w.work += C.walking * dt
+        w.flag = 2
+        if (walkTo(w.route[w.routeIdx])) {
+          if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
+          else {
+            w.pose = [w.start[0], w.start[1], Math.atan2(w.tree[1] - w.start[1], w.tree[0] - w.start[0])]
+            if (w.ladder === 1) {
+              w.state = 7
+              w.timer = 0
+            } else w.state = 1
+          }
+        }
+        break
+      case 15:
+        w.flag = 0 // sin fruta que cosechar
         break
       case 7:
         w.work += C.ladderClimb * dt
@@ -153,8 +182,26 @@ export class HOSim {
     w.last = 0
     w.box = [w.pose[0], w.pose[1]]
     w.state = 3
-    w.route = [this.cargo]
+    w.route = this._path(w.pose, this.cargo)
     w.routeIdx = 0
+  }
+
+  /** Camino de a hasta b: por calles en huertos generados; en línea recta en matlab-2026 (como MATLAB). */
+  _path(a, b) {
+    return this.cosecha ? rutaCalles(this.huerto, a, b) : [b]
+  }
+
+  _goNextTree(w) {
+    w.goNext = false
+    const spot = this.cosecha.next(w)
+    if (!spot) {
+      w.state = 15
+      return
+    }
+    w.state = 13
+    w.route = this._path(w.pose, spot)
+    w.routeIdx = 0
+    w.start = [spot[0], spot[1]]
   }
 
   step() {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
+import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { saveSimulation } from './saveSim.js'
 import { profileDefaults } from '../hrsim/common.js'
 import { SC } from './charts.jsx'
@@ -177,13 +178,16 @@ export default function WorkloadApp({ modeSwitch }) {
   }
 
   const ref = hr || ho
+  const genHuerto = source === 'sim' && params.huerto !== 'matlab-2026' ? SISTEMAS[params.huerto] : null
   const title = cfg
-    ? t('{nw} trabajadores · Fila {row} · {act} · Disposición {rp}', {
-        nw: cfg.nw,
-        row: cfg.row,
-        act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act,
-        rp: cfg.rp,
-      })
+    ? genHuerto
+      ? t('{nw} trabajadores · {act} · {h}', { nw: cfg.nw, act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act, h: t(genHuerto.label) })
+      : t('{nw} trabajadores · Fila {row} · {act} · Disposición {rp}', {
+          nw: cfg.nw,
+          row: cfg.row,
+          act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act,
+          rp: cfg.rp,
+        })
     : t('Sin datos')
 
   return (
@@ -200,7 +204,15 @@ export default function WorkloadApp({ modeSwitch }) {
               {' '}
               · {t('sesión de {t}', { t: fmtT(ref.series.t[ref.n - 1]) })}{' '}
               {source === 'sim'
-                ? ` · ${t('simulación en el navegador ({m})', { m: t(runs.hr?.meta?.params?.profile === 'hri' ? 'perfil HRI' : 'réplica del modelo MATLAB') })}`
+                ? ` · ${t('simulación en el navegador ({m})', {
+                    m: t(
+                      runs.hr?.meta?.params?.profile === 'hri'
+                        ? 'perfil HRI'
+                        : (runs.hr?.meta?.params?.huerto ?? 'matlab-2026') === 'matlab-2026'
+                          ? 'réplica del modelo MATLAB'
+                          : 'perfil MATLAB 2026',
+                    ),
+                  })}`
                 : ` · ${t('reproducción de corridas del simulador MATLAB')}`}
             </span>
           )}

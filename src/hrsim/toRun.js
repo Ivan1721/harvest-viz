@@ -3,6 +3,7 @@
 import { workerBase, CARGO } from '../workload/spec.js'
 import { ENGINE_VERSION, paramsHash, toJSONSafe } from './common.js'
 import { ladderHeights, metabolicRate, rateScale } from '../workload/derive.js'
+import { buildHuerto } from './huertos/index.js'
 
 const f32 = (a) => Float32Array.from(a)
 
@@ -33,10 +34,16 @@ export function simToRun(sim, { robot }) {
     work: f32(rec.work),
   }
   const all = []
+  // el huerto no viaja desde el worker (tiene funciones): se regenera, el generador es determinista
+  const huerto = sim.huerto || (p.huerto && p.huerto !== 'matlab-2026' ? buildHuerto(p) : null)
   const workers = sim.W.map((w, k) => {
     const h = k + 1
     const act = sim.type[k] === 1 ? 'ground' : sim.type[k] === 2 ? 'ladder' : 'picker'
-    const base = workerBase(h, p.row, p.rp)
+    // puesto inicial: mapa del estudio (por fila y disposición) o el del huerto generado
+    const pu = huerto?.calles ? huerto.puestos[k] : null
+    const base = pu
+      ? { x: pu.start[0], y: pu.start[1], tx: pu.tree[0], ty: pu.tree[1], heading: Math.atan2(pu.tree[1] - pu.start[1], pu.tree[0] - pu.start[0]) }
+      : workerBase(h, p.row, p.rp)
     const flag = Uint8Array.from(rec.flag[k])
     const prod = f32(rec.prod[k]),
       work = f32(rec.workH[k])
@@ -53,7 +60,8 @@ export function simToRun(sim, { robot }) {
     const rate = metabolicRate(work, dt, all)
     // posición de la caja de este trabajador: la del primer evento de su caja
     const b0 = robot ? sim.ev.boxes.find((b) => b.h === h) : null
-    return { h, act, base, box: b0 ? [b0.x, b0.y] : [CARGO.wp[0], CARGO.wp[1]], prod, work, flag, state, rate, track }
+    const acopio = huerto?.acopio || CARGO.wp
+    return { h, act, base, box: b0 ? [b0.x, b0.y] : [acopio[0], acopio[1]], prod, work, flag, state, rate, track }
   })
   const rateMax = rateScale(all)
   let rob = null
