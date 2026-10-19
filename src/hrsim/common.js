@@ -72,10 +72,14 @@ export const LIMITS = { maxDuration: 4 * 3600, maxWorkers: 48, minDt: 0.05, maxD
  * @returns {SimParams}
  */
 export function resolveParams(opts = {}, extra = {}) {
+  const profile = opts.profile ?? DEFAULTS.profile
+  if (!PROFILES[profile]) throw new Error(`Parámetro inválido: perfil "${profile}" desconocido (${Object.keys(PROFILES).join(', ')})`)
   const p = {
     ...DEFAULTS,
+    ...PROFILES[profile].params,
     ...extra,
     ...opts,
+    profile,
     costs: { ...DEFAULTS.costs, ...(opts.costs || {}) },
     prodPeriod: { ...DEFAULTS.prodPeriod, ...(opts.prodPeriod || {}) },
   }
@@ -113,7 +117,22 @@ export function paramsHash(obj) {
 }
 
 /** @type {SimParams} */
+/**
+ * Perfiles de modelo. `matlab-2026` es la réplica validada de HumanRobot_Sim/HumanOnly_Sim y queda congelada:
+ * la regresión contra MATLAB y el oráculo de huellas corren siempre con él. `hri` agrega las consideraciones de
+ * interacción humano-robot (ver docs/simulador.md); cada una es un parámetro que en `matlab-2026` está apagado.
+ * Orden de aplicación: DEFAULTS → perfil → opciones explícitas.
+ */
+export const PROFILES = {
+  'matlab-2026': { label: 'MATLAB 2026 (réplica validada)', params: {} },
+  hri: { label: 'HRI (en desarrollo)', params: {} },
+}
+
+/** Parámetros completos de un perfil (lo que muestra el formulario al elegirlo). */
+export const profileDefaults = (profile) => structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, profile })
+
 export const DEFAULTS = {
+  profile: 'matlab-2026',
   nw: 12,
   row: 3,
   act: 'mixed',

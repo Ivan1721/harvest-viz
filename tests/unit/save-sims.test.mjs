@@ -17,7 +17,7 @@ function body() {
     hr = simToRun(new HRSim(cfg, FIS).run(), { robot: true })
   const m = hr.meta
   return {
-    meta: { nw: m.nw, row: m.row, act: m.act, rp: m.rp, engineVersion: m.engineVersion, paramsHash: m.paramsHash, duration: 60 },
+    meta: { profile: m.params.profile, nw: m.nw, row: m.row, act: m.act, rp: m.rp, engineVersion: m.engineVersion, paramsHash: m.paramsHash, duration: 60 },
     summary: { ho: { TotalRecollectedCrops: 1 }, hr: { TotalRecollectedCrops: 2, handoffs: 0 } },
     files: [...runFiles(ho), ...runFiles(hr)],
   }
@@ -29,7 +29,7 @@ test('escribe la simulación en motor-<versión>/<config>_SIM-<hash>/ con un ín
   const b = body()
   const r = writeSimulation(root, b)
   assert.equal(r.existed, false)
-  const dir = path.join(root, `motor-${b.meta.engineVersion}`, `2_ROW1_ground_RP0_SIM-${b.meta.paramsHash}`)
+  const dir = path.join(root, `motor-${b.meta.engineVersion}`, 'matlab-2026', `2_ROW1_ground_RP0_SIM-${b.meta.paramsHash}`)
   const files = fs.readdirSync(dir).filter((f) => !f.startsWith('.'))
   assert.equal(files.length, 6, 'timeseries, poses y meta de HO y HR')
   const idx = fs.readFileSync(path.join(root, 'indice.csv'), 'utf8').trim().split('\n')
@@ -51,7 +51,7 @@ test('nombres de archivo saneados: no se puede escribir fuera de la carpeta', (t
   ]
   const r = writeSimulation(root, b)
   assert.ok(!fs.existsSync(path.join(root, '..', 'escape.csv')))
-  const dir = path.join(root, `motor-${b.meta.engineVersion}`)
+  const dir = path.join(root, `motor-${b.meta.engineVersion}`, 'matlab-2026')
   const [sub] = fs.readdirSync(dir)
   assert.deepEqual(
     fs.readdirSync(path.join(dir, sub)).filter((f) => !f.startsWith('.')),
@@ -66,4 +66,18 @@ test('desactivado en GitHub Actions y con HV_SAVE_SIMS=0', () => {
   assert.equal(saveEnabled({ CI: 'true' }), false)
   assert.equal(saveEnabled({ GITHUB_ACTIONS: 'true' }), false)
   assert.equal(saveEnabled({ HV_SAVE_SIMS: '0' }), false)
+})
+
+test('el perfil separa carpetas y queda en el índice; un índice antiguo actualiza su cabecera', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hv-sims-'))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  fs.writeFileSync(path.join(root, 'indice.csv'), 'fecha,motor\nviejo,0.2.0\n')
+  const b = body()
+  b.meta.profile = 'hri'
+  const r = writeSimulation(root, b)
+  assert.match(r.dir, /\/hri\/2_ROW1_ground_RP0_SIM-/)
+  const lines = fs.readFileSync(path.join(root, 'indice.csv'), 'utf8').trim().split('\n')
+  assert.ok(lines[0].endsWith(',perfil'))
+  assert.equal(lines[1], 'viejo,0.2.0')
+  assert.ok(lines[2].endsWith(',hri'))
 })

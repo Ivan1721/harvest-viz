@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DEFAULTS } from '../../hrsim/common.js'
+import { PROFILES, profileDefaults } from '../../hrsim/common.js'
+import { Field, Seg } from '../ui.jsx'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
 export function NumField({ value, onCommit, step, min = 0, max = Infinity, label }) {
@@ -65,10 +66,22 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
   const num = (k, step, min, max, label) => <NumField value={params[k]} step={step} min={min} max={max} label={label} onCommit={(v) => set(k, v)} />
-  const changed = JSON.stringify(params) !== JSON.stringify(DEFAULTS_SIM)
+  const base = profileDefaults(params.profile)
+  const changed = JSON.stringify(params) !== JSON.stringify(base)
   return (
     <section className="panel">
       <h4>Simulador</h4>
+      <Field label="Modelo">
+        <Seg
+          size="mini"
+          value={params.profile}
+          onChange={(p) => setParams(profileDefaults(p))}
+          options={Object.entries(PROFILES).map(([k, v]) => [k, k === 'matlab-2026' ? 'MATLAB 2026' : 'HRI', false, v.label])}
+        />
+      </Field>
+      {params.profile !== 'matlab-2026' && (
+        <div className="note">{PROFILES[params.profile].label}: extiende la réplica de MATLAB con consideraciones de interacción humano-robot.</div>
+      )}
       {busy ? (
         <button className="btn" onClick={onCancel} data-testid="sim-cancel">
           Simulando… · Cancelar
@@ -119,12 +132,13 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
               />
             </label>
           ))}
-          <button className="btn" onClick={() => setParams(DEFAULTS_SIM)}>
-            Restablecer a MATLAB
+          <button className="btn" onClick={() => setParams(base)}>
+            {params.profile === 'matlab-2026' ? 'Restablecer a MATLAB' : 'Restablecer perfil'}
           </button>
         </div>
       </details>
     </section>
   )
 }
-export const DEFAULTS_SIM = JSON.parse(JSON.stringify(DEFAULTS))
+/** Parámetros de la réplica validada (perfil matlab-2026). */
+export const DEFAULTS_SIM = profileDefaults('matlab-2026')
