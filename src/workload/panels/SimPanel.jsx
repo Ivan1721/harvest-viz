@@ -78,15 +78,23 @@ const SSM = [
   ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
   ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
 ]
-const SHORT = {
-  'matlab-2026': 'Estudio',
-  'palta-tradicional': 'Palta trad.',
-  'palta-alta-densidad': 'Palta alta dens.',
-  'palta-ladera': 'Palta ladera',
-  'uva-parron': 'Uva parrón',
-  arandano: 'Arándano',
-  'cerezo-ufo': 'Cerezo UFO',
-}
+// cultivo → sistema (I2): el escenario se elige en dos niveles. El mapa del estudio de MATLAB es de palta (Hass).
+export const CULTIVOS = [
+  [
+    'palta',
+    'Palta',
+    [
+      ['matlab-2026', 'Mapa del estudio'],
+      ['palta-tradicional', 'Tradicional'],
+      ['palta-alta-densidad', 'Alta densidad'],
+      ['palta-ladera', 'Ladera'],
+    ],
+  ],
+  ['uva', 'Uva de mesa', [['uva-parron', 'Parrón']]],
+  ['arandano', 'Arándano', [['arandano', 'Hilera']]],
+  ['cerezo', 'Cerezo', [['cerezo-ufo', 'UFO peatonal']]],
+]
+export const cultivoDe = (huerto) => CULTIVOS.find(([, , ss]) => ss.some(([k]) => k === huerto)) || CULTIVOS[0]
 // parámetros del generador de huertos (H2): [clave, etiqueta, paso, mínimo, máximo, entero]
 const HUERTO = [
   ['hileras', 'Hileras', 1, 2, 200, true],
@@ -97,7 +105,6 @@ const HUERTO = [
   ['altura', 'Altura del árbol (m)', 0.5, 0.5, 12],
   ['cargaArbol', 'Carga por árbol (kg)', 1, 0, 500],
   ['cabecera', 'Ancho de cabecera (m)', 0.5, 3, 20],
-  ['pendiente', 'Pendiente a lo largo de las hileras (%)', 1, 0, 60],
 ]
 const PERIODS = [
   [1, 'Suelo'],
@@ -107,6 +114,16 @@ const PERIODS = [
 
 /** Paso k (de 1 a 3) cuyos valores cambian con la clave `k` de los parámetros. */
 const STEP_OF = (k) => (k === 'huertoParams' ? 1 : k === 'duration' ? 3 : 2)
+/** Valores de partida de un paso: devuelve `params` con las claves de ese paso tomadas de `base`. */
+export function resetStep(params, base, n) {
+  const out = { ...params }
+  for (const k of new Set([...Object.keys(params), ...Object.keys(base)]))
+    if (STEP_OF(k) === n) {
+      if (k in base) out[k] = structuredClone(base[k])
+      else delete out[k]
+    }
+  return out
+}
 /** Pasos con valores distintos de los de partida (un punto junto al título). */
 export function changedSteps(params, base) {
   const s = new Set()
@@ -115,7 +132,7 @@ export function changedSteps(params, base) {
 }
 
 /** Paso numerado del panel izquierdo: Escenario → Agentes → Simulación. */
-export function Step({ n, title, changed, children, testid }) {
+export function Step({ n, title, changed, onReset, children, testid }) {
   useLang()
   const id = `step-${n}`
   return (
@@ -126,6 +143,11 @@ export function Step({ n, title, changed, children, testid }) {
         </span>
         {title}
         {changed && <i className="step-dot" title={t('Tiene valores distintos de los de partida')} aria-label={t('modificado')} />}
+        {changed && onReset && (
+          <button className="step-reset" onClick={onReset} title={t('Vuelve a los valores de partida de este paso')} data-testid={`reset-${n}`}>
+            {t('Restablecer')}
+          </button>
+        )}
       </h4>
       {children}
     </section>
@@ -152,7 +174,7 @@ const differs = (a, b, keys) => keys.some((k) => JSON.stringify(a[k]) !== JSON.s
  * 1 Escenario (qué huerto), 2 Agentes (cuadrilla y robot), 3 Simulación (correr, exportar).
  * Nada simula solo: los cambios se aplican al pulsar «Simular» y, mientras tanto, la escena avisa que está desactualizada.
  */
-export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, busy, stale, info, onExport, videoPanel }) {
+export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, busy, stale, info, onExport, onCopyLink, copied, videoPanel }) {
   useLang()
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   const row = (k, l, st, src, min, max) => (
@@ -165,34 +187,56 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
   const steps = changedSteps(params, base)
   const hp = params.huertoParams
   const generated = !!hp
+  const setHp = (k, v) => setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, [k]: v } }))
+  const [cultivo, , sistemas] = cultivoDe(params.huerto)
   const libre = hp ? hp.calle - 2 * hp.radioCopa : null
+  const ancho = hp ? hp.hileras * hp.calle : 0,
+    largo = hp ? 2 * hp.cabecera + hp.arbolesPorHilera * hp.sobreHilera : 0
+  const rb = generated ? ROBOTS[params.robotTipo] || ROBOTS.warthog : null
   const noLadder = hp?.escalera === false
   const acts = ACTS.filter((a) => !(noLadder && a === 'ladder'))
   const crewChanged = differs(params, base, [...CREW.map((r) => r[0]), 'costs', 'prodPeriod'])
   const robotChanged = differs(params, base, [...ROBOT.map((r) => r[0]), 'ssm', 'energia'])
   return (
     <>
-      <Step n={1} title={t('Escenario')} changed={steps.has(1)} testid="step-escenario">
-        <Field label={t('Huerto')}>
+      <Step n={1} title={t('Escenario')} changed={steps.has(1)} onReset={() => setParams((p) => resetStep(p, base, 1))} testid="step-escenario">
+        <Field label={t('Cultivo')}>
           <Seg
             size="mini"
-            value={params.huerto}
-            onChange={(h) => setParams(profileDefaults(params.profile, h, params.robotTipo))}
-            options={Object.entries(SISTEMAS).map(([k, v]) => [k, t(SHORT[k] || k), false, t(v.label)])}
+            value={cultivo}
+            onChange={(c) => {
+              const ss = CULTIVOS.find(([k]) => k === c)[2]
+              // al cambiar de cultivo se abre su primer sistema generado (palta: tradicional; el mapa del estudio se elige aparte)
+              const h = (ss.find(([k]) => k !== 'matlab-2026') || ss[0])[0]
+              setParams(profileDefaults(params.profile, h, params.robotTipo))
+            }}
+            options={CULTIVOS.map(([k, l]) => [k, t(l)])}
           />
         </Field>
-        {generated ? (
-          <div className="note" data-testid="huerto-info">
-            {t('{n} plantas · {w} × {h} m · calle libre {l} m', {
-              n: hp.hileras * hp.arbolesPorHilera,
-              w: fmtNum(hp.hileras * hp.calle, { maximumFractionDigits: 1 }),
-              h: fmtNum(2 * hp.cabecera + hp.arbolesPorHilera * hp.sobreHilera, { maximumFractionDigits: 1 }),
-              l: fmtNum(libre, { maximumFractionDigits: 2 }),
-            })}
-            {hp.pendiente > 0 &&
-              ` · ${t('pendiente {p} %, acopio {d}', { p: fmtNum(hp.pendiente, { maximumFractionDigits: 1 }), d: hp.acopioEnCima ? t('en la cima') : t('al pie') })}`}
-          </div>
-        ) : (
+        {sistemas.length > 1 && (
+          <Field label={t('Sistema')}>
+            <Seg
+              size="mini"
+              value={params.huerto}
+              onChange={(h) => setParams(profileDefaults(params.profile, h, params.robotTipo))}
+              options={sistemas.map(([k, l]) => [k, t(l), false, t(SISTEMAS[k].label)])}
+            />
+          </Field>
+        )}
+        <div className="note scen" data-testid="huerto-info">
+          {generated
+            ? t('{n} plantas · {w} × {h} m ({ha} ha) · calle libre {l} m · {kg} kg por planta · caja de {k} kg', {
+                n: fmtNum(hp.hileras * hp.arbolesPorHilera),
+                w: fmtNum(ancho, { maximumFractionDigits: 1 }),
+                h: fmtNum(largo, { maximumFractionDigits: 1 }),
+                ha: fmtNum((ancho * largo) / 10000, { maximumFractionDigits: 2 }),
+                l: fmtNum(libre, { maximumFractionDigits: 2 }),
+                kg: fmtNum(hp.cargaArbol, { maximumFractionDigits: 1 }),
+                k: fmtNum(params.maxProd, { maximumFractionDigits: 1 }),
+              })
+            : t('Mapa del estudio: 3 filas × 4 árboles, simulado con el modelo de MATLAB.')}
+        </div>
+        {!generated && (
           <>
             <Field label={t('Fila de cultivo')}>
               <Seg value={cfg?.row} options={[1, 2, 3].map((v) => [v, String(v)])} onChange={(v) => pickCfg('row', v)} />
@@ -200,39 +244,51 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
             <Field label={t('Disposición (RP)')}>
               <Seg value={cfg?.rp} options={[0, 1].map((v) => [v, String(v)])} onChange={(v) => pickCfg('rp', v)} />
             </Field>
-            <div className="note">{t('Mapa del estudio: 3 filas × 4 árboles, simulado con el modelo de MATLAB.')}</div>
           </>
         )}
         {generated && (
-          <Group title={t('Ajustar el huerto')} changed={steps.has(1)} testid="huerto-params">
+          <Field label={t('Terreno')}>
+            <div className="params" style={{ marginTop: 0 }}>
+              <label>
+                <span>{t('Pendiente a lo largo de las hileras (%)')}</span>
+                <NumField
+                  value={hp.pendiente}
+                  step={1}
+                  min={0}
+                  max={60}
+                  label={t('Pendiente a lo largo de las hileras (%)')}
+                  onCommit={(v) => setHp('pendiente', v)}
+                />
+              </label>
+              <label>
+                <span>{t('Acopio en la cima del cerro')}</span>
+                <input type="checkbox" checked={hp.acopioEnCima} disabled={!hp.pendiente} onChange={(e) => setHp('acopioEnCima', e.target.checked)} />
+              </label>
+            </div>
+          </Field>
+        )}
+        {generated && (
+          <Group
+            title={t('Ajustar el huerto')}
+            changed={differs(
+              hp,
+              base.huertoParams,
+              HUERTO.map((r) => r[0]),
+            )}
+            testid="huerto-params"
+          >
             {HUERTO.map(([k, l, st, min, max, int]) => (
               <label key={k}>
                 <span>{t(l)}</span>
-                <NumField
-                  value={hp[k]}
-                  step={st}
-                  min={min}
-                  max={max}
-                  label={t(l)}
-                  onCommit={(v) => (!int || Number.isInteger(v)) && setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, [k]: v } }))}
-                />
+                <NumField value={hp[k]} step={st} min={min} max={max} label={t(l)} onCommit={(v) => (!int || Number.isInteger(v)) && setHp(k, v)} />
               </label>
             ))}
-            <label>
-              <span>{t('Acopio en la cima del cerro')}</span>
-              <input
-                type="checkbox"
-                checked={hp.acopioEnCima}
-                disabled={!hp.pendiente}
-                onChange={(e) => setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, acopioEnCima: e.target.checked } }))}
-              />
-            </label>
             {2 * hp.radioCopa >= hp.calle && <div className="note warn">{t('Las copas de hileras vecinas se tocan: no queda calle para caminar.')}</div>}
           </Group>
         )}
       </Step>
 
-      <Step n={2} title={t('Agentes')} changed={steps.has(2)} testid="step-agentes">
+      <Step n={2} title={t('Agentes')} changed={steps.has(2)} onReset={() => setParams((p) => resetStep(p, base, 2))} testid="step-agentes">
         <Field label={t('Cosecheros')}>
           <Seg
             value={cfg?.nw}
@@ -290,12 +346,20 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
           )}
         </Field>
         {generated && (
-          <div className="note" data-testid="robot-info">
-            {libre >= (ROBOTS[params.robotTipo]?.ancho ?? 1.38) + HOLGURA_CALLE
-              ? t('el robot entra a las calles')
-              : t('el robot no cabe en las calles: recorre la cabecera')}
-            {` · ${t('{n} cajas de {k} kg por viaje', { n: params.capacityBoxes, k: fmtNum(params.maxProd, { maximumFractionDigits: 1 }) })}`}
-            {params.robotTipo !== 'warthog' && hp.pendiente > 15 && ` · ${t('pendiente fuera de la ficha del Burro (15 %)')}`}
+          <div className="ficha" data-testid="robot-info">
+            <div>
+              {t('{a} m de ancho · {c} kg de carga · batería {b} kWh', {
+                a: fmtNum(rb.ancho, { maximumFractionDigits: 2 }),
+                c: fmtNum(rb.cargaKg),
+                b: fmtNum((params.energia?.bateriaWh ?? rb.energia.bateriaWh) / 1000, { maximumFractionDigits: 1 }),
+              })}
+              {rb.carro && ` · ${t('carro de {m} kg', { m: fmtNum(rb.carro.masa) })}`}
+            </div>
+            <div className={libre >= rb.ancho + HOLGURA_CALLE ? 'good' : 'warn'}>
+              {libre >= rb.ancho + HOLGURA_CALLE ? t('el robot entra a las calles') : t('el robot no cabe en las calles: recorre la cabecera')}
+              {` · ${t('{n} cajas de {k} kg por viaje', { n: params.capacityBoxes, k: fmtNum(params.maxProd, { maximumFractionDigits: 1 }) })}`}
+            </div>
+            {params.robotTipo !== 'warthog' && hp.pendiente > 15 && <div className="warn">{t('pendiente fuera de la ficha del Burro (15 %)')}</div>}
           </div>
         )}
         <Field label={t('Comportamiento del robot')}>
@@ -335,7 +399,7 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
         </Group>
       </Step>
 
-      <Step n={3} title={t('Simulación')} changed={steps.has(3)} testid="step-simulacion">
+      <Step n={3} title={t('Simulación')} changed={steps.has(3)} onReset={() => setParams((p) => resetStep(p, base, 3))} testid="step-simulacion">
         <div className="params">{row(...DURATION)}</div>
         {busy ? (
           <button className="btn" onClick={onCancel} data-testid="sim-cancel">
@@ -359,9 +423,16 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
             {t('Exportar corridas')}
           </button>
         )}
-        {steps.size > 0 && (
-          <button className="btn link" style={{ marginTop: 6 }} onClick={() => setParams(base)} data-testid="sim-reset">
-            {params.profile === 'matlab-2026' ? t('Restablecer a MATLAB') : t('Restablecer perfil')}
+        {onCopyLink && (
+          <button
+            className="btn link"
+            style={{ marginTop: 6 }}
+            onClick={onCopyLink}
+            disabled={busy}
+            data-testid="copy-link"
+            title={t('El enlace abre esta misma corrida: escenario, agentes y duración')}
+          >
+            {copied ? t('Enlace copiado') : t('Copiar enlace a esta corrida')}
           </button>
         )}
       </Step>

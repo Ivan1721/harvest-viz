@@ -45,8 +45,10 @@ function ModeSwitch({ mode, setMode }) {
 /** ?modo=sim|replica|occlusion manda; si no, el último modo usado. */
 function initialMode() {
   try {
-    const q = new URLSearchParams(window.location.search).get('modo')
+    const sp = new URLSearchParams(window.location.search)
+    const q = sp.get('modo')
     if (MODE_KEYS.includes(q)) return q
+    if (sp.has('huerto')) return 'sim' // un enlace a una corrida abre el Simulador
     const saved = localStorage.getItem('hv-mode')
     if (saved === 'workload') return 'sim'
     return MODE_KEYS.includes(saved) ? saved : 'sim'
@@ -62,8 +64,12 @@ export default function App() {
     setMode(m)
     try {
       localStorage.setItem('hv-mode', m)
+      // la URL dice en qué modo se está (un enlace copiado abre el mismo modo)
+      const sp = new URLSearchParams(window.location.search)
+      sp.set('modo', m)
+      window.history.replaceState(window.history.state, '', `${window.location.pathname}?${sp}${window.location.hash}`)
     } catch {
-      /* sin almacenamiento: se usa el modo por defecto */
+      /* sin almacenamiento ni historial: se usa el modo por defecto */
     }
   }
   const sw = (

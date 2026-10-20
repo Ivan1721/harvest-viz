@@ -3,7 +3,6 @@ import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { saveSimulation } from './saveSim.js'
-import { profileDefaults } from '../hrsim/common.js'
 import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
@@ -12,6 +11,7 @@ import { ConfigPanel } from './panels/ConfigPanel.jsx'
 import { DataPanel } from './panels/DataPanel.jsx'
 import { DEFAULTS_SIM } from './panels/SimPanel.jsx'
 import { StaleBanner, ViewBar } from './panels/ViewBar.jsx'
+import { readRunState, writeRunState } from './urlState.js'
 import { Summary } from './panels/Summary.jsx'
 import { Validation } from './panels/Validation.jsx'
 import { Detail, WorkerList } from './panels/Workers.jsx'
@@ -31,6 +31,10 @@ const base = import.meta.env.BASE_URL // constante del build (ruta de publicaci�
 const CFG0 = { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }
 /** Clave de lo configurado: si cambia después de simular, los resultados están desactualizados. */
 const simKeyOf = (params, cfg) => JSON.stringify({ ...params, ...cfg })
+/** Clave del escenario (paso 1): si cambia, la escena muestra la vista previa del huerto nuevo en vez de resultados viejos. */
+const scenKeyOf = (p, c) => JSON.stringify([p.huerto, p.huertoParams ?? null, p.huerto === 'matlab-2026' ? [c?.row, c?.rp] : null])
+// la vista previa es una corrida de 1 s: el huerto, los cosecheros en sus puestos y el robot en su punto de partida
+const PREVIEW_S = 1
 
 /**
  * Modo Workload. `source` lo elige la cabecera: 'sim' (modo Simulador) o 'data' (modo Réplica MATLAB: corridas de
@@ -40,7 +44,9 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   useLang()
   const [lib, setLib] = useState([])
   // configuración elegida en cada modo (la réplica elige entre corridas existentes; el simulador, cualquiera)
-  const [cfgs, setCfgs] = useState({ data: null, sim: CFG0 })
+  // ?huerto=…&nw=…&ajustes=… (enlace reproducible, I2): la corrida que describe la URL es la primera que se simula
+  const [fromUrl] = useState(() => readRunState(new URLSearchParams(window.location.search), CFG0))
+  const [cfgs, setCfgs] = useState(() => ({ data: null, sim: fromUrl?.cfg ?? CFG0 }))
   const cfg = cfgs[source]
   const setCfg = (c) => setCfgs((s) => ({ ...s, [source]: typeof c === 'function' ? c(s[source]) : c }))
   const setCfgData = (c) => setCfgs((s) => ({ ...s, data: c }))
@@ -49,7 +55,9 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   const [view, setView] = useState(() => (['ho', 'hr', 'cmp'].includes(qs.get('view')) ? qs.get('view') : 'cmp'))
   const [runs, setRuns] = useState({ ho: null, hr: null })
   const [loading, setLoading] = useState(true)
-  const [err, setErr] = useState(null)
+  const [err, setErr] = useState(() =>
+    fromUrl?.error ? t('El enlace tiene valores que no se reconocen ({k}); se usaron los de partida.', { k: fromUrl.error.join(', ') }) : null,
+  )
   const [tab, setTab] = useState('resumen')
   const [preset, setPreset] = useState('iso')
   // ?look=schem abre en estilo Esquemático (más liviano: útil para figuras y equipos sin GPU)
@@ -61,7 +69,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   }
   const [ov, setOvState] = useState({ zones: false, intent: false })
   // ?perfil=hri abre el simulador con el modelo extendido; por defecto, la réplica de MATLAB
-  const [params, setParams] = useState(() => (qs.get('perfil') === 'hri' ? profileDefaults('hri') : DEFAULTS_SIM))
+  const [params, setParams] = useState(() => fromUrl?.params ?? DEFAULTS_SIM)
   const [simBusy, setSimBusy] = useState(false)
   const [simInfo, setSimInfo] = useState(null)
   const [simNonce, setSimNonce] = useState(0)
@@ -72,6 +80,9 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   const cfgRef = useRef(cfg)
   cfgRef.current = cfg
   const [simKey, setSimKey] = useState(null)
+  const [simScen, setSimScen] = useState(null)
+  const [preview, setPreview] = useState(null)
+  const [copied, setCopied] = useState(false)
   const [simDone, setSimDone] = useState(0) // simulaciones terminadas (las pruebas de interfaz esperan a que suba)
   const [valRuns, setValRuns] = useState(null)
   const snap = usePlayback()
@@ -123,12 +134,23 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     setSimBusy(true)
     setErr(null)
     const c = cfgRef.current,
-      key = simKeyOf(paramsRef.current, c)
-    runSimulation({ ...paramsRef.current, ...c })
+      p = paramsRef.current,
+      key = simKeyOf(p, c)
+    runSimulation({ ...p, ...c })
       .then(({ ho, hr, ms }) => {
         if (!alive) return
         setRuns({ ho, hr })
         setSimKey(key)
+        setSimScen(scenKeyOf(p, c))
+        setPreview(null)
+        // la URL pasa a describir esta corrida: copiarla o recargar la página la reproduce
+        try {
+          const sp = writeRunState(new URLSearchParams(window.location.search), p, c)
+          sp.set('modo', 'sim')
+          window.history.replaceState(window.history.state, '', `${window.location.pathname}?${sp}${window.location.hash}`)
+        } catch {
+          /* sin historial (p. ej. un iframe restringido): el enlace no se actualiza */
+        }
         setSimDone((n) => n + 1)
         setLoading(false)
         const s = hr.summary
@@ -163,6 +185,8 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     }
     setRuns({ ho: null, hr: null })
     setSimKey(null)
+    setSimScen(null)
+    setPreview(null)
     setTab((t) => (t === 'valid' && source === 'sim' ? 'resumen' : t))
     if (source === 'sim') setView('cmp')
   }, [source])
@@ -181,8 +205,30 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     }
   }, [source, tab, cfg])
 
+  // vista previa (I2): con un escenario distinto del simulado, la escena muestra el huerto nuevo sin simular
+  const scenNow = scenKeyOf(params, cfg)
+  const showPreview = source === 'sim' && simScen !== null && scenNow !== simScen && !simBusy
+  useEffect(() => {
+    if (!showPreview) return
+    let alive = true
+    const id = setTimeout(() => {
+      runSimulation({ ...paramsRef.current, ...cfgRef.current, duration: PREVIEW_S }, ['hr'])
+        .then((r) => {
+          if (!alive) return
+          setPreview({ key: scenNow, run: { ...r.hr, entryId: `vista-previa-${r.hr.entryId}` } })
+          setPlay({ t: 0, playing: false, selected: null })
+        })
+        .catch((e) => alive && e.name !== 'AbortError' && setPreview({ key: scenNow, error: e.message }))
+    }, 250)
+    return () => {
+      alive = false
+      clearTimeout(id)
+    }
+  }, [showPreview, scenNow])
+  const prev = showPreview && preview?.key === scenNow ? preview : null
+
   const { ho, hr } = runs
-  const vis = { ho: (view === 'ho' || view === 'cmp') && ho, hr: (view === 'hr' || view === 'cmp') && hr }
+  const vis = showPreview ? { ho: null, hr: prev?.run || null } : { ho: (view === 'ho' || view === 'cmp') && ho, hr: (view === 'hr' || view === 'cmp') && hr }
   const shown = [vis.ho, vis.hr].filter(Boolean)
   const tmax = Math.max(0, ...shown.map((r) => r.series.t[r.n - 1]))
   // la escena que avanza el reloj y su límite (valores derivados de lo que se muestra)
@@ -288,9 +334,22 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
               n: simInfo.n,
             }) + (simInfo.saved ? ` · ${t(simInfo.saved.existed ? 'ya guardada en {dir}' : 'guardada en {dir}', { dir: simInfo.saved.dir })}` : ''),
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
+          copied,
+          onCopyLink:
+            source === 'sim' && simKey
+              ? () =>
+                  navigator.clipboard.writeText(window.location.href).then(
+                    () => {
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    },
+                    () => setErr(t('No se pudo copiar el enlace: cópialo desde la barra de direcciones.')),
+                  )
+              : null,
         }}
         videoPanel={
-          shown.length > 0 && (
+          shown.length > 0 &&
+          !showPreview && (
             <VideoPanel
               tmax={tmax}
               title={`${title}${source === 'sim' ? ` · ${t('simulación')}` : ' · MATLAB'}`}
@@ -319,11 +378,22 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           ov={ov}
           setOv={setOv}
         />
-        {stale && <StaleBanner onRun={runNow} busy={simBusy} />}
+        {stale && (
+          <StaleBanner
+            onRun={runNow}
+            busy={simBusy}
+            text={showPreview ? t('Vista previa del escenario nuevo: todavía no se simula.') : t('Resultados de la configuración anterior.')}
+          />
+        )}
         <div className="wb-views" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
           {!shown.length && (
             <div className="wb-empty panel">
-              {source === 'sim' ? (
+              {showPreview ? (
+                <>
+                  <h3>{t('Vista previa')}</h3>
+                  <p className={prev?.error ? 'warn' : 'muted'}>{prev?.error ? prev.error : t('Preparando la vista previa del huerto…')}</p>
+                </>
+              ) : source === 'sim' ? (
                 <>
                   <h3>{t('Simulador')}</h3>
                   <p>{t('Elige el escenario y los agentes a la izquierda y pulsa «Simular».')}</p>
@@ -349,10 +419,10 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
                   <ErrorBoundary label={t('la vista {v}', { v: t(SC[k].label) })} resetKey={vis[k].entryId}>
                     <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
                   </ErrorBoundary>
-                  <div className="wb-chip">
+                  <div className="wb-chip" data-testid={showPreview ? 'preview-chip' : undefined}>
                     <i style={{ background: SC[k].color }} />
-                    {t(SC[k].label)}
-                    <span className="muted"> · {fmtT(snap.t)}</span>
+                    {showPreview ? t('Vista previa del escenario · sin simular') : t(SC[k].label)}
+                    {!showPreview && <span className="muted"> · {fmtT(snap.t)}</span>}
                   </div>
                 </div>
               ),
@@ -410,7 +480,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
       </aside>
 
       <footer className="wb-foot">
-        {hr?.hri && (
+        {hr?.hri && !showPreview && (
           <div
             className="heatwrap2"
             title={t('Distancia mínima robot–humano: rojo < 0,45 m · naranja < 1,2 m · amarillo < 3,6 m')}
