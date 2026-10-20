@@ -11,6 +11,7 @@ import { Analysis } from './panels/Analysis.jsx'
 import { ConfigPanel } from './panels/ConfigPanel.jsx'
 import { DataPanel } from './panels/DataPanel.jsx'
 import { DEFAULTS_SIM } from './panels/SimPanel.jsx'
+import { StaleBanner, ViewBar } from './panels/ViewBar.jsx'
 import { Summary } from './panels/Summary.jsx'
 import { Validation } from './panels/Validation.jsx'
 import { Detail, WorkerList } from './panels/Workers.jsx'
@@ -27,10 +28,22 @@ import { t, useLang } from '../i18n/index.js'
 /* ---------------------------------------------------------------- aplicación */
 const base = import.meta.env.BASE_URL // constante del build (ruta de publicación)
 
-export default function WorkloadApp({ modeSwitch }) {
+const CFG0 = { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }
+/** Clave de lo configurado: si cambia después de simular, los resultados están desactualizados. */
+const simKeyOf = (params, cfg) => JSON.stringify({ ...params, ...cfg })
+
+/**
+ * Modo Workload. `source` lo elige la cabecera: 'sim' (modo Simulador) o 'data' (modo Réplica MATLAB: corridas de
+ * MATLAB del mapa del estudio y su validación). Cada modo recuerda su propia configuración.
+ */
+export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   useLang()
   const [lib, setLib] = useState([])
-  const [cfg, setCfg] = useState(null)
+  // configuración elegida en cada modo (la réplica elige entre corridas existentes; el simulador, cualquiera)
+  const [cfgs, setCfgs] = useState({ data: null, sim: CFG0 })
+  const cfg = cfgs[source]
+  const setCfg = (c) => setCfgs((s) => ({ ...s, [source]: typeof c === 'function' ? c(s[source]) : c }))
+  const setCfgData = (c) => setCfgs((s) => ({ ...s, data: c }))
   // parámetros de URL: ?view=ho|hr|cmp, ?speed=1…120, ?perf=1 (diagnóstico), ?look=schem
   const qs = new URLSearchParams(window.location.search)
   const [view, setView] = useState(() => (['ho', 'hr', 'cmp'].includes(qs.get('view')) ? qs.get('view') : 'cmp'))
@@ -47,15 +60,20 @@ export default function WorkloadApp({ modeSwitch }) {
     setCanopyState(v)
   }
   const [ov, setOvState] = useState({ zones: false, intent: false })
-  const [source, setSourceState] = useState('data')
   // ?perfil=hri abre el simulador con el modelo extendido; por defecto, la réplica de MATLAB
   const [params, setParams] = useState(() => (qs.get('perfil') === 'hri' ? profileDefaults('hri') : DEFAULTS_SIM))
   const [simBusy, setSimBusy] = useState(false)
   const [simInfo, setSimInfo] = useState(null)
   const [simNonce, setSimNonce] = useState(0)
-  // los parámetros se aplican al pulsar «Simular» (simNonce), no en cada tecla: el efecto los lee de una ref
+  // un solo disparador: se simula al entrar al modo y al pulsar «Simular» (simNonce); el efecto lee lo configurado
+  // de refs, así que editar no simula. simKey guarda qué configuración produjo los resultados que se ven.
   const paramsRef = useRef(params)
   paramsRef.current = params
+  const cfgRef = useRef(cfg)
+  cfgRef.current = cfg
+  const [simKey, setSimKey] = useState(null)
+  const [simDone, setSimDone] = useState(0) // simulaciones terminadas (las pruebas de interfaz esperan a que suba)
+  const [valRuns, setValRuns] = useState(null)
   const snap = usePlayback()
   useEffect(() => {
     const sp = Number(qs.get('speed'))
@@ -68,7 +86,7 @@ export default function WorkloadApp({ modeSwitch }) {
       setLib(l)
       if (l.length) {
         const e = l.find((x) => x.robot) || l[0]
-        setCfg({ nw: e.nw, row: e.row, act: e.act, rp: e.rp })
+        setCfgData({ nw: e.nw, row: e.row, act: e.act, rp: e.rp })
       } else setLoading(false)
     })
   }, [])
@@ -100,14 +118,18 @@ export default function WorkloadApp({ modeSwitch }) {
   }, [cfg, eHO, eHR, source]) // eHO/eHR son objetos estables de `lib` (cambian solo si cambia la configuración)
 
   useEffect(() => {
-    if (!cfg || source !== 'sim') return
+    if (source !== 'sim') return
     let alive = true
     setSimBusy(true)
     setErr(null)
-    runSimulation({ ...paramsRef.current, ...cfg })
+    const c = cfgRef.current,
+      key = simKeyOf(paramsRef.current, c)
+    runSimulation({ ...paramsRef.current, ...c })
       .then(({ ho, hr, ms }) => {
         if (!alive) return
         setRuns({ ho, hr })
+        setSimKey(key)
+        setSimDone((n) => n + 1)
         setLoading(false)
         const s = hr.summary
         // se guardan los valores (no el texto) para que el aviso siga el idioma activo
@@ -130,7 +152,34 @@ export default function WorkloadApp({ modeSwitch }) {
       cancelSimulation()
       setSimBusy(false)
     }
-  }, [source, cfg, simNonce])
+  }, [source, simNonce])
+
+  // al cambiar de modo: se vacía la escena hasta que lleguen las corridas del modo nuevo
+  const firstSource = useRef(true)
+  useEffect(() => {
+    if (firstSource.current) {
+      firstSource.current = false
+      return
+    }
+    setRuns({ ho: null, hr: null })
+    setSimKey(null)
+    setTab((t) => (t === 'valid' && source === 'sim' ? 'resumen' : t))
+    if (source === 'sim') setView('cmp')
+  }, [source])
+
+  // Réplica MATLAB · Validación: el simulador corre la misma configuración con los parámetros de MATLAB
+  useEffect(() => {
+    if (source !== 'data' || tab !== 'valid' || !cfg) return
+    let alive = true
+    setValRuns(null)
+    runSimulation({ ...DEFAULTS_SIM, ...cfg })
+      .then((r) => alive && setValRuns(r))
+      .catch((e) => alive && e.name !== 'AbortError' && setErr(e.message))
+    return () => {
+      alive = false
+      cancelSimulation()
+    }
+  }, [source, tab, cfg])
 
   const { ho, hr } = runs
   const vis = { ho: (view === 'ho' || view === 'cmp') && ho, hr: (view === 'hr' || view === 'cmp') && hr }
@@ -147,18 +196,9 @@ export default function WorkloadApp({ modeSwitch }) {
     setOvState(o)
   }
   const setColorBy = (k) => setPlay({ colorBy: k })
-  const setSource = (v) => {
-    setSourceState(v)
-    if (v !== 'sim') setTab((t) => (t === 'valid' ? 'resumen' : t))
-    if (v === 'sim') {
-      setRuns({ ho: null, hr: null })
-      setView('cmp')
-      if (!cfg) setCfg({ nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp })
-    }
-  }
   const pickCfg = (field, value) => {
     if (source === 'sim') {
-      setCfg((c) => ({ ...(c || { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }), [field]: value }))
+      setCfg((c) => ({ ...(c || CFG0), [field]: value }))
       return
     }
     const score = (e) => ['nw', 'row', 'act', 'rp'].reduce((s, k) => s + (k === field ? 0 : e[k] === cfg[k] ? 1 : 0), 0)
@@ -170,7 +210,7 @@ export default function WorkloadApp({ modeSwitch }) {
       const ent = await entriesFromFiles(files)
       setLib((l) => [...l.filter((e) => !ent.some((n) => n.id === e.id)), ...ent])
       const f = ent.find((e) => e.robot) || ent[0]
-      setCfg({ nw: f.nw, row: f.row, act: f.act, rp: f.rp })
+      setCfgData({ nw: f.nw, row: f.row, act: f.act, rp: f.rp })
       setErr(null)
     } catch (e) {
       setErr(e.message)
@@ -178,20 +218,26 @@ export default function WorkloadApp({ modeSwitch }) {
   }
 
   const ref = hr || ho
-  const genHuerto = source === 'sim' && params.huerto !== 'matlab-2026' ? SISTEMAS[params.huerto] : null
-  const title = cfg
+  const stale = source === 'sim' && !!simKey && !simBusy && simKeyOf(params, cfg) !== simKey
+  const runNow = () => setSimNonce((n) => n + 1)
+  // el título describe lo que se ve (la corrida simulada), no lo que se está configurando
+  const tc = source === 'sim' ? ref?.meta?.params || null : cfg
+  const genHuerto = tc && source === 'sim' && tc.huerto && tc.huerto !== 'matlab-2026' ? SISTEMAS[tc.huerto] : null
+  const title = tc
     ? genHuerto
-      ? t('{nw} trabajadores · {act} · {h}', { nw: cfg.nw, act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act, h: t(genHuerto.label) })
+      ? t('{nw} trabajadores · {act} · {h}', { nw: tc.nw, act: ACT_LABEL[tc.act] ? t(ACT_LABEL[tc.act]) : tc.act, h: t(genHuerto.label) })
       : t('{nw} trabajadores · Fila {row} · {act} · Disposición {rp}', {
-          nw: cfg.nw,
-          row: cfg.row,
-          act: ACT_LABEL[cfg.act] ? t(ACT_LABEL[cfg.act]) : cfg.act,
-          rp: cfg.rp,
+          nw: tc.nw,
+          row: tc.row,
+          act: ACT_LABEL[tc.act] ? t(ACT_LABEL[tc.act]) : tc.act,
+          rp: tc.rp,
         })
-    : t('Sin datos')
+    : source === 'sim'
+      ? t('Simulando…')
+      : t('Sin datos')
 
   return (
-    <div className="wb">
+    <div className="wb" data-sim-done={simDone}>
       <header className="wb-top">
         <div className="logo">
           <span className="logo-mark">H</span> HarvestView
@@ -223,30 +269,16 @@ export default function WorkloadApp({ modeSwitch }) {
         lib={lib}
         cfg={cfg}
         pickCfg={pickCfg}
-        view={view}
-        setView={setView}
-        hasHO={!!ho}
-        hasHR={!!hr}
-        preset={preset}
-        setPreset={setPreset}
-        snap={snap}
-        setColorBy={setColorBy}
-        ov={ov}
-        setOv={setOv}
         onFiles={onFiles}
-        loading={loading || simBusy}
-        look={look}
-        setLook={setLook}
-        canopy={canopy}
-        setCanopy={setCanopy}
+        loading={loading}
         source={source}
-        setSource={setSource}
         simProps={{
           params,
           setParams,
-          onRun: () => setSimNonce((n) => n + 1),
+          onRun: runNow,
           onCancel: () => cancelSimulation(),
           busy: simBusy,
+          stale,
           info:
             simInfo &&
             t('Simulado en {ms} ms · carga total {hr} kcal (HR) vs {ho} kcal (HO) · {n} entregas a robot', {
@@ -262,7 +294,7 @@ export default function WorkloadApp({ modeSwitch }) {
             <VideoPanel
               tmax={tmax}
               title={`${title}${source === 'sim' ? ` · ${t('simulación')}` : ' · MATLAB'}`}
-              fileStem={cfg ? `harvest-viz_${cfg.nw}_ROW${cfg.row}_${cfg.act}_RP${cfg.rp}_${view}` : 'harvest-viz'}
+              fileStem={tc ? `harvest-viz_${tc.nw}_ROW${tc.row}_${tc.act}_RP${tc.rp}_${view}` : 'harvest-viz'}
               disabled={loading || simBusy}
             />
           )
@@ -270,31 +302,62 @@ export default function WorkloadApp({ modeSwitch }) {
       />
 
       {perfEnabled() && <PerfOverlay />}
-      <main className="wb-stage" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
-        {!shown.length && (
-          <div className="wb-empty panel">
-            <h3>{t('Modo Workload')}</h3>
-            <p>{t('Reproduce en 3D corridas del simulador MATLAB: huerto de 3 filas × 4 árboles, trabajadores y robot transportador.')}</p>
-            <p className="muted">
-              {loading ? t('Cargando corridas…') : t('No hay corridas incluidas. Carga el *_timeseries.csv (y el log del robot) desde el panel izquierdo.')}
-            </p>
-          </div>
-        )}
-        {['ho', 'hr'].map(
-          (k) =>
-            vis[k] && (
-              <div key={k} className="wb-view">
-                <ErrorBoundary label={t('la vista {v}', { v: t(SC[k].label) })} resetKey={vis[k].entryId}>
-                  <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
-                </ErrorBoundary>
-                <div className="wb-chip">
-                  <i style={{ background: SC[k].color }} />
-                  {t(SC[k].label)}
-                  <span className="muted"> · {fmtT(snap.t)}</span>
+      <main className="wb-stage">
+        <ViewBar
+          view={view}
+          setView={setView}
+          hasHO={!!ho}
+          hasHR={!!hr}
+          preset={preset}
+          setPreset={setPreset}
+          look={look}
+          setLook={setLook}
+          canopy={canopy}
+          setCanopy={setCanopy}
+          colorBy={snap.colorBy}
+          setColorBy={setColorBy}
+          ov={ov}
+          setOv={setOv}
+        />
+        {stale && <StaleBanner onRun={runNow} busy={simBusy} />}
+        <div className="wb-views" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
+          {!shown.length && (
+            <div className="wb-empty panel">
+              {source === 'sim' ? (
+                <>
+                  <h3>{t('Simulador')}</h3>
+                  <p>{t('Elige el escenario y los agentes a la izquierda y pulsa «Simular».')}</p>
+                  <p className="muted">{simBusy ? t('Simulando…') : t('No hay resultados todavía.')}</p>
+                </>
+              ) : (
+                <>
+                  <h3>{t('Réplica MATLAB')}</h3>
+                  <p>{t('Reproduce en 3D corridas del simulador MATLAB: huerto de 3 filas × 4 árboles, trabajadores y robot transportador.')}</p>
+                  <p className="muted">
+                    {loading
+                      ? t('Cargando corridas…')
+                      : t('No hay corridas incluidas. Carga el *_timeseries.csv (y el log del robot) desde el panel izquierdo.')}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+          {['ho', 'hr'].map(
+            (k) =>
+              vis[k] && (
+                <div key={k} className="wb-view">
+                  <ErrorBoundary label={t('la vista {v}', { v: t(SC[k].label) })} resetKey={vis[k].entryId}>
+                    <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
+                  </ErrorBoundary>
+                  <div className="wb-chip">
+                    <i style={{ background: SC[k].color }} />
+                    {t(SC[k].label)}
+                    <span className="muted"> · {fmtT(snap.t)}</span>
+                  </div>
                 </div>
-              </div>
-            ),
-        )}
+              ),
+          )}
+        </div>
         {err && <Toast onClose={() => setErr(null)}>{err}</Toast>}
       </main>
 
@@ -307,10 +370,15 @@ export default function WorkloadApp({ modeSwitch }) {
             ['resumen', t('Resumen')],
             ['trab', t('Trabajadores')],
             ['hri', t('Interacción')],
-            ...(source === 'sim' ? [['valid', t('Validación')]] : []),
+            ...(source === 'data' ? [['valid', t('Validación')]] : []),
             ['datos', t('Datos')],
           ]}
         />
+        {stale && (
+          <div className="stale small" role="status">
+            {t('Resultados de la configuración anterior.')}
+          </div>
+        )}
         <div className="wb-scroll">
           {tab === 'resumen' && <Summary ho={ho} hr={hr} t={snap.t} seek={seek} />}
           {tab === 'trab' && (
@@ -330,7 +398,13 @@ export default function WorkloadApp({ modeSwitch }) {
               }}
             />
           )}
-          {tab === 'valid' && source === 'sim' && <Validation ho={ho} hr={hr} cfg={cfg} params={params} base={base} />}
+          {tab === 'valid' &&
+            source === 'data' &&
+            (valRuns ? (
+              <Validation ho={valRuns.ho} hr={valRuns.hr} cfg={cfg} params={DEFAULTS_SIM} base={base} />
+            ) : (
+              <div className="note">{t('Simulando la misma configuración con los parámetros de MATLAB…')}</div>
+            ))}
           {tab === 'datos' && <DataPanel ho={ho} hr={hr} />}
         </div>
       </aside>

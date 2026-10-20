@@ -2,7 +2,7 @@
 // Solo corre con VISUAL=1 (el texto y WebGL varían entre máquinas): npm run test:visual
 // Para aceptar un cambio visual intencional: npm run test:visual -- --update-snapshots
 import { test, expect } from '@playwright/test'
-import { openWorkload, useSimulator, pause, setRange } from './helpers.js'
+import { openWorkload, pause, setRange } from './helpers.js'
 
 test.skip(!process.env.VISUAL, 'regresión visual desactivada (VISUAL=1 para activarla)')
 
@@ -25,9 +25,9 @@ test('escena 3D Humano-robot en un instante fijo', async ({ page }) => {
   await expect(page.locator('.wb-stage')).toHaveScreenshot('escena-hr.png', { maxDiffPixelRatio: 0.05 })
 })
 
-test('pestaña de validación del simulador', async ({ page }) => {
+test('pestaña de validación (Réplica MATLAB)', async ({ page }) => {
   await openWorkload(page)
-  await useSimulator(page)
   await page.getByRole('tab', { name: 'Validación' }).click()
+  await page.locator('table.cmp').first().waitFor({ timeout: 60_000 })
   await expect(page.locator('.wb-right')).toHaveScreenshot('validacion.png')
 })

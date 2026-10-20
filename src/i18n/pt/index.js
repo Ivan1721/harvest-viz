@@ -3,5 +3,6 @@ import app from './app.js'
 import occlusion from './occlusion.js'
 import workload from './workload.js'
 import analysis from './analysis.js'
+import steps from './steps.js'
 
-export default { ...app, ...occlusion, ...workload, ...analysis }
+export default { ...app, ...occlusion, ...workload, ...analysis, ...steps }

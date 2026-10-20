@@ -2,7 +2,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useState } from 'react'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
-import { SimPanel, DEFAULTS_SIM } from '../../src/workload/panels/SimPanel.jsx'
+import { SimSteps, DEFAULTS_SIM, changedSteps } from '../../src/workload/panels/SimPanel.jsx'
+import { profileDefaults } from '../../src/hrsim/common.js'
 import { Validation } from '../../src/workload/panels/Validation.jsx'
 
 afterEach(() => {
@@ -10,26 +11,49 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function Harness({ onRun = () => {}, onExport }) {
-  const [params, setParams] = useState(DEFAULTS_SIM)
+function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_SIM }) {
+  const [params, setParams] = useState(start)
+  const [cfg, setCfg] = useState({ nw: 12, row: 3, act: 'mixed', rp: 0 })
   return (
     <>
-      <SimPanel params={params} setParams={setParams} onRun={onRun} busy={false} info="Simulado en 1 ms" onExport={onExport} />
+      <SimSteps
+        params={params}
+        setParams={setParams}
+        cfg={cfg}
+        pickCfg={(k, v) => setCfg((c) => ({ ...c, [k]: v }))}
+        onRun={onRun}
+        busy={false}
+        stale={stale}
+        info="Simulado en 1 ms"
+        onExport={onExport}
+      />
       <output data-testid="walk">{params.walkSpeed}</output>
+      <output data-testid="huerto">{params.huerto}</output>
+      <output data-testid="nw">{cfg.nw}</output>
     </>
   )
 }
 
-describe('SimPanel', () => {
-  it('edita un parámetro, lo marca como modificado y lo restablece', () => {
+describe('SimSteps (panel izquierdo del Simulador)', () => {
+  it('tres pasos en orden: Escenario, Agentes, Simulación', () => {
     render(<Harness />)
-    expect(screen.getByText('Parámetros')).toBeTruthy()
+    const titles = screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent)
+    expect(titles).toEqual(['1Escenario', '2Agentes', '3Simulación'])
+  })
+
+  it('edita un parámetro de la cuadrilla, marca el paso Agentes y lo restablece', () => {
+    render(<Harness />)
+    expect(screen.getByTestId('crew-params').textContent).toBe('Ajustar la cuadrilla')
+    expect(screen.queryByTestId('sim-reset')).toBeNull()
     const input = screen.getByTitle('MATLAB: 0,75').querySelector('input')
     fireEvent.change(input, { target: { value: '1.1' } })
     expect(screen.getByTestId('walk').textContent).toBe('1.1')
-    expect(screen.getByText('Parámetros (modificados)')).toBeTruthy()
+    expect(screen.getByTestId('crew-params').textContent).toMatch(/modificado/)
+    expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeTruthy()
+    expect(screen.getByTestId('step-escenario').querySelector('.step-dot')).toBeNull()
     fireEvent.click(screen.getByText('Restablecer a MATLAB'))
     expect(screen.getByTestId('walk').textContent).toBe('0.75')
+    expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeNull()
   })
 
   it('no aplica un campo vacío ni valores bajo el mínimo (velocidad 0 inmovilizaría a los trabajadores)', () => {
@@ -45,6 +69,35 @@ describe('SimPanel', () => {
     expect(input.getAttribute('aria-invalid')).toBe('false')
   })
 
+  it('cambiar el huerto, el robot o la cuadrilla no simula: solo «Simular» dispara', () => {
+    const onRun = vi.fn()
+    render(<Harness onRun={onRun} />)
+    fireEvent.click(screen.getByText('Palta alta dens.'))
+    expect(screen.getByTestId('huerto').textContent).toBe('palta-alta-densidad')
+    fireEvent.click(screen.getByText('Burro con carro'))
+    fireEvent.click(screen.getByText('16'))
+    expect(screen.getByTestId('nw').textContent).toBe('16')
+    expect(screen.getByTestId('robot-info').textContent).toMatch(/26 cajas de 15 kg/)
+    expect(screen.queryByRole('button', { name: 'Escalera' })).toBeNull() // alta densidad: sin escalera
+    expect(screen.queryByText('Fila de cultivo')).toBeNull()
+    expect(onRun).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('sim-run'))
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('el comportamiento del robot reemplaza a «Modelo»: como en MATLAB o con regla de seguridad', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Con regla de seguridad'))
+    fireEvent.click(screen.getByTestId('robot-params'))
+    expect(screen.getByText('Regla de seguridad activa')).toBeTruthy()
+  })
+
+  it('con cambios sin simular, el botón Simular se destaca y lo dice', () => {
+    render(<Harness stale />)
+    expect(screen.getByTestId('sim-run').className).toMatch(/primary/)
+    expect(screen.getByText('Hay cambios sin simular.')).toBeTruthy()
+  })
+
   it('solo muestra «Exportar corridas» si hay algo que exportar', () => {
     const onRun = vi.fn(),
       onExport = vi.fn()
@@ -55,6 +108,14 @@ describe('SimPanel', () => {
     rerender(<Harness onRun={onRun} onExport={onExport} />)
     fireEvent.click(screen.getByText('Exportar corridas'))
     expect(onExport).toHaveBeenCalled()
+  })
+
+  it('changedSteps asigna cada parámetro a su paso', () => {
+    const base = profileDefaults('matlab-2026', 'palta-tradicional')
+    expect([...changedSteps(base, base)]).toEqual([])
+    expect([...changedSteps({ ...base, huertoParams: { ...base.huertoParams, hileras: 3 } }, base)]).toEqual([1])
+    expect([...changedSteps({ ...base, capacityBoxes: 3 }, base)]).toEqual([2])
+    expect([...changedSteps({ ...base, duration: 600 }, base)]).toEqual([3])
   })
 })
 

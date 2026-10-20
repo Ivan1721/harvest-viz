@@ -2,7 +2,7 @@
 // El lienzo 3D se excluye: su contenido no es accesible por naturaleza y se describe con texto en los paneles.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { openWorkload, useSimulator } from './helpers.js'
+import { openWorkload } from './helpers.js'
 
 async function audit(page, label) {
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('canvas').analyze()
@@ -18,16 +18,18 @@ async function audit(page, label) {
   expect(report, `Violaciones de accesibilidad en ${label}`).toEqual([])
 }
 
-test('Workload (datos MATLAB) sin violaciones críticas ni graves', async ({ page }) => {
+test('Réplica MATLAB (corridas y validación) sin violaciones críticas ni graves', async ({ page }) => {
   await openWorkload(page)
-  await audit(page, 'Workload')
+  await audit(page, 'Réplica')
+  await page.getByRole('tab', { name: 'Validación' }).click()
+  await page.locator('table.cmp').first().waitFor({ timeout: 60_000 })
+  await audit(page, 'Validación')
 })
 
-test('Workload (simulador + validación) sin violaciones críticas ni graves', async ({ page }) => {
-  await openWorkload(page)
-  await useSimulator(page)
-  await page.getByTestId('sim-params').click()
-  await page.getByRole('tab', { name: 'Validación' }).click()
+test('Simulador (pasos abiertos y capas) sin violaciones críticas ni graves', async ({ page }) => {
+  await openWorkload(page, { mode: 'sim' })
+  for (const id of ['crew-params', 'robot-params']) await page.getByTestId(id).click()
+  await page.getByText('Capas y estilo').click()
   await audit(page, 'Simulador')
 })
 

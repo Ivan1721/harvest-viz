@@ -931,12 +931,123 @@ body {
 }
 .wb-stage {
   grid-area: stage;
-  display: grid;
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
   background: var(--line);
   position: relative;
   min-width: 0;
   min-height: 0;
+}
+.wb-views {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  min-height: 0;
+}
+/* I1: barra de vista sobre la escena (no cambia la simulación) */
+.wb-viewbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.wb-viewbar .seg {
+  flex: none;
+  margin: 0;
+}
+.wb .pop {
+  position: relative;
+}
+.wb .pop > summary {
+  list-style: none;
+  margin: 0;
+  width: auto;
+  padding: 4px 10px;
+  font-size: 11.5px;
+}
+.wb .pop > summary::-webkit-details-marker {
+  display: none;
+}
+.wb .pop > summary::after {
+  content: ' ▾';
+}
+.wb .pop-body {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  width: 250px;
+  box-shadow: 0 6px 20px rgba(20, 30, 60, 0.15);
+}
+/* resultados que ya no corresponden a lo configurado */
+.wb .stale {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #fff7e6;
+  border-bottom: 1px solid #f3d19c;
+  color: #8a4b08;
+  font-size: 12px;
+}
+.wb .stale .btn {
+  width: auto;
+  padding: 4px 12px;
+}
+.wb-right .stale {
+  border: 1px solid #f3d19c;
+  border-radius: 6px;
+}
+/* pasos del panel izquierdo: Escenario → Agentes → Simulación */
+.wb .wstep h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+}
+.wb .step-n {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  flex: none;
+}
+.wb .step-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d97706;
+  margin-left: auto;
+}
+.wb .group {
+  margin: 4px 0 8px;
+}
+.wb .group > summary {
+  margin-top: 2px;
+  color: var(--muted);
+}
+.wb .btn.primary {
+  background: #1f3a8a;
+  border-color: #1f3a8a;
+  color: #fff;
+}
+.wb .btn.primary:hover {
+  background: #1b327a;
+}
+.wb .btn.link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  font-weight: 500;
 }
 .wb-view {
   position: relative;
