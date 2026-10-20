@@ -1,8 +1,8 @@
 # Simulador Workload en el navegador
 
-El modo Workload puede **ejecutar** las simulaciones (no solo reproducir CSV): `Fuente → Simulador`. Corre en un Web Worker
+El modo **Simulador** (cabecera) **ejecuta** las simulaciones; el modo **Réplica MATLAB** reproduce los CSV del estudio. Corre en un Web Worker
 (`src/hrsim/sim.worker.js`); 45 min con 12 trabajadores toman ≈0,5 s, así que cualquier combinación nw/fila/actividad/RP se
-simula al instante y los parámetros se pueden cambiar en el panel «Simulador → Parámetros».
+simula al instante. Se configura en tres pasos (Escenario → Agentes → Simulación) y se simula al pulsar «Simular»; los parámetros avanzados están plegados en «Ajustar el huerto», «Ajustar la cuadrilla» y «Ajustar el robot».
 
 ## Qué replica
 
@@ -15,7 +15,7 @@ dirección delantera (FourWheelSteering). Código: `common.js` (parámetros), `e
 
 ## Perfiles de modelo
 
-El motor tiene dos perfiles, elegibles en el panel Simulador («Modelo») o con `?perfil=hri` en la URL:
+El motor tiene dos perfiles, elegibles en el paso Agentes («Comportamiento del robot»: Como en MATLAB o Con regla de seguridad) o con `?perfil=hri` en la URL:
 
 | Perfil                      | Qué es                                                                                                                                                                                                                                                        |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -32,7 +32,7 @@ El motor recibe el huerto como dato (`src/hrsim/huertos/`): árboles y su carga 
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `matlab-2026`              | La geometría fija del estudio (3 hileras × 4 árboles, carga infinita, desplazamientos en línea recta). La réplica de MATLAB y la regresión usan siempre este.                                                                                                                                                                                                                                                                                                         |
 | `palta-alta-densidad` (H3) | Mismo generador: 25 hileras × 45 árboles en marco 4 × 2 m, árboles de 2 m con copa de 1 m de radio, 9 kg por árbol, sin escalera (quien iba a usarla cosecha desde el suelo). La calle deja 2 m libres: el robot entra. Ritmo calibrado a 1.000–1.600 kg por cosechero en 8 h (`prodPeriod` 14 / 14 / 18 s por kg; cuadrilla mixta sin robot: 1.209 kg). Variante 3 × 3 m con `huertoParams` (`calle: 3, sobreHilera: 3`): 1 m libre y el robot vuelve a la cabecera. |
-| `palta-tradicional` (H2)   | Cuartel de 1 ha generado (`huertos/rectangular.js`): 16 hileras × 15 árboles en marco 6 × 6 m, copa de 2,5 m de radio y 6 m de alto, 42 kg por árbol (10.100 kg/ha, ODEPA 2025), cabeceras de 6 m y acopio al centro de la cabecera inferior. Parámetros editables en `huertoParams` (Simulador → Parámetros → Huerto).                                                                                                                                               |
+| `palta-tradicional` (H2)   | Cuartel de 1 ha generado (`huertos/rectangular.js`): 16 hileras × 15 árboles en marco 6 × 6 m, copa de 2,5 m de radio y 6 m de alto, 42 kg por árbol (10.100 kg/ha, ODEPA 2025), cabeceras de 6 m y acopio al centro de la cabecera inferior. Parámetros editables en `huertoParams` (Escenario → Ajustar el huerto).                                                                                                                                                 |
 
 Reglas de los huertos generados (especificación H0), iguales en Humano-robot y Solo humano:
 
@@ -108,7 +108,7 @@ Monitorización de velocidad y separación (`HRSim._ssmScale`, parámetros `ssm`
 
 El perfil `hri` también activa `fixRecallLoop`: sin él, un trabajador llamado por un robot lleno queda girando junto a él y la regla dejaría al robot detenido para siempre. Con `ssm.enabled = false` y `fixRecallLoop = false`, `hri` da exactamente lo mismo que `matlab-2026` (prueba de coherencia). La invariante «ningún trabajador, salvo quien atiende al robot, queda dentro de S_p(v_c) con el robot en movimiento» se verifica tick a tick con parámetros al azar (`tests/model/safety.test.mjs`).
 
-En el visor: dos anillos alrededor del robot (protección S_p, naranja/rojo al detenerse; advertencia, gris/violeta al ir lento), marcas de parada en la franja de proximidad y, en Interacción → Fluidez, paradas, tiempo lento y el resto de métricas. Los parámetros se editan en Simulador → Parámetros.
+En el visor: dos anillos alrededor del robot (protección S_p, naranja/rojo al detenerse; advertencia, gris/violeta al ir lento), marcas de parada en la franja de proximidad y, en Interacción → Fluidez, paradas, tiempo lento y el resto de métricas. Los parámetros se editan en Agentes → Ajustar el robot.
 
 ## Validación (métricas agregadas)
 
@@ -120,7 +120,7 @@ Las referencias son los CSV resumen de MATLAB: 732 filas (principal, extended y 
 | Humano-robot                         | 352/360 idénticas. De las 8 restantes, 5 difieren < 4e-5 (dentro de la tolerancia normal); 3 difieren más: 7-3-mixta-RP0 (entregado 3075 vs 3045 u) y 24-1-gancho-RP0/RP1 (4 u en bolsas) |
 | Corrida de ejemplo (series por tick) | 0 discrepancias en trabajo, producción, bandera, a bordo y entregado                                                                                                                      |
 
-La pestaña **Validación** compara en vivo el simulador con `matlab_summary.json` (generado con `scripts/build_matlab_summary.mjs`).
+La pestaña **Validación** (modo Réplica MATLAB) simula la configuración elegida con los parámetros de MATLAB y la compara en vivo con `matlab_summary.json` (generado con `scripts/build_matlab_summary.mjs`).
 
 ### Por qué difieren esas configuraciones
 

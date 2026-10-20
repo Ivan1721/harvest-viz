@@ -53,3 +53,20 @@ test('en el navegador: ?lang= manda, luego lo guardado; avisa a los suscritos al
     delete globalThis.document
   }
 })
+
+test('los textos de la estructura de la interfaz (I1) están traducidos al inglés y al portugués', async () => {
+  const fs = await import('node:fs')
+  const files = [
+    'src/App.jsx',
+    'src/workload/WorkloadApp.jsx',
+    'src/workload/panels/SimPanel.jsx',
+    'src/workload/panels/ConfigPanel.jsx',
+    'src/workload/panels/ViewBar.jsx',
+  ]
+  const missing = []
+  for (const f of files) {
+    const s = fs.readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8')
+    for (const m of s.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) for (const [n, d] of Object.entries({ en, pt })) if (!(m[1] in d)) missing.push(`${n}: ${m[1]}`)
+  }
+  assert.deepEqual(missing, [])
+})

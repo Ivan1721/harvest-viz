@@ -1,14 +1,14 @@
 # HarvestView — maqueta 3D de cosecha humano-robot
 
-Dos modos sobre un núcleo común (`src/shared`): **Workload** (reproduce y compara corridas del simulador MATLAB sobre el huerto real) y **Oclusión** (selección de punto de vista, nivel 2).
+Tres modos en la cabecera sobre un núcleo común (`src/shared`): **Simulador** (simula en el navegador cualquier huerto, cuadrilla y robot), **Réplica MATLAB** (reproduce y valida las corridas del simulador MATLAB sobre el mapa del estudio) y **Oclusión** (selección de punto de vista, nivel 2). `?modo=sim|replica|occlusion` abre uno directamente.
 
 ## Modo Workload
 
-**Simulador integrado:** además de reproducir corridas, `Fuente → Simulador` ejecuta en el navegador una réplica del modelo MATLAB con parámetros editables (ver `docs/simulador.md`).
+**Simulador integrado:** el modo Simulador ejecuta en el navegador una réplica del modelo MATLAB, extendida a huertos generados, robots y una regla de seguridad (ver `docs/simulador.md`).
 
 Reproduce en 3D las corridas del simulador MATLAB de `WorkloadProductionPaper` (huerto de 3 filas × 4 árboles, copa 3,25 m, mapa 29,7 × 25,8 m) y las compara.
 
-**Interfaz.** Panel izquierdo: configuración (trabajadores, fila, actividad, disposición RP), vista (Solo humano / Humano-robot / Comparar), cámara (isométrica, cenital, lateral), color de los trabajadores (carga metabólica o actividad), capas de cortesía y ruta anticipada, y carga de archivos. Centro: una o dos escenas sincronizadas. Panel derecho: Resumen (tabla comparativa y gráficos con clic para saltar en el tiempo), Trabajadores, Interacción y Datos. Pie: línea de tiempo (×1 a ×120) y barra de proximidad robot–humano.
+**Interfaz.** Panel izquierdo en tres pasos que siguen la jerarquía del modelo: **1 Escenario** (huerto; en el mapa del estudio, fila y disposición RP), **2 Agentes** (cosecheros y actividad, robot y su comportamiento; parámetros avanzados plegados por grupo) y **3 Simulación** (duración, Simular, exportar y video; en la Réplica, carga de archivos). Nada simula solo: tras un cambio, la escena y los resultados avisan «Resultados de la configuración anterior» hasta pulsar Simular, y cada paso con valores modificados lleva un punto. Sobre la escena, la barra de vista: Solo humano / Humano-robot / Comparar, cámara (isométrica, cenital, lateral) y «Capas y estilo» (estilo, follaje, color de los trabajadores, cortesía, ruta anticipada). Centro: una o dos escenas sincronizadas. Panel derecho: Resumen (tabla comparativa y gráficos con clic para saltar en el tiempo), Trabajadores, Interacción, Datos y, en la Réplica, Validación. Pie: línea de tiempo (×1 a ×120) y barra de proximidad robot–humano.
 
 **Datos.** `public/data/manifest.json` lista las corridas incluidas (hoy: 12 trabajadores, fila 3, mixta, RP0, sesión de 45 min, solo humano y humano-robot). Desde la interfaz se pueden cargar otras: el `*_timeseries.csv` y, con robot, su `*_robot_status_log.txt`; el nombre debe seguir el patrón `HUMAN_ROBOT_12_ROW3_harv_mixed_RP0_…`. Todo se procesa en el navegador.
 Se leen el paso de muestreo del CSV (1 s) y el índice de tick del log (0,25 s). Las entregas siguen el protocolo del estudio (`tree_point`: un punto de caja por árbol; el robot se detiene y el trabajador carga la caja).
