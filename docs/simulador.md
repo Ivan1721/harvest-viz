@@ -110,6 +110,31 @@ El perfil `hri` también activa `fixRecallLoop`: sin él, un trabajador llamado 
 
 En el visor: dos anillos alrededor del robot (protección S_p, naranja/rojo al detenerse; advertencia, gris/violeta al ir lento), marcas de parada en la franja de proximidad y, en Interacción → Fluidez, paradas, tiempo lento y el resto de métricas. Los parámetros se editan en Agentes → Ajustar el robot.
 
+## Variabilidad entre cosecheros (H6)
+
+Por defecto el motor es determinista: misma configuración, mismo resultado. Con `semilla` (entero ≥ 0) cada cosechero
+recibe su propio ritmo: su periodo de cosecha se multiplica por U(1 − v, 1 + v), con `variacionRitmo` v = 0,1 por defecto
+(generador `mulberry32`, igual en cualquier equipo). El sorteo es el mismo en Solo humano y Humano-robot, así que las
+corridas quedan pareadas. Como el periodo deja de ser un número entero de ticks, el contador guarda el resto y el ritmo
+medio es exacto. Sin `semilla` esos parámetros no existen: la réplica de MATLAB y los hashes no cambian.
+
+## Experimentos en lote (H6)
+
+`npm run experimentos -- experimentos/h6.json` corre todas las celdas de un diseño en paralelo (un hilo por núcleo) y
+escribe en `experimentos/h6/`:
+
+- `corridas.csv`: una fila por corrida terminada, con su clave (versión del motor + Solo humano/Humano-robot + hash de
+  parámetros). Sirve de caché: al volver a correr, lo hecho no se repite.
+- `resultados.csv`: una fila por celda del diseño, con el efecto de cada robot contra la corrida sin robot del mismo
+  escenario, cuadrilla, duración y semilla (`efecto_entregado_pct`, `efecto_cosecha_pct`, `efecto_kcal_por_kg_pct`).
+
+Un diseño es un JSON con bloques; cada bloque tiene `fijos`, `factores` (un factor anidado se escribe con punto, p. ej.
+`huertoParams.pendiente`; `robot` = `ninguno` o un tipo de robot) y, opcionalmente, `repeticiones` con sus semillas y
+las celdas a las que se aplican (`solo`). Sin robot el perfil no aplica: esas celdas se corren una vez. El diseño de H6
+(`experimentos/h6.json`) tiene 266 celdas deterministas más 1050 repeticiones de 45 min; el análisis y los hallazgos están
+en el documento «H6: resultados de los experimentos en lote». Código: `scripts/experimentos.mjs` y
+`scripts/experimentos/lib.mjs`.
+
 ## Validación (métricas agregadas)
 
 Las referencias son los CSV resumen de MATLAB: 732 filas (principal, extended y scaling), que se reducen a **720 configuraciones únicas** (360 Solo humano + 360 Humano-robot) en `public/data/matlab_summary.json`.

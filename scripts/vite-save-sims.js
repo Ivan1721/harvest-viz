@@ -2,7 +2,7 @@
 //
 // Cada simulación hecha en el visor se escribe en una carpeta del proyecto (por defecto `simulaciones/`):
 //   simulaciones/
-//     motor-0.3.0/
+//     motor-0.4.0/
 //       matlab-2026/                        ← perfil de modelo (matlab-2026 = réplica validada, hri = extendido)
 //         12_ROW3_mixed_RP0_SIM-1a2b3c4d/   ← una carpeta por configuración + parámetros (paramsHash)
 //         HUMAN_ONLY_…_timeseries.csv · _poses.csv · _meta.json

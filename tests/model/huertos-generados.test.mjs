@@ -161,3 +161,18 @@ test('al agotar su lado, el cosechero camina al siguiente árbol del tramo', () 
     'avanzó por la hilera',
   )
 })
+
+test('huerto que se agota: quien ya no tiene tramo sigue dejando sus cajas donde trabajó (no se cae)', () => {
+  // 8 hileras × 12 árboles con poca fruta y 24 cosecheros: no quedan tramos libres y hay cajas llenas sin tramo
+  // (antes: TypeError en Cosecha.drop; se vio en 24 cosecheros × 4 h en alta densidad)
+  const o = { huerto: 'palta-alta-densidad', nw: 24, act: 'mixed', duration: 3600, huertoParams: { hileras: 8, arbolesPorHilera: 12, cargaArbol: 10 } }
+  for (const s of [new HRSim(o, FIS).run(), new HOSim(o).run()]) {
+    assert.equal(s.cosecha.reserva.length, 0, 'se repartieron todos los tramos')
+    assert.ok(
+      s.W.some((w) => w.tramo === null),
+      'alguien se quedó sin tramo',
+    )
+    const sm = s.summary()
+    assert.ok(Math.abs(s.cosecha.inicial - s.cosecha.restante() - sm.TotalRecollectedCrops_crop_units) < 1e-6, 'la fruta se conserva')
+  }
+})

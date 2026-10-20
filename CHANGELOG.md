@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [0.7.0] — 2026-10-20
+
+De la réplica de MATLAB a un simulador de sistemas de cosecha: métricas de interacción, seguridad, huertos generados, robots y experimentos en lote. **Motor 0.4.0** (los huertos generados cambian resultados desde la 0.3.0; la réplica de MATLAB no cambia y sigue pasando sus 720 configuraciones).
+
+### Agregado
+
+- **Métricas de fluidez y seguridad** (fase 2): reparto del tiempo del robot, esperas de cajas y del robot, atención y su equidad (Jain), tiempo dentro de S_p(v) (ISO/TS 15066) con velocidad de acercamiento direccional.
+- **Perfil `hri`** con regla de seguridad SSM (fase 3): parada y velocidad reducida según S_p(v), paradas marcadas en la línea de tiempo.
+- **Huertos generados** (H2–H5): palta tradicional, palta alta densidad, palta en ladera (Tobler y Pandolf), uva en parrón, arándano y cerezo UFO, con fruta finita por planta, tramos por cosechero y caminos por calles y cabeceras.
+- **Robots y energía**: Warthog, Burro y Burro con carro; potencia, batería, tracción y frenada según la pendiente.
+- **Interfaz en modos y pasos** (I1): Simulador, Réplica MATLAB y Oclusión; pasos Escenario → Agentes → Simulación; un solo disparador con aviso de resultados desactualizados; barra de vista sobre la escena.
+- **Variabilidad entre cosecheros** (H6): `semilla` opcional que da a cada cosechero su ritmo (±10 %); sin ella todo sigue determinista.
+- **Experimentos en lote** (H6): `npm run experimentos -- experimentos/h6.json`, en paralelo y con caché; resultados del diseño de H6 en `experimentos/h6/` (1316 celdas).
+
+### Corregido
+
+- Un cosechero sin tramo libre que llenaba una caja hacía caer la simulación (`Cosecha.drop`); ahora deja la caja donde trabajó por última vez. Se vio con 24 cosecheros durante 4 h en alta densidad.
+
 ## [0.6.0] — 2026-10-18
 
 Migración de dependencias mayores (tanda 8 de la auditoría).

@@ -1,0 +1,30 @@
+{
+  "nombre": "h6",
+  "descripcion": "H6: ¿cuándo aporta el robot, qué robot conviene, cuánto cuesta la seguridad y qué cambia la ladera? Diseño en el documento «H6: diseño de los experimentos en lote».",
+  "bloques": [
+    {
+      "id": "A",
+      "descripcion": "Sistemas, cuadrilla, robot y seguridad (preguntas 1–3). 45 min con 10 repeticiones de ritmo de cosecheros ±10 %.",
+      "fijos": { "act": "mixed" },
+      "factores": {
+        "huerto": ["palta-tradicional", "palta-alta-densidad", "uva-parron", "arandano", "cerezo-ufo"],
+        "nw": [6, 12, 24],
+        "robot": ["ninguno", "warthog", "burro", "burro-carro"],
+        "profile": ["matlab-2026", "hri"],
+        "duration": [2700, 14400]
+      },
+      "repeticiones": { "semillas": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "solo": { "duration": 2700 } }
+    },
+    {
+      "id": "B",
+      "descripcion": "Ladera (pregunta 4): palta alta densidad, 12 cosecheros, 45 min.",
+      "fijos": { "act": "mixed", "huerto": "palta-alta-densidad", "nw": 12, "duration": 2700 },
+      "factores": {
+        "huertoParams.pendiente": [0, 10, 20, 30],
+        "huertoParams.acopioEnCima": [false, true],
+        "robot": ["ninguno", "warthog", "burro", "burro-carro"],
+        "profile": ["matlab-2026", "hri"]
+      }
+    }
+  ]
+}

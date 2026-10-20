@@ -290,6 +290,7 @@ export class Cosecha {
     while (w.tramo) {
       if (w.ti < w.tramo.arboles.length - 1) w.ti++
       else {
+        w.ultimaCaja = this.drop(w) // si ya no quedan tramos, sus cajas siguen yendo al último lugar que usó
         let best = -1,
           bd = Infinity
         this.reserva.forEach((t, k) => {
@@ -315,6 +316,7 @@ export class Cosecha {
   /** Dónde deja el trabajador la caja: en el eje de su calle frente al árbol si el robot cabe; si no, en la boca de la calle. */
   drop(w) {
     const c = this.h.calles
+    if (!w.tramo) return w.ultimaCaja ? [...w.ultimaCaja] : [this.h.acopio[0], this.h.acopio[1]]
     if (c.robotCabe) return [w.tramo.eje, this.h.arboles[w.tramo.arboles[w.ti]].y]
     return [w.tramo.eje, c.cabecera]
   }
