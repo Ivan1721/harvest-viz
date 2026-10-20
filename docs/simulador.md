@@ -2,7 +2,7 @@
 
 El modo **Simulador** (cabecera) **ejecuta** las simulaciones; el modo **Réplica MATLAB** reproduce los CSV del estudio. Corre en un Web Worker
 (`src/hrsim/sim.worker.js`); 45 min con 12 trabajadores toman ≈0,5 s, así que cualquier combinación nw/fila/actividad/RP se
-simula al instante. Se configura en tres pasos (Escenario → Agentes → Simulación) y se simula al pulsar «Simular»; los parámetros avanzados están plegados en «Ajustar el huerto», «Ajustar la cuadrilla» y «Ajustar el robot».
+simula al instante. Se configura en tres pasos (Escenario → Agentes → Simulación) y se simula al pulsar «Simular»; la URL de cada corrida la reproduce (`src/workload/urlState.js`); los parámetros avanzados están plegados en «Ajustar el huerto», «Ajustar la cuadrilla» y «Ajustar el robot».
 
 ## Qué replica
 

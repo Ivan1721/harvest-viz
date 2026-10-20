@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useState } from 'react'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
-import { SimSteps, DEFAULTS_SIM, changedSteps } from '../../src/workload/panels/SimPanel.jsx'
+import { SimSteps, DEFAULTS_SIM, changedSteps, resetStep } from '../../src/workload/panels/SimPanel.jsx'
 import { profileDefaults } from '../../src/hrsim/common.js'
 import { Validation } from '../../src/workload/panels/Validation.jsx'
 
@@ -44,14 +44,14 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
   it('edita un parámetro de la cuadrilla, marca el paso Agentes y lo restablece', () => {
     render(<Harness />)
     expect(screen.getByTestId('crew-params').textContent).toBe('Ajustar la cuadrilla')
-    expect(screen.queryByTestId('sim-reset')).toBeNull()
+    expect(screen.queryByTestId('reset-2')).toBeNull()
     const input = screen.getByTitle('MATLAB: 0,75').querySelector('input')
     fireEvent.change(input, { target: { value: '1.1' } })
     expect(screen.getByTestId('walk').textContent).toBe('1.1')
     expect(screen.getByTestId('crew-params').textContent).toMatch(/modificado/)
     expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeTruthy()
     expect(screen.getByTestId('step-escenario').querySelector('.step-dot')).toBeNull()
-    fireEvent.click(screen.getByText('Restablecer a MATLAB'))
+    fireEvent.click(screen.getByTestId('reset-2'))
     expect(screen.getByTestId('walk').textContent).toBe('0.75')
     expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeNull()
   })
@@ -72,7 +72,7 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
   it('cambiar el huerto, el robot o la cuadrilla no simula: solo «Simular» dispara', () => {
     const onRun = vi.fn()
     render(<Harness onRun={onRun} />)
-    fireEvent.click(screen.getByText('Palta alta dens.'))
+    fireEvent.click(screen.getByText('Alta densidad'))
     expect(screen.getByTestId('huerto').textContent).toBe('palta-alta-densidad')
     fireEvent.click(screen.getByText('Burro con carro'))
     fireEvent.click(screen.getByText('16'))
@@ -110,12 +110,51 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     expect(onExport).toHaveBeenCalled()
   })
 
+  it('escenario en dos niveles: cultivo y luego sistema; un cultivo con un solo sistema no muestra el segundo nivel', () => {
+    render(<Harness />)
+    expect(screen.getByText('Mapa del estudio')).toBeTruthy()
+    fireEvent.click(screen.getByText('Uva de mesa'))
+    expect(screen.getByTestId('huerto').textContent).toBe('uva-parron')
+    expect(screen.queryByText('Sistema')).toBeNull()
+    expect(screen.getByTestId('huerto-info').textContent).toMatch(/caja de 9 kg/)
+    fireEvent.click(screen.getByText('Palta'))
+    expect(screen.getByTestId('huerto').textContent).toBe('palta-tradicional')
+    expect(screen.getByText('Sistema')).toBeTruthy()
+  })
+
+  it('terreno visible y restablecer por paso: solo vuelve a los valores de ese paso', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Ladera'))
+    const pend = screen.getByLabelText('Pendiente a lo largo de las hileras (%)')
+    expect(pend.value).toBe('20')
+    fireEvent.change(pend, { target: { value: '30' } })
+    fireEvent.change(screen.getByTitle('MATLAB: 0,75').querySelector('input'), { target: { value: '1' } })
+    expect(screen.getByTestId('step-escenario').querySelector('.step-dot')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('reset-1'))
+    expect(screen.getByLabelText('Pendiente a lo largo de las hileras (%)').value).toBe('20')
+    expect(screen.getByTestId('walk').textContent).toBe('1') // el paso 2 no se toca
+    expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeTruthy()
+  })
+
+  it('ficha del robot: ancho, carga, batería y si cabe en las calles', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Arándano'))
+    expect(screen.getByTestId('robot-info').textContent).toMatch(/1,38 m de ancho · 272 kg de carga · batería 2,4 kWh/)
+    expect(screen.getByTestId('robot-info').textContent).toMatch(/no cabe/)
+    fireEvent.click(screen.getByText('Burro con carro'))
+    expect(screen.getByTestId('robot-info').textContent).toMatch(/carro de 60 kg/)
+    expect(screen.getByTestId('robot-info').textContent).toMatch(/entra a las calles/)
+  })
+
   it('changedSteps asigna cada parámetro a su paso', () => {
     const base = profileDefaults('matlab-2026', 'palta-tradicional')
     expect([...changedSteps(base, base)]).toEqual([])
     expect([...changedSteps({ ...base, huertoParams: { ...base.huertoParams, hileras: 3 } }, base)]).toEqual([1])
     expect([...changedSteps({ ...base, capacityBoxes: 3 }, base)]).toEqual([2])
     expect([...changedSteps({ ...base, duration: 600 }, base)]).toEqual([3])
+    const mod = { ...base, duration: 600, capacityBoxes: 3 }
+    expect(resetStep(mod, base, 3)).toEqual({ ...base, capacityBoxes: 3 })
+    expect([...changedSteps(resetStep(mod, base, 2), base)]).toEqual([3])
   })
 })
 

@@ -1031,6 +1031,34 @@ body {
 .wb .group {
   margin: 4px 0 8px;
 }
+/* I2: restablecer por paso, resumen del escenario y ficha del robot */
+.wb .step-reset {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  padding: 0 2px;
+  text-decoration: underline;
+}
+.wb .step-dot + .step-reset {
+  margin-left: 4px;
+}
+.wb .note.scen {
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.wb .ficha {
+  font-size: 11px;
+  line-height: 1.45;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: -2px 0 8px;
+  background: #f8fafd;
+}
 .wb .group > summary {
   margin-top: 2px;
   color: var(--muted);

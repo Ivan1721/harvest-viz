@@ -100,11 +100,11 @@ export function ViewBar({ view, setView, hasHO, hasHR, preset, setPreset, look, 
 }
 
 /** Franja sobre la escena y los resultados cuando lo configurado ya no es lo que se simuló. */
-export function StaleBanner({ onRun, busy }) {
+export function StaleBanner({ onRun, busy, text }) {
   useLang()
   return (
     <div className="stale" role="status" data-testid="stale">
-      <span>{t('Resultados de la configuración anterior.')}</span>
+      <span>{text ?? t('Resultados de la configuración anterior.')}</span>
       <button className="btn primary" onClick={onRun} disabled={busy}>
         {t('Simular')}
       </button>
