@@ -12,8 +12,9 @@ import { parseFis, evalFis } from './fis.js'
 import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 import { buildHuerto } from './huertos/index.js'
 import { protectionDistance } from './ssm.js'
-import { Cosecha, rutaCalles } from './huertos/rectangular.js'
+import { Cosecha, rutaCalles, ejeCercano } from './huertos/rectangular.js'
 import { paso } from './huertos/pendiente.js'
+import { ROBOTS, potencia, fuerzaAvance, limiteTraccion, frenadaEfectiva } from './robots.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -82,6 +83,14 @@ export class HRSim {
     this.ssmStopped = false
     this.ssmClear = 0
     this.ssmStops = 0
+    // robot elegido, energía y carro (solo huertos generados; la réplica de MATLAB no los tiene)
+    this.robotSpec = this.cosecha ? ROBOTS[p.robotTipo] || ROBOTS.warthog : null
+    this.energyJ = 0
+    this.vPrev = 0
+    this.tractionTicks = 0
+    this.maxPull = 0
+    const cr = this.robotSpec?.carro
+    this.carro = cr ? this._carroInicial(cr) : null
     // --- registro ---
     this.rec = {
       t: [],
@@ -95,6 +104,7 @@ export class HRSim {
       ry: [],
       rth: [],
       rst: [],
+      ...(this.cosecha ? { energy: [], cx: [], cy: [], cth: [] } : {}),
       wx: Array.from({ length: NH }, () => []),
       wy: Array.from({ length: NH }, () => []),
       wth: Array.from({ length: NH }, () => []),
@@ -141,6 +151,15 @@ export class HRSim {
       // la caja queda sobre la ruta del robot (calle en la que cabe) o junto a ella, en la boca de la calle
       const near0 = nearestOnPolyline(hxy, this.baseRoute)
       if (Math.hypot(hxy[0] - near0[0], hxy[1] - near0[1]) < 1e-6) return hxy
+      const d0 = Math.hypot(hxy[0] - near0[0], hxy[1] - near0[1]),
+        off0 = Math.min(p.boxRouteOffset, Math.max(0.35, 0.6 * d0))
+      const b = [near0[0] + (off0 * (hxy[0] - near0[0])) / d0, near0[1] + (off0 * (hxy[1] - near0[1])) / d0]
+      // en la cabecera, a no menos de 1,5 m del borde de las copas: el robot que va a buscarla no las roza
+      const c = this.huerto.calles,
+        H = this.huerto.limites.h
+      if (b[1] < c.cabecera) b[1] = Math.min(b[1], c.cabecera - 1.5)
+      else if (b[1] > H - c.cabecera) b[1] = Math.max(b[1], H - c.cabecera + 1.5)
+      return b
     } else if (p.placement === 'tree_point') {
       let bi = 0,
         bd = Infinity
@@ -177,6 +196,12 @@ export class HRSim {
     r.ry.push(this.rpose[1])
     r.rth.push(this.rpose[2])
     r.rst.push(this.rstatus)
+    if (r.energy) {
+      r.energy.push(this.energyJ / 3600) // Wh acumulados
+      r.cx.push(this.carro ? this.carro[0] : NaN)
+      r.cy.push(this.carro ? this.carro[1] : NaN)
+      r.cth.push(this.carro ? this.carro[2] : NaN)
+    }
     for (let h = 0; h < NH; h++) {
       const w = this.W[h]
       r.prod[h].push(w.prod)
@@ -490,7 +515,9 @@ export class HRSim {
     for (let h = 0; h < NH; h++) {
       const w = W[h]
       if (!(w.nBoxes >= 1 && w.prodBox > 0 && w.box && this.boxInserted[h])) continue
-      const dist = hyp(rpos[0] - w.box[0], rpos[1] - w.box[1])
+      // con carro, el cosechero carga la caja en el carro: cuenta el más cercano de los dos
+      let dist = hyp(rpos[0] - w.box[0], rpos[1] - w.box[1])
+      if (this.carro) dist = Math.min(dist, hyp(this.carro[0] - w.box[0], this.carro[1] - w.box[1]))
       const hasRoom = this.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
       if (dist < PICKUP_RADIUS && !hasRoom) {
         this.capacityBlocked++
@@ -552,9 +579,37 @@ export class HRSim {
     // huertos generados: con el robot lleno, va a descargar al acopio por las calles y vuelve a donde estaba
     // (en el mapa del estudio la vuelta base ya pasa por la zona de carga a cada rato; en 1 ha, no)
     if (this.cosecha && !this.goingToUnload && (this.needUnload || this.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
-      const here = [rpos[0], rpos[1]]
-      const detour = [...rutaCalles(this.huerto, here, this.cargoZone), ...rutaCalles(this.huerto, this.cargoZone, here)]
-      this.waypoints.splice(this.kWp, 0, ...detour)
+      // dentro de una calle no puede dar la vuelta (no cabe): sigue hasta el próximo waypoint en una cabecera y
+      // desde ahí va al acopio por el carril; si está en la cabecera de arriba, baja por la calle vecina (dos giros de
+      // 90°, sin giro en U entre copas). Después vuelve a ese punto y retoma la vuelta.
+      const c = this.huerto.calles,
+        H = this.huerto.limites.h,
+        W = this.waypoints,
+        acop = this.cargoZone
+      // «en la cabecera» = sobre el carril del robot (los waypoints densos de la calle llegan hasta el borde de las copas)
+      const enCab = (q) => q[1] <= c.yb + 0.5 || q[1] >= c.yt - 0.5
+      let j = this.kWp
+      for (let k = 0; k < W.length && !enCab(W[j]); k++) j = (j + 1) % W.length
+      const here = enCab([rpos[0], rpos[1]])
+      const from = here ? [rpos[0], rpos[1] < H / 2 ? c.yb : c.yt] : [W[j][0], W[j][1]]
+      const at = here ? this.kWp : j + 1
+      let ida, vuelta
+      if (from[1] < H / 2) {
+        ida = [[acop[0], acop[1]]]
+        vuelta = [[from[0], from[1]]]
+      } else {
+        const e = ejeCercano(c, from[0])
+        const k = c.ejes.indexOf(e),
+          e2 = c.ejes[k + (acop[0] > e ? 1 : -1)] ?? c.ejes[k - (acop[0] > e ? 1 : -1)] ?? e
+        // por la calle, un waypoint cada 3 m como en la vuelta base (el controlador apunta al waypoint)
+        const n = Math.max(1, Math.round((c.yt - c.yb) / 3))
+        const baja = Array.from({ length: n + 1 }, (_, k) => [e2, c.yt - ((c.yt - c.yb) * k) / n])
+        ida = [...baja, [acop[0], acop[1]]]
+        vuelta = [...[...baja].reverse(), [from[0], from[1]]]
+      }
+      const detour = [...ida, ...vuelta]
+      this.waypoints.splice(at, 0, ...detour)
+      if (at < this.kWp) this.kWp += detour.length
       this.goingToUnload = true
       this.log(`Robot FULL | going to CARGO ZONE | ${detour.length} waypoints inserted`)
     }
@@ -654,11 +709,90 @@ export class HRSim {
         this.rstatus = 4
       }
     }
+    // huertos generados: límites físicos del robot elegido (velocidad máxima, frenada en bajada, tracción)
+    if (this.robotSpec && (wxv || wyv)) {
+      const k = this._limitesFisicos(wxv, wyv)
+      if (k === 0) {
+        wxv = wyv = wth = 0
+        this.rstatus = 5 // tracción insuficiente
+      } else if (k < 1) {
+        wxv *= k
+        wyv *= k
+        wth *= k
+      }
+    }
     // la integración usa pose(:,idx-1) sin recorte, igual que el MATLAB
+    const old = this.rpose
     const nx = this.rpose[0] + wxv * dt,
       ny = this.rpose[1] + wyv * dt,
       nth = this.rpose[2] + wth * dt
     this.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
+    if (this.robotSpec) this._energiaYCarro(old, this.rpose)
+  }
+
+  /** Masas del conjunto: total que se mueve, la del robot (tracción) y la que está sobre ruedas que frenan. */
+  _masas() {
+    const r = this.robotSpec,
+      cr = r.carro
+    const fruta = this.prodRobot // 1 unidad = 1 kg en los huertos generados
+    const mTot = r.masa + (cr ? cr.masa : 0) + fruta
+    return { mTot, mRobot: r.masa, mFrena: cr ? r.masa : mTot }
+  }
+
+  /** Pendiente (rad) del terreno en la dirección (ux, uy) desde la pose del robot; 0 en plano. */
+  _theta(ux, uy, at = this.rpose) {
+    const h = this.huerto
+    if (!h.terreno?.pendiente || !h.z) return 0
+    return Math.atan(h.z(at[0] + ux, at[1] + uy) - h.z(at[0], at[1]))
+  }
+
+  /** Factor de escala por velocidad máxima, frenada efectiva en bajada y tracción (0 = no puede avanzar). */
+  _limitesFisicos(vx, vy) {
+    const r = this.robotSpec,
+      v = Math.hypot(vx, vy)
+    let k = v > r.vMax ? r.vMax / v : 1
+    const th = this._theta(vx / v, vy / v)
+    const { mTot, mRobot, mFrena } = this._masas()
+    // tracción: solo empujan las ruedas del robot
+    const F = fuerzaAvance(mTot, th, this.p.energia),
+      lim = limiteTraccion(mRobot, th)
+    if (F > this.maxPull) this.maxPull = F
+    if (F > lim) {
+      this.tractionTicks++
+      return 0
+    }
+    // frenada: si el suelo no deja detenerse a tiempo (carro sin freno cuesta abajo), baja a velocidad lenta
+    const aCtrl = this.p.ssm?.a ?? 1.5
+    if (frenadaEfectiva(aCtrl, th, mFrena, mTot) < 0.3) k = Math.min(k, (this.p.ssm?.vSlow ?? 0.3) / v)
+    return k
+  }
+
+  /** Energía del tick (sin regeneración) y movimiento del carro (remolque con enganche en el eje). */
+  _energiaYCarro(a, b) {
+    const dt = this.dt,
+      dx = b[0] - a[0],
+      dy = b[1] - a[1],
+      d = Math.hypot(dx, dy),
+      v = d / dt
+    const th = d > 1e-9 ? this._theta(dx / d, dy / d, a) : 0
+    const acc = (v - this.vPrev) / dt
+    this.vPrev = v
+    this.energyJ += potencia(this._masas().mTot, v, acc, th, this.p.energia) * dt
+    if (this.carro) {
+      const cr = this.robotSpec.carro,
+        hb = this.robotSpec.largo / 2
+      const vf = dx * Math.cos(b[2]) + dy * Math.sin(b[2]) // avance en la dirección del cuerpo
+      const tc = this.carro[2] + (vf / dt / cr.L) * Math.sin(b[2] - this.carro[2]) * dt
+      const hx = b[0] - hb * Math.cos(b[2]),
+        hy = b[1] - hb * Math.sin(b[2])
+      this.carro = [hx - cr.L * Math.cos(tc), hy - cr.L * Math.sin(tc), tc]
+    }
+  }
+
+  _carroInicial(cr) {
+    const [x, y, th] = this.rpose,
+      hb = this.robotSpec.largo / 2
+    return [x - (hb + cr.L) * Math.cos(th), y - (hb + cr.L) * Math.sin(th), th]
   }
 
   /**
@@ -670,13 +804,13 @@ export class HRSim {
    */
   _ssmScale(vx, vy) {
     let s = this.p.ssm
-    // en ladera, cuesta abajo la frenada efectiva es a − g·senθ (θ: pendiente en la dirección de avance), con un piso
-    // del 10 % de a (con a = 1,5 m/s² y 20 % de pendiente, a − g·senθ sería negativa: el robot no podría detenerse)
-    if (this.huerto.terreno?.pendiente && this.huerto.z && Math.hypot(vx, vy) > 1e-9) {
-      const v = Math.hypot(vx, vy),
-        [rx0, ry0] = this.rpose
-      const S = this.huerto.z(rx0 + vx / v, ry0 + vy / v) - this.huerto.z(rx0, ry0)
-      if (S < 0) s = { ...s, a: Math.max(0.1 * s.a, s.a - 9.81 * (-S / Math.hypot(1, S))) }
+    // huertos generados: frenada efectiva = mínimo entre lo que decide el control (a) y lo que permite el suelo
+    // (adherencia de las ruedas que frenan; cuesta abajo resta g·senθ). Piso 0,3 m/s²: por debajo, el robot ya va
+    // a velocidad lenta (_limitesFisicos)
+    if (this.robotSpec && Math.hypot(vx, vy) > 1e-9) {
+      const v = Math.hypot(vx, vy)
+      const { mTot, mFrena } = this._masas()
+      s = { ...s, a: Math.max(0.3, frenadaEfectiva(s.a, this._theta(vx / v, vy / v), mFrena, mTot)) }
     }
     const dt = this.dt,
       [rx, ry] = this.rpose
@@ -754,6 +888,17 @@ export class HRSim {
       waypointSkips: this.skips,
       capacityBlocked: this.capacityBlocked,
       ...(this.p.ssm?.enabled ? { safetyStops: this.ssmStops } : {}),
+      ...(this.robotSpec
+        ? {
+            robot: this.p.robotTipo,
+            energyWh: this.energyJ / 3600,
+            batteryPct: 100 * Math.max(0, 1 - this.energyJ / 3600 / this.p.energia.bateriaWh),
+            unloads: this.ev.unloads.filter((u) => u.amount > 0).length,
+            tractionLimited_s: this.tractionTicks * this.dt,
+            maxPull_N: this.maxPull,
+            tractionLimit_N: limiteTraccion(this.robotSpec.masa, 0),
+          }
+        : {}),
     }
   }
 }

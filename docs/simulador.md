@@ -62,6 +62,25 @@ Resultados de referencia (12 cosecheros, mixta, 45 min, acopio al pie): sin robo
 
 Simplificaciones de H2: la caja siempre va a la cabecera inferior (la del acopio; en 45 min los cosecheros no pasan del tercer árbol); la capacidad del robot sigue en 68 cajas; terreno plano. Alta densidad (H3), ladera (H4) y otras frutas (H5) usan el mismo generador.
 
+## Robots y energía (huertos generados)
+
+En los huertos generados se elige el robot (Simulador → Robot; `robotTipo`), con datos de fabricante (`src/hrsim/robots.js`; especificación «Robots y energía»). El mapa del estudio no cambia: Warthog de 68 cajas y sin energía.
+
+|                            | Warthog                       | Burro           | Burro con carro               |
+| -------------------------- | ----------------------------- | --------------- | ----------------------------- |
+| Ancho · masa               | 1,38 m · 280 kg               | 0,92 m · 146 kg | 0,92 m · 146 kg + carro 60 kg |
+| Capacidad (cajas de 15 kg) | 18 (272 kg)                   | 15 (226 kg)     | 26 (≈ 390 kg en el carro)     |
+| Velocidad máxima           | 5 m/s                         | 2 m/s           | 2 m/s                         |
+| Batería utilizable         | 2,4 kWh (50 % de 4,8 kWh AGM) | 2,4 kWh LiFePO₄ | 2,4 kWh                       |
+
+- **Energía**: P = max(0, m·g·(C_rr·cos θ + sen θ) + m·a)·v/η + P_aux, sin regeneración; m incluye la fruta a bordo (y el carro). C_rr = 0,08 y η = 0,43 reproducen la autonomía publicada del Burro (16 km con 2,4 kWh, 136 kg a 1,2 m/s en tierra); P_aux = 60 W (Warthog) y 30 W (Burro), supuestos. El giro en el lugar no está modelado (subestima).
+- **Tracción**: solo empujan las ruedas del robot: m_tot·g·(C_rr·cos θ + sen θ) ≤ μ·m_robot·g·cos θ, con μ = 0,65 (la especificación proponía 0,6; con 0,6 el Burro no subiría el 15 % con 250 kg que garantiza su ficha). Si no alcanza, el robot no avanza (`rst = 5`, «sin tracción») y, pasado el tiempo máximo en el waypoint, salta al siguiente. Con el carro lleno el Burro sube hasta ≈ 8 %.
+- **Frenada**: a_ef = min(a_ctrl, μ·g·cos θ·m_frena/m_tot + g·sen θ) (θ < 0 cuesta abajo; m_frena = masa sobre ruedas que frenan, sin el carro). Reemplaza al piso provisorio de H4: el robot solo frena igual en ladera que en plano; con el carro sin freno cuesta abajo, si a_ef < 0,3 m/s² baja a 0,3 m/s, y en el perfil `hri` S_p usa max(0,3; a_ef).
+- **Carro**: remolque con enganche en el eje (orientación del carro → la del robot a razón de (v/L)·sen(θ_r − θ_c), L = 1,5 m); el cosechero carga la caja en el carro o en el robot, el que esté más cerca. Ni el robot ni el carro rozan copas (verificado).
+- **Lleno**: con el 90 % de la capacidad va a descargar. Dentro de una calle sigue hasta la cabecera; desde la de arriba baja por la calle vecina (sin giro en U entre copas). El acopio está sobre el carril del robot.
+
+Métricas (Interacción → Fluidez y `indice.csv`): energía (Wh), Wh por kg entregado, batería restante, descargas y tiempo sin tracción.
+
 ## Métricas de fluidez y seguridad (fase 2)
 
 Se calculan en `src/workload/hri.js` (`analyzeHRI(run).fluency`) desde las series que el motor ya registra, sin modificarlo, para ambos perfiles. Definiciones exactas:

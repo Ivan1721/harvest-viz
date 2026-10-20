@@ -21,7 +21,7 @@ test('palta tradicional: 16 × 15 árboles en 96 × 102 m, 15 calles de 1 m libr
     h.arboles.reduce((s, a) => s + a.carga, 0),
     240 * 42,
   )
-  assert.deepEqual(h.acopio, [48, 3])
+  assert.deepEqual(h.acopio, [48, 2])
   // parejas por calle, empezando por la que está frente al acopio
   assert.equal(h.tramos.length, 12)
   assert.equal(h.tramos[0].eje, 48)
@@ -29,7 +29,7 @@ test('palta tradicional: 16 × 15 árboles en 96 × 102 m, 15 calles de 1 m libr
   assert.notEqual(h.tramos[0].lado, h.tramos[1].lado)
   assert.equal(new Set(h.tramos.map((t) => t.eje)).size, 6)
   // el robot recorre la cabecera inferior pasando por la boca de las calles ocupadas
-  assert.ok(h.vueltaRobot.every(([x, y]) => y === 2 || (x === 48 && y === 3)))
+  assert.ok(h.vueltaRobot.every(([, y]) => y === 2))
 })
 
 test('más cosecheros que lados de hilera: los lados se parten en tramos; la réplica no tiene parámetros de huerto', () => {

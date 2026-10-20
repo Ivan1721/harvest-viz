@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PROFILES, profileDefaults } from '../../hrsim/common.js'
 import { SISTEMAS } from '../../hrsim/huertos/index.js'
-import { ROBOT_ANCHO, HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
+import { HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
+import { ROBOTS } from '../../hrsim/robots.js'
 import { Field, Seg } from '../ui.jsx'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
@@ -95,7 +96,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   // un campo vacío o fuera de rango no se aplica (p. ej. velocidad 0 dejaría a los trabajadores inmóviles)
   const num = (k, step, min, max, label) => <NumField value={params[k]} step={step} min={min} max={max} label={label} onCommit={(v) => set(k, v)} />
-  const base = profileDefaults(params.profile, params.huerto)
+  const base = profileDefaults(params.profile, params.huerto, params.robotTipo)
   const changed = JSON.stringify(params) !== JSON.stringify(base)
   const hp = params.huertoParams
   const libre = hp ? hp.calle - 2 * hp.radioCopa : null
@@ -106,7 +107,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
         <Seg
           size="mini"
           value={params.profile}
-          onChange={(p) => setParams(profileDefaults(p, params.huerto))}
+          onChange={(p) => setParams(profileDefaults(p, params.huerto, params.robotTipo))}
           options={Object.entries(PROFILES).map(([k, v]) => [k, k === 'matlab-2026' ? 'MATLAB 2026' : 'HRI', false, t(v.label)])}
         />
       </Field>
@@ -122,6 +123,19 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
         />
       </Field>
       {hp && (
+        <Field label={t('Robot')}>
+          <Seg
+            size="mini"
+            value={params.robotTipo}
+            onChange={(r) => {
+              setParams((p) => ({ ...p, robotTipo: r, capacityBoxes: ROBOTS[r].capacidad, energia: { ...ROBOTS[r].energia } }))
+              onRun()
+            }}
+            options={Object.entries(ROBOTS).map(([k, v]) => [k, t(v.label), false, t(v.label)])}
+          />
+        </Field>
+      )}
+      {hp && (
         <div className="note" data-testid="huerto-info">
           {t('{n} árboles · {w} × {h} m · calle libre {l} m', {
             n: hp.hileras * hp.arbolesPorHilera,
@@ -130,7 +144,11 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
             l: fmtNum(libre, { maximumFractionDigits: 2 }),
           })}
           {' · '}
-          {libre >= ROBOT_ANCHO + HOLGURA_CALLE ? t('el robot entra a las calles') : t('el robot no cabe en las calles: recorre la cabecera')}
+          {libre >= (ROBOTS[params.robotTipo]?.ancho ?? 1.38) + HOLGURA_CALLE
+            ? t('el robot entra a las calles')
+            : t('el robot no cabe en las calles: recorre la cabecera')}
+          {` · ${t('{n} cajas por viaje', { n: params.capacityBoxes })}`}
+          {params.robotTipo !== 'warthog' && hp.pendiente > 15 && ` · ${t('pendiente fuera de la ficha del Burro (15 %)')}`}
           {hp.pendiente > 0 &&
             ` · ${t('pendiente {p} %, acopio {d}', { p: fmtNum(hp.pendiente, { maximumFractionDigits: 1 }), d: hp.acopioEnCima ? t('en la cima') : t('al pie') })}`}
         </div>

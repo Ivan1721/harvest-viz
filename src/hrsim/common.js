@@ -86,8 +86,18 @@ export function resolveParams(opts = {}, extra = {}) {
     prodPeriod: { ...DEFAULTS.prodPeriod, ...(sis?.params?.prodPeriod || {}), ...(opts.prodPeriod || {}) },
   }
   // parámetros del generador: solo en huertos generados (matlab-2026 no los tiene: su hash no cambia)
-  if (sis?.generador) p.huertoParams = { ...sis.generador, ...(opts.huertoParams || {}) }
-  else delete p.huertoParams
+  if (sis?.generador) {
+    p.huertoParams = { ...sis.generador, ...(opts.huertoParams || {}) }
+    // robot (solo en huertos generados): su capacidad real y su modelo de energía, salvo que se indiquen
+    p.robotTipo = opts.robotTipo ?? 'warthog'
+    const rb = ROBOTS[p.robotTipo]
+    if (rb && opts.capacityBoxes === undefined) p.capacityBoxes = rb.capacidad
+    if (rb) p.energia = { ...rb.energia, ...(opts.energia || {}) }
+  } else {
+    delete p.huertoParams
+    delete p.robotTipo
+    delete p.energia
+  }
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -100,6 +110,10 @@ export function resolveParams(opts = {}, extra = {}) {
   if (![0, 1].includes(p.rp)) bad(`rp debe ser 0 o 1 (es ${p.rp})`)
   if (!SISTEMAS[p.huerto]) bad(`sistema de huerto "${p.huerto}" desconocido (${Object.keys(SISTEMAS).join(', ')})`)
   if (p.huertoParams) validarRectangular(p.huertoParams)
+  if (p.robotTipo !== undefined && !ROBOTS[p.robotTipo]) bad(`robotTipo "${p.robotTipo}" desconocido (${Object.keys(ROBOTS).join(', ')})`)
+  if (p.energia)
+    for (const k of ['crr', 'eta', 'paux', 'bateriaWh'])
+      if (!(Number.isFinite(p.energia[k]) && p.energia[k] >= 0 && (k !== 'eta' || p.energia[k] > 0))) bad(`energia.${k} inválido`)
   if (!(p.dt >= LIMITS.minDt && p.dt <= LIMITS.maxDt)) bad(`dt debe estar entre ${LIMITS.minDt} y ${LIMITS.maxDt} s (es ${p.dt})`)
   if (!(p.duration > 0 && p.duration <= LIMITS.maxDuration)) bad(`duration debe estar entre 0 y ${LIMITS.maxDuration} s (es ${p.duration})`)
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
@@ -147,11 +161,16 @@ export const PROFILES = {
 }
 
 /** Parámetros completos de un perfil y un sistema de huerto (lo que muestra el formulario al elegirlos). */
-export const profileDefaults = (profile, huerto = DEFAULTS.huerto) => {
+export const profileDefaults = (profile, huerto = DEFAULTS.huerto, robotTipo = 'warthog') => {
   const sis = SISTEMAS[huerto]
   const d = structuredClone({ ...DEFAULTS, ...PROFILES[profile].params, ...(sis.params || {}), profile, huerto })
   d.prodPeriod = { ...DEFAULTS.prodPeriod, ...(sis.params?.prodPeriod || {}) }
-  if (sis.generador) d.huertoParams = { ...sis.generador }
+  if (sis.generador) {
+    d.huertoParams = { ...sis.generador }
+    d.robotTipo = robotTipo
+    d.capacityBoxes = ROBOTS[robotTipo].capacidad
+    d.energia = { ...ROBOTS[robotTipo].energia }
+  }
   if (d.ssm) d.ssm = { ...SSM_DEFAULTS, enabled: false, ...d.ssm }
   return d
 }
@@ -206,6 +225,7 @@ export { R3, TREE_X, TREES_ALL, OFFS_RP0, OFFS_RP1 } from './huertos/matlab2026.
 import { SSM_DEFAULTS } from './ssm.js'
 import { SISTEMAS, buildHuerto } from './huertos/index.js'
 import { validarRectangular } from './huertos/rectangular.js'
+import { ROBOTS } from './robots.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

@@ -66,20 +66,27 @@ test('ladera 20 %: los árboles siguen el terreno, subir es más lento y cosecha
   assert.ok(found, 'hay tramos subiendo')
 })
 
-test('robot cuesta abajo: frena peor (a − g·senθ), así que se detiene antes', () => {
-  const s = new HRSim({ nw: 1, duration: 10, profile: 'hri', huerto: 'palta-ladera' }, FIS)
-  s.rpose = [50, 50, 0]
-  const w = s.W[0]
-  w.state = 1
+test('frenada cuesta abajo: el robot solo frena igual que en plano; con el carro lleno sin freno, mucho peor', () => {
+  const mk = (robotTipo, carga) => {
+    const s = new HRSim({ nw: 1, duration: 10, profile: 'hri', huerto: 'palta-ladera', robotTipo }, FIS)
+    s.rpose = [50, 50, 0]
+    s.prodRobot = carga
+    s.W[0].state = 1
+    return s
+  }
   const v = 1
-  // trabajador a una distancia entre S_p(1) en plano y la necesaria cuesta abajo
-  const d = protectionDistance(v, s.p.ssm) + v * s.dt + 0.3
-  // bajando (−y, el acopio está al pie): debe parar
-  w.pose = [50, 50 - d, 0]
-  s.ssmStopped = false
-  assert.equal(s._ssmScale(0, -v), 0)
-  // subiendo, a la misma distancia: no para
-  w.pose = [50, 50 + d, 0]
-  s.ssmStopped = false
-  assert.notEqual(s._ssmScale(0, v), 0)
+  for (const [robotTipo, carga, frenaPeor] of [
+    ['warthog', 0, false],
+    ['burro-carro', 390, true],
+  ]) {
+    const s = mk(robotTipo, carga)
+    // justo fuera del campo de advertencia calculado con la frenada del control (1,5 m/s²)
+    const d = protectionDistance(v, s.p.ssm) + s.p.ssm.warn + 0.2
+    s.W[0].pose = [50, 50 - d, 0] // bajando (−y: el acopio está al pie)
+    s.ssmStopped = false
+    assert.equal(s._ssmScale(0, -v) < 1, frenaPeor, `${robotTipo} bajando`)
+    s.W[0].pose = [50, 50 + d, 0] // subiendo, a la misma distancia: sin restricción
+    s.ssmStopped = false
+    assert.equal(s._ssmScale(0, v), 1, `${robotTipo} subiendo`)
+  }
 })
