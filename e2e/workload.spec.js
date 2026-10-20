@@ -144,3 +144,15 @@ test('palta alta densidad: el robot entra a las calles y no se ofrece la escaler
   if (process.env.SHOT4) await page.screenshot({ path: process.env.SHOT4 })
   expect(errors).toEqual([])
 })
+
+test('palta en ladera: la escena se inclina y se informa la pendiente (H4)', async ({ page }) => {
+  const errors = await openWorkload(page)
+  await useSimulator(page)
+  await page.getByRole('button', { name: 'Palta ladera', exact: true }).click()
+  await expect(page.getByTestId('huerto-info')).toContainText('pendiente 20 %')
+  await page.getByText(/Simulado en \d+ ms/).waitFor({ timeout: 60_000 })
+  await pause(page)
+  await setRange(page.locator('.timeline2 input[type=range]'), 900)
+  if (process.env.SHOT5) await page.screenshot({ path: process.env.SHOT5 })
+  expect(errors).toEqual([])
+})

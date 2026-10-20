@@ -1,6 +1,6 @@
 // Sistemas de huerto: el motor recibe el huerto como dato (ver docs/simulador.md, «Sistemas de huerto»).
 import { huertoMatlab2026 } from './matlab2026.js'
-import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD } from './rectangular.js'
+import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, PALTA_LADERA } from './rectangular.js'
 
 /**
  * @typedef {object} Huerto
@@ -36,6 +36,13 @@ export const SISTEMAS = {
     // sin escalera; ritmo calibrado a 1.000–1.600 kg por cosechero en 8 h (ver docs/simulador.md)
     params: { prodPeriod: { 1: 14, 2: 14, 3: 18 } },
     build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-alta-densidad' }),
+  },
+  'palta-ladera': {
+    label: 'Palta en ladera (4 × 2 m, 20 %)',
+    generador: PALTA_LADERA,
+    // mismo ritmo de cosecha que en plano: la ladera solo cambia la marcha (Tobler) y su gasto (Pandolf)
+    params: { prodPeriod: { 1: 14, 2: 14, 3: 18 } },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-ladera' }),
   },
 }
 

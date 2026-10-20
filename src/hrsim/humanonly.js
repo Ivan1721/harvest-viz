@@ -5,6 +5,7 @@
 import { resolveParams, initWorkers, movePose } from './common.js'
 import { buildHuerto } from './huertos/index.js'
 import { Cosecha, rutaCalles } from './huertos/rectangular.js'
+import { paso } from './huertos/pendiente.js'
 
 export class HOSim {
   constructor(opts = {}) {
@@ -64,8 +65,11 @@ export class HOSim {
     const p = this.p,
       dt = this.dt,
       C = this.C
+    // en ladera la velocidad y el gasto dependen de la pendiente del tramo (en plano: v = walkSpeed, k = 1)
+    const slope = (cargando) => paso(this.huerto, w.pose, w.route[w.routeIdx], p.walkSpeed, cargando)
+    let sv = p.walkSpeed
     const walkTo = (target) => {
-      const { pose, reached } = movePose(w.pose, target, p.walkSpeed, dt)
+      const { pose, reached } = movePose(w.pose, target, sv, dt)
       w.pose = pose
       return reached || Math.hypot(pose[0] - target[0], pose[1] - target[1]) <= p.tolerance
     }
@@ -103,7 +107,11 @@ export class HOSim {
         break
       case 3:
         w.prod = 0
-        w.work += C.walkingCarrying * dt
+        {
+          const { v, k } = slope(true)
+          sv = v
+          w.work += C.walkingCarrying * dt * k
+        }
         w.flag = 2
         w.box = [w.pose[0], w.pose[1]]
         if (walkTo(w.route[w.routeIdx])) {
@@ -133,7 +141,11 @@ export class HOSim {
         break
       case 5:
         w.prod = 0
-        w.work += C.walking * dt
+        {
+          const { v, k } = slope(false)
+          sv = v
+          w.work += C.walking * dt * k
+        }
         w.flag = 2
         if (walkTo(w.route[w.routeIdx])) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
@@ -148,7 +160,11 @@ export class HOSim {
         break
       case 13:
         // camina por la calle al siguiente árbol de su tramo
-        w.work += C.walking * dt
+        {
+          const { v, k } = slope(false)
+          sv = v
+          w.work += C.walking * dt * k
+        }
         w.flag = 2
         if (walkTo(w.route[w.routeIdx])) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1

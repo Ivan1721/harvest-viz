@@ -83,6 +83,7 @@ for (const [huerto, nw, act] of [
   ['palta-tradicional', 34, 'ground'],
   ['palta-alta-densidad', 12, 'mixed'],
   ['palta-alta-densidad', 24, 'picker'],
+  ['palta-ladera', 12, 'mixed'],
 ]) {
   test(`${huerto}, ${nw} cosecheros (${act}): la fruta se conserva, nadie cruza copas, el robot no las roza`, () => {
     const o = { huerto, nw, act, duration: 2700 }

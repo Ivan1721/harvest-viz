@@ -517,14 +517,17 @@ function World({ run, selected, onSelect, version, look, geom }) {
         </>
       )}
       <Clock run={run} />
-      <Ground run={run} real={real} geom={geom} />
-      <CargoPile run={run} real={real} geom={geom} />
-      {run.robot && <Intent run={run} />}
-      <Boxes run={run} real={real} />
-      {run.workers.map((w) => (
-        <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />
-      ))}
-      {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}
+      {/* en ladera todo (suelo, árboles, personas, robot) se inclina con el terreno; en plano tilt = 0 */}
+      <group rotation={[geom.tilt || 0, 0, 0]}>
+        <Ground run={run} real={real} geom={geom} />
+        <CargoPile run={run} real={real} geom={geom} />
+        {run.robot && <Intent run={run} />}
+        <Boxes run={run} real={real} />
+        {run.workers.map((w) => (
+          <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />
+        ))}
+        {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}
+      </group>
     </>
   )
 }

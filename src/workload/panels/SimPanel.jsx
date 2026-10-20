@@ -71,7 +71,7 @@ const SSM = [
   ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
   ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
 ]
-const SHORT = { 'matlab-2026': 'Estudio', 'palta-tradicional': 'Palta trad.', 'palta-alta-densidad': 'Palta alta dens.' }
+const SHORT = { 'matlab-2026': 'Estudio', 'palta-tradicional': 'Palta trad.', 'palta-alta-densidad': 'Palta alta dens.', 'palta-ladera': 'Palta ladera' }
 // parámetros del generador de huertos (H2): [clave, etiqueta, paso, mínimo, máximo, entero]
 const HUERTO = [
   ['hileras', 'Hileras', 1, 2, 200, true],
@@ -82,6 +82,7 @@ const HUERTO = [
   ['altura', 'Altura del árbol (m)', 0.5, 0.5, 12],
   ['cargaArbol', 'Carga por árbol (kg)', 1, 0, 500],
   ['cabecera', 'Ancho de cabecera (m)', 0.5, 3, 20],
+  ['pendiente', 'Pendiente a lo largo de las hileras (%)', 1, 0, 60],
 ]
 const PERIODS = [
   [1, 'Suelo'],
@@ -130,6 +131,8 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
           })}
           {' · '}
           {libre >= ROBOT_ANCHO + HOLGURA_CALLE ? t('el robot entra a las calles') : t('el robot no cabe en las calles: recorre la cabecera')}
+          {hp.pendiente > 0 &&
+            ` · ${t('pendiente {p} %, acopio {d}', { p: fmtNum(hp.pendiente, { maximumFractionDigits: 1 }), d: hp.acopioEnCima ? t('en la cima') : t('al pie') })}`}
         </div>
       )}
       {params.profile !== 'matlab-2026' && (
@@ -209,6 +212,15 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
                   />
                 </label>
               ))}
+              <label>
+                <span>{t('Acopio en la cima del cerro')}</span>
+                <input
+                  type="checkbox"
+                  checked={hp.acopioEnCima}
+                  disabled={!hp.pendiente}
+                  onChange={(e) => setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, acopioEnCima: e.target.checked } }))}
+                />
+              </label>
               {2 * hp.radioCopa >= hp.calle && <div className="note warn">{t('Las copas de hileras vecinas se tocan: no queda calle para caminar.')}</div>}
             </>
           )}
