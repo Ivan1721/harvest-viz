@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { PROFILES, profileDefaults } from '../../hrsim/common.js'
 import { SISTEMAS } from '../../hrsim/huertos/index.js'
 import { HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
-import { ROBOTS } from '../../hrsim/robots.js'
+import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
 import { Field, Seg } from '../ui.jsx'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
@@ -72,7 +72,15 @@ const SSM = [
   ['vSlow', 'Velocidad lenta (m/s)', 0.05, 'ISO 3691-4: 0,3', 0.05],
   ['tResume', 'Tiempo libre para reanudar (s)', 0.25, 'Supuesto: 1,0', 0],
 ]
-const SHORT = { 'matlab-2026': 'Estudio', 'palta-tradicional': 'Palta trad.', 'palta-alta-densidad': 'Palta alta dens.', 'palta-ladera': 'Palta ladera' }
+const SHORT = {
+  'matlab-2026': 'Estudio',
+  'palta-tradicional': 'Palta trad.',
+  'palta-alta-densidad': 'Palta alta dens.',
+  'palta-ladera': 'Palta ladera',
+  'uva-parron': 'Uva parrón',
+  arandano: 'Arándano',
+  'cerezo-ufo': 'Cerezo UFO',
+}
 // parámetros del generador de huertos (H2): [clave, etiqueta, paso, mínimo, máximo, entero]
 const HUERTO = [
   ['hileras', 'Hileras', 1, 2, 200, true],
@@ -128,7 +136,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
             size="mini"
             value={params.robotTipo}
             onChange={(r) => {
-              setParams((p) => ({ ...p, robotTipo: r, capacityBoxes: ROBOTS[r].capacidad, energia: { ...ROBOTS[r].energia } }))
+              setParams((p) => ({ ...p, robotTipo: r, capacityBoxes: capacidadCajas(r, p.maxProd), energia: { ...ROBOTS[r].energia } }))
               onRun()
             }}
             options={Object.entries(ROBOTS).map(([k, v]) => [k, t(v.label), false, t(v.label)])}
@@ -137,7 +145,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
       )}
       {hp && (
         <div className="note" data-testid="huerto-info">
-          {t('{n} árboles · {w} × {h} m · calle libre {l} m', {
+          {t('{n} plantas · {w} × {h} m · calle libre {l} m', {
             n: hp.hileras * hp.arbolesPorHilera,
             w: fmtNum(hp.hileras * hp.calle, { maximumFractionDigits: 1 }),
             h: fmtNum(2 * hp.cabecera + hp.arbolesPorHilera * hp.sobreHilera, { maximumFractionDigits: 1 }),
@@ -147,7 +155,7 @@ export function SimPanel({ params, setParams, onRun, onCancel, busy, info, onExp
           {libre >= (ROBOTS[params.robotTipo]?.ancho ?? 1.38) + HOLGURA_CALLE
             ? t('el robot entra a las calles')
             : t('el robot no cabe en las calles: recorre la cabecera')}
-          {` · ${t('{n} cajas por viaje', { n: params.capacityBoxes })}`}
+          {` · ${t('{n} cajas de {k} kg por viaje', { n: params.capacityBoxes, k: fmtNum(params.maxProd, { maximumFractionDigits: 1 }) })}`}
           {params.robotTipo !== 'warthog' && hp.pendiente > 15 && ` · ${t('pendiente fuera de la ficha del Burro (15 %)')}`}
           {hp.pendiente > 0 &&
             ` · ${t('pendiente {p} %, acopio {d}', { p: fmtNum(hp.pendiente, { maximumFractionDigits: 1 }), d: hp.acopioEnCima ? t('en la cima') : t('al pie') })}`}

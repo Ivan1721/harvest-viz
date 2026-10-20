@@ -43,6 +43,18 @@ export function sceneGeometry(meta) {
       trees: h.arboles.map((a, i) => ({ x: a.x, y: a.y, seed: i + 1 })),
       R,
       H: h.arboles[0]?.altura,
+      forma: h.params?.forma || 'arbol',
+      // parrón: extensión del techo (los postes están en los centros de planta; el techo cubre medio marco alrededor)
+      techo:
+        h.params?.forma === 'parron'
+          ? {
+              x0: Math.min(...h.arboles.map((a) => a.x)) - h.params.calle / 2,
+              x1: Math.max(...h.arboles.map((a) => a.x)) + h.params.calle / 2,
+              y0: Math.min(...h.arboles.map((a) => a.y)) - h.params.sobreHilera / 2,
+              y1: Math.max(...h.arboles.map((a) => a.y)) + h.params.sobreHilera / 2,
+              z: h.params.altura,
+            }
+          : null,
       // ladera: el terreno es un plano inclinado a lo largo de las hileras (y); la escena entera se inclina ese ángulo
       tilt: h.terreno?.pendiente ? (h.terreno.acopioEnCima ? -1 : 1) * Math.atan(h.terreno.pendiente / 100) : 0,
       // hileras verticales (paralelas al eje y)

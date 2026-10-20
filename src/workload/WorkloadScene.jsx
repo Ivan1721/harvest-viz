@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrthographicCamera, OrbitControls, Line } from '@react-three/drei'
 import { TagLayer } from '../shared/TagLayer.jsx'
@@ -185,7 +185,8 @@ function RobotCarrier({ run, onSelect, selected }) {
   const ssm = run.meta?.params?.ssm?.enabled ? run.meta.params.ssm : null
   // huertos generados: el robot elegido (el modelo 3D es el Warthog escalado a sus medidas) y su capacidad real
   const spec = ROBOTS[run.meta?.params?.robotTipo] || null
-  const cap = (run.meta?.params?.capacityBoxes ?? 68) * 15
+  const unit = run.meta?.params?.maxProd ?? 15 // kg (o unidades) por caja del cultivo
+  const cap = (run.meta?.params?.capacityBoxes ?? 68) * unit
   const body = spec ? [spec.largo / ROBOT.L, spec.alto / ROBOT.H, spec.ancho / ROBOT.W] : [1, 1, 1]
   useFrame(() => {
     const smp = sampleAt(run.n, run.dt, play.t),
@@ -227,8 +228,8 @@ function RobotCarrier({ run, onSelect, selected }) {
       sh = shown.current,
       dts = play.t - sh.t
     if (dts < 0 || dts > 4) sh.v = target
-    else if (target > sh.v) sh.v = Math.min(target, sh.v + (15 / 3.6) * dts)
-    else sh.v = Math.max(target, sh.v - (15 / 1.44) * dts)
+    else if (target > sh.v) sh.v = Math.min(target, sh.v + (unit / 3.6) * dts)
+    else sh.v = Math.max(target, sh.v - (unit / 1.44) * dts)
     sh.t = play.t
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / cap))
     lab.current = `RB-01 · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap })}`
@@ -464,11 +465,41 @@ function CargoPile({ run, real, geom }) {
           size={real ? [0.6, 0.3, 0.4] : [0.44, 0.3, 0.38]}
           frame={(put) => {
             const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
-            const nBox = Math.min(PILE.length, Math.round(run.series.cargo[i] / 15))
+            const nBox = Math.min(PILE.length, Math.round(run.series.cargo[i] / (run.meta?.params?.maxProd ?? 15)))
             for (let k = 0; k < nBox; k++) put(...PILE[k])
           }}
         />
       </group>
+    </group>
+  )
+}
+
+// Parrón (uva de mesa): postes en cada planta y un techo verde semitransparente a la altura del parrón; la opacidad
+// sigue al control de transparencia del follaje para ver a cosecheros y robot debajo
+function Parron({ trees, techo }) {
+  const posts = useRef(),
+    roof = useRef()
+  useLayoutEffect(() => {
+    const m = new THREE.Matrix4()
+    trees.forEach((t, k) => posts.current.setMatrixAt(k, m.makeTranslation(t.x, techo.z / 2, t.z)))
+    posts.current.instanceMatrix.needsUpdate = true
+    posts.current.computeBoundingSphere()
+  }, [trees, techo])
+  useFrame(() => {
+    const o = play.canopy ? Math.min(0.85, play.canopy.v) : 0.5
+    if (roof.current && roof.current.material.opacity !== o) roof.current.material.opacity = o
+  })
+  const [cx, , cz] = toW((techo.x0 + techo.x1) / 2, (techo.y0 + techo.y1) / 2)
+  return (
+    <group>
+      <instancedMesh ref={posts} args={[null, null, trees.length]} castShadow>
+        <cylinderGeometry args={[0.06, 0.08, techo.z, 6]} />
+        <meshStandardMaterial color="#6b5540" roughness={1} />
+      </instancedMesh>
+      <mesh ref={roof} rotation={[-Math.PI / 2, 0, 0]} position={[cx, techo.z + 0.05, cz]}>
+        <planeGeometry args={[techo.x1 - techo.x0, techo.y1 - techo.y0]} />
+        <meshStandardMaterial color="#5f9a4a" transparent opacity={0.5} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
     </group>
   )
 }
@@ -508,7 +539,7 @@ function Ground({ run, real, geom }) {
           </mesh>
         </>
       )}
-      <Orchard trees={trees} R={geom.R} H={geom.H} real={real} canopy={play.canopy} />
+      {geom.forma === 'parron' ? <Parron trees={trees} techo={geom.techo} /> : <Orchard trees={trees} R={geom.R} H={geom.H} real={real} canopy={play.canopy} />}
       {run.robot && <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />}
     </group>
   )

@@ -1,7 +1,7 @@
 // Sistemas de huerto: el motor recibe el huerto como dato (ver docs/simulador.md, «Sistemas de huerto»).
 import { huertoMatlab2026 } from './matlab2026.js'
 import { ROBOTS } from '../robots.js'
-import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, PALTA_LADERA } from './rectangular.js'
+import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, PALTA_LADERA, UVA_PARRON, ARANDANO, CEREZO_UFO } from './rectangular.js'
 
 /**
  * @typedef {object} Huerto
@@ -46,6 +46,26 @@ export const SISTEMAS = {
     // mismo ritmo de cosecha que en plano: la ladera solo cambia la marcha (Tobler) y su gasto (Pandolf)
     params: { prodPeriod: { 1: 14, 2: 14, 3: 18 }, fixRecallLoop: true },
     build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-ladera', robotAncho: anchoRobot(p) }),
+  },
+  // H5: el ritmo de cosecha (s por kg, igual para todas las actividades: no hay escalera) está calibrado a la fuente de
+  // cada cultivo; maxProd = kg de la caja o bandeja que el cosechero llena y entrega (ver docs/simulador.md)
+  'uva-parron': {
+    label: 'Uva de mesa en parrón (3,5 × 3,5 m)',
+    generador: UVA_PARRON,
+    params: { prodPeriod: { 1: 90, 2: 90, 3: 90 }, maxProd: 9, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'uva-parron', robotAncho: anchoRobot(p) }),
+  },
+  arandano: {
+    label: 'Arándano (3 × 1 m)',
+    generador: ARANDANO,
+    params: { prodPeriod: { 1: 340, 2: 340, 3: 340 }, maxProd: 2, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'arandano', robotAncho: anchoRobot(p) }),
+  },
+  'cerezo-ufo': {
+    label: 'Cerezo peatonal UFO (3,2 × 1,8 m)',
+    generador: CEREZO_UFO,
+    params: { prodPeriod: { 1: 63, 2: 63, 3: 63 }, maxProd: 5, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'cerezo-ufo', robotAncho: anchoRobot(p) }),
   },
 }
 
