@@ -18,7 +18,7 @@ export const ROBOTS = Object.freeze({
     largo: 1.52,
     alto: 0.83,
     masa: 280,
-    capacidad: 18, // cajas de 15 kg (carga útil 272 kg)
+    cargaKg: 272, // carga útil (18 cajas de 15 kg)
     vMax: 5, // 18 km/h
     energia: { ...ENERGIA_BASE, paux: 60, bateriaWh: 2400 }, // 48 V · 100 Ah AGM, 50 % utilizable (supuesto)
     carro: null,
@@ -29,7 +29,7 @@ export const ROBOTS = Object.freeze({
     largo: 1.39,
     alto: 0.72,
     masa: 146,
-    capacidad: 15, // carga útil 226 kg
+    cargaKg: 226, // carga útil (15 cajas de 15 kg)
     vMax: 2,
     energia: { ...ENERGIA_BASE, paux: 30, bateriaWh: 2400 }, // 24 V · 100 Ah LiFePO4
     carro: null,
@@ -40,13 +40,16 @@ export const ROBOTS = Object.freeze({
     largo: 1.39,
     alto: 0.72,
     masa: 146,
-    capacidad: 26, // la fruta va en el carro: ≈ 390 kg (453 kg remolcados en total)
+    cargaKg: 390, // la fruta va en el carro (453 kg remolcados en total con sus 60 kg; 26 cajas de 15 kg)
     vMax: 2,
     energia: { ...ENERGIA_BASE, paux: 30, bateriaWh: 2400 },
     // carro de arrastre continuo (supuestos): 60 kg vacío, sin freno propio; L = barra + medio carro desde el enganche
     carro: { masa: 60, largo: 1.2, ancho: 0.92, L: 1.5 },
   },
 })
+
+/** Capacidad en cajas o bandejas del cultivo: la carga útil en kg dividida por los kg de cada unidad de cosecha. */
+export const capacidadCajas = (robotTipo, kgPorCaja) => Math.max(1, Math.floor((ROBOTS[robotTipo] || ROBOTS.warthog).cargaKg / kgPorCaja + 1e-9))
 
 /**
  * Potencia que sale de la batería [W]:

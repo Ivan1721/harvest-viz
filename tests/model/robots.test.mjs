@@ -52,7 +52,7 @@ for (const robotTipo of Object.keys(ROBOTS))
   test(`${robotTipo} en alta densidad: energía creciente, nunca más carga que su capacidad, el carro no roza copas`, () => {
     const s = new HRSim({ huerto: 'palta-alta-densidad', nw: 12, act: 'mixed', duration: 1800, robotTipo }, FIS).run()
     const r = s.rec,
-      cap = ROBOTS[robotTipo].capacidad * 15
+      cap = ROBOTS[robotTipo].cargaKg
     for (let i = 1; i < r.t.length; i++) assert.ok(r.energy[i] >= r.energy[i - 1])
     assert.ok(Math.max(...r.onboard) <= cap)
     const sm = s.summary()

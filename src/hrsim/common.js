@@ -91,7 +91,7 @@ export function resolveParams(opts = {}, extra = {}) {
     // robot (solo en huertos generados): su capacidad real y su modelo de energía, salvo que se indiquen
     p.robotTipo = opts.robotTipo ?? 'warthog'
     const rb = ROBOTS[p.robotTipo]
-    if (rb && opts.capacityBoxes === undefined) p.capacityBoxes = rb.capacidad
+    if (rb && opts.capacityBoxes === undefined) p.capacityBoxes = capacidadCajas(p.robotTipo, p.maxProd) // capacidad en kg → cajas del cultivo
     if (rb) p.energia = { ...rb.energia, ...(opts.energia || {}) }
   } else {
     delete p.huertoParams
@@ -168,7 +168,7 @@ export const profileDefaults = (profile, huerto = DEFAULTS.huerto, robotTipo = '
   if (sis.generador) {
     d.huertoParams = { ...sis.generador }
     d.robotTipo = robotTipo
-    d.capacityBoxes = ROBOTS[robotTipo].capacidad
+    d.capacityBoxes = capacidadCajas(robotTipo, d.maxProd)
     d.energia = { ...ROBOTS[robotTipo].energia }
   }
   if (d.ssm) d.ssm = { ...SSM_DEFAULTS, enabled: false, ...d.ssm }
@@ -225,7 +225,7 @@ export { R3, TREE_X, TREES_ALL, OFFS_RP0, OFFS_RP1 } from './huertos/matlab2026.
 import { SSM_DEFAULTS } from './ssm.js'
 import { SISTEMAS, buildHuerto } from './huertos/index.js'
 import { validarRectangular } from './huertos/rectangular.js'
-import { ROBOTS } from './robots.js'
+import { ROBOTS, capacidadCajas } from './robots.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

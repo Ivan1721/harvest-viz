@@ -60,6 +60,8 @@ En ladera (H4), siempre como factor sobre el valor en plano (`huertos/pendiente.
 
 Resultados de referencia (12 cosecheros, mixta, 45 min, acopio al pie): sin robot la ladera de 20 % baja la cosecha de 1.360 a 1.200 kg y sube el gasto de 1,60 a 2,19 kcal/kg; con robot se cosechan 1.672 kg a 1,40 kcal/kg (+39 % sobre sin robot). Con el acopio en la cima, sin robot el gasto sube a 2,55 kcal/kg (las cajas se suben) y el robot lo deja en 1,29.
 
+Cultivos de H5 (especificación «H5: uva de mesa, arándano y cerezo»): sin escalera; la unidad de cosecha (`maxProd`, kg por caja o bandeja) y el ritmo son del cultivo, calibrados sin robot con una cuadrilla mixta de 12: uva 39 kg/h cosechando (supuesto de 40 kg/h, sin fuente publicada), arándano 62 kg por persona en 8 h (promedio de 60 kg, Redagrícola), cerezo 47 kg/h cosechando (47–56 kg/h en UFO, Ampatzidis y Whiting 2013). La capacidad del robot se cuenta en kg (272 / 226 / 390 kg): con bandejas de 2 kg el Warthog lleva 136. En el visor, el parrón se dibuja con postes y un techo semitransparente.
+
 Simplificaciones de H2: la caja siempre va a la cabecera inferior (la del acopio; en 45 min los cosecheros no pasan del tercer árbol); la capacidad del robot sigue en 68 cajas; terreno plano. Alta densidad (H3), ladera (H4) y otras frutas (H5) usan el mismo generador.
 
 ## Robots y energía (huertos generados)

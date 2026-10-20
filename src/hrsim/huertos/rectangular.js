@@ -22,6 +22,7 @@ export const PALTA_TRADICIONAL = Object.freeze({
   escalera: true, // árboles altos: parte de la cuadrilla cosecha con escalera
   pendiente: 0, // % a lo largo de las hileras (camellones a favor de la pendiente)
   acopioEnCima: false, // el acopio está al pie del cerro (false) o en la cima (true)
+  forma: 'arbol', // cómo se dibuja la planta: árbol, arbusto (hilera continua), plano (cerezo peatonal) o parrón
 })
 
 /** Palta alta densidad (H3): marco 4 × 2 m, árboles bajos (≤ 2 m) cosechados desde el suelo; el Warthog entra justo. */
@@ -39,6 +40,48 @@ export const PALTA_ALTA_DENSIDAD = Object.freeze({
   acopioEnCima: false,
 })
 
+// H5: otros cultivos (especificación «H5: uva de mesa, arándano y cerezo»). Mismo generador; cambian la planta,
+// el marco y la carga. La unidad de cosecha (kg por caja) y el ritmo van en los parámetros del sistema (huertos/index.js).
+
+/** Uva de mesa en parrón español: techo a 2 m sobre postes (la «copa» es el poste); se camina bajo el techo. */
+export const UVA_PARRON = Object.freeze({
+  ...PALTA_ALTA_DENSIDAD,
+  calle: 3.5,
+  sobreHilera: 3.5,
+  hileras: 28,
+  arbolesPorHilera: 27,
+  altura: 2,
+  radioCopa: 0.3,
+  cargaArbol: 30, // 24,6 t/ha (3.000 cajas de 8,2 kg) ÷ 816 plantas
+  forma: 'parron',
+})
+
+/** Arándano: arbustos en hilera continua, marco 3 × 1 m. */
+export const ARANDANO = Object.freeze({
+  ...PALTA_ALTA_DENSIDAD,
+  calle: 3,
+  sobreHilera: 1,
+  hileras: 33,
+  arbolesPorHilera: 95,
+  altura: 1.8,
+  radioCopa: 0.6,
+  cargaArbol: 4.8, // 16 t/ha ÷ 3.333 plantas
+  forma: 'arbusto',
+})
+
+/** Cerezo peatonal UFO: plano de fruta de 1 m de ancho, marco 3,2 × 1,8 m, sin escalera. */
+export const CEREZO_UFO = Object.freeze({
+  ...PALTA_ALTA_DENSIDAD,
+  calle: 3.2,
+  sobreHilera: 1.8,
+  hileras: 31,
+  arbolesPorHilera: 52,
+  altura: 2.5,
+  radioCopa: 0.5,
+  cargaArbol: 7.3, // 12,7 t/ha ÷ 1.736 plantas
+  forma: 'plano',
+})
+
 /** Palta en ladera (H4): como la alta densidad, en una pendiente de 20 % (rango usual 15–30 %). */
 export const PALTA_LADERA = Object.freeze({ ...PALTA_ALTA_DENSIDAD, pendiente: 20 })
 
@@ -50,6 +93,7 @@ export function validarRectangular(g) {
   for (const k of ['calle', 'sobreHilera', 'altura', 'radioCopa', 'cabecera']) if (!(Number.isFinite(g[k]) && g[k] > 0)) bad(`${k} debe ser > 0`)
   if (!(Number.isFinite(g.cargaArbol) && g.cargaArbol >= 0)) bad('cargaArbol debe ser ≥ 0')
   if (typeof g.escalera !== 'boolean') bad('escalera debe ser true o false')
+  if (g.forma !== undefined && !['arbol', 'arbusto', 'plano', 'parron'].includes(g.forma)) bad('forma debe ser arbol, arbusto, plano o parron')
   if (!(Number.isFinite(g.pendiente) && g.pendiente >= 0 && g.pendiente <= 60)) bad('pendiente debe estar entre 0 y 60 %')
   if (typeof g.acopioEnCima !== 'boolean') bad('acopioEnCima debe ser true o false')
   for (const k of ['hileras', 'arbolesPorHilera']) if (!(Number.isInteger(g[k]) && g[k] >= 2 && g[k] <= 200)) bad(`${k} debe ser un entero entre 2 y 200`)
