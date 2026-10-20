@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.3.0'
+export const ENGINE_VERSION = '0.4.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -98,6 +98,14 @@ export function resolveParams(opts = {}, extra = {}) {
     delete p.robotTipo
     delete p.energia
   }
+  // variabilidad entre cosecheros (H6): solo con semilla; sin ella todo es determinista y el hash no cambia
+  if (opts.semilla != null) {
+    p.semilla = opts.semilla
+    p.variacionRitmo = opts.variacionRitmo ?? 0.1
+  } else {
+    delete p.semilla
+    delete p.variacionRitmo
+  }
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -119,6 +127,10 @@ export function resolveParams(opts = {}, extra = {}) {
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
   for (const [k, v] of Object.entries(p.costs)) if (!(Number.isFinite(v) && v >= 0)) bad(`costs.${k} debe ser un número ≥ 0`)
   for (const k of ['walkSpeed', 'maxProd', 'capacityBoxes', 'maxBoxStopsPerLap']) if (!(p[k] > 0)) bad(`${k} debe ser > 0`)
+  if (p.semilla != null) {
+    if (!(Number.isInteger(p.semilla) && p.semilla >= 0)) bad(`semilla debe ser un entero ≥ 0 (es ${p.semilla})`)
+    if (!(p.variacionRitmo >= 0 && p.variacionRitmo < 1)) bad(`variacionRitmo debe estar entre 0 y 1 (es ${p.variacionRitmo})`)
+  }
   if (p.ssm) {
     for (const k of ['vh', 'a', 'vSlow']) if (!(Number.isFinite(p.ssm[k]) && p.ssm[k] > 0)) bad(`ssm.${k} debe ser > 0`)
     for (const k of ['Tr', 'C', 'Zd', 'Zr', 'warn', 'tResume']) if (!(Number.isFinite(p.ssm[k]) && p.ssm[k] >= 0)) bad(`ssm.${k} debe ser ≥ 0`)
@@ -291,8 +303,12 @@ export function initWorkers(p, huerto = buildHuerto(p)) {
       }
   const tInc = { 1: Math.round(p.prodPeriod[1] / p.dt), 2: Math.round(p.prodPeriod[2] / p.dt), 3: Math.round(p.prodPeriod[3] / p.dt) }
   const costH = { 1: C.harvestGround, 2: C.harvestLadder, 3: C.harvestPicker }
+  // con semilla (H6): cada cosechero tiene su ritmo, periodo × U(1 − v, 1 + v). El periodo deja de ser un número entero
+  // de ticks y el contador conserva el resto, así el ritmo medio es exacto. Mismo sorteo en HO y HR (corridas pareadas).
+  const rng = p.semilla != null ? mulberry32(p.semilla) : null
   const W = []
   for (let h = 0; h < NH; h++) {
+    const ritmo = rng ? 1 + p.variacionRitmo * (2 * rng() - 1) : 1
     const { tree, start } = huerto.puestos[h]
     const [x, y] = start
     W.push({
@@ -305,7 +321,8 @@ export function initWorkers(p, huerto = buildHuerto(p)) {
       last: 0,
       cont: 0,
       work: 0,
-      tInc: tInc[type[h]],
+      tInc: rng ? (p.prodPeriod[type[h]] / p.dt) * ritmo : tInc[type[h]],
+      ritmo,
       cost: costH[type[h]],
       ladder: ladder[h],
       ladderCount: 0,
@@ -324,6 +341,18 @@ export function initWorkers(p, huerto = buildHuerto(p)) {
     })
   }
   return { W, C, type, ladder }
+}
+
+/** Generador pseudoaleatorio pequeño y reproducible (mulberry32): misma semilla, misma secuencia en cualquier equipo. */
+export function mulberry32(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
 }
 
 export function assignActivities(NH, act) {

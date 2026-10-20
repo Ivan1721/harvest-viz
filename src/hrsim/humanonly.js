@@ -80,7 +80,7 @@ export class HOSim {
           const inc = Math.min(p.costProduction * dt, p.maxProd - w.prod)
           w.prod = this.cosecha ? w.prod + this.cosecha.take(w, inc) : Math.min(w.prod + p.costProduction * dt, p.maxProd)
           w.last = w.prod
-          w.cont = 0
+          w.cont = p.semilla == null ? 0 : w.cont - w.tInc // con semilla el periodo no es entero: se guarda el resto
         } else w.prod = w.last
         w.work += w.cost * dt
         w.flag = 1

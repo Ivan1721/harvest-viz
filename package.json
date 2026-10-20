@@ -1,7 +1,7 @@
 {
   "name": "harvest-viz",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Visor 3D y simulador de cosecha colaborativa humano-robot (réplica JS de HumanRobot_Sim/HumanOnly_Sim)",
   "repository": {
@@ -29,6 +29,7 @@
     "test:mutation": "stryker run",
     "bench": "node scripts/bench.mjs",
     "sensitivity": "node scripts/sensitivity.mjs",
+    "experimentos": "node scripts/experimentos.mjs",
     "bench:visual": "node scripts/bench-visual.mjs",
     "export:video": "node scripts/export-video.mjs",
     "test:mutation:engine": "stryker run stryker.engine.config.json"

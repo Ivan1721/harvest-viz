@@ -247,7 +247,7 @@ export class HRSim {
           // el excedente; con fruta finita eso rompería la conservación)
           w.prod = prevProd + (this.cosecha ? this.cosecha.take(w, Math.max(0, Math.min(p.costProduction * dt, maxProd - prevProd))) : p.costProduction * dt)
           w.last = w.prod
-          w.cont = 0
+          w.cont = p.semilla == null ? 0 : w.cont - w.tInc // con semilla el periodo no es entero: se guarda el resto
         } else w.prod = w.last
         if (prevProd >= maxProd) {
           w.prod = maxProd

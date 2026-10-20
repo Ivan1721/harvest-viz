@@ -45,6 +45,7 @@ Limitaciones de la etapa A: posiciones reconstruidas (distancias aproximadas); e
     npm run test:coverage # cobertura con umbral
     npm run bench         # rendimiento vs bench/baseline.json
     npm run sensitivity   # elasticidades de los parámetros
+    npm run experimentos -- experimentos/h6.json   # experimentos en lote (H6), en paralelo y con caché
     npm run lint          # ESLint
     npm run format        # Prettier
     npm run build         # sitio estático en dist/
