@@ -7,6 +7,7 @@ import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
 import { Analysis } from './panels/Analysis.jsx'
+import { ModelTab } from './panels/ModelTab.jsx'
 import { ConfigPanel } from './panels/ConfigPanel.jsx'
 import { DataPanel } from './panels/DataPanel.jsx'
 import { DEFAULTS_SIM } from './panels/SimPanel.jsx'
@@ -440,6 +441,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
             ['resumen', t('Resumen')],
             ['trab', t('Trabajadores')],
             ['hri', t('Interacción')],
+            ['modelo', t('Modelo')],
             ...(source === 'data' ? [['valid', t('Validación')]] : []),
             ['datos', t('Datos')],
           ]}
@@ -475,6 +477,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
             ) : (
               <div className="note">{t('Simulando la misma configuración con los parámetros de MATLAB…')}</div>
             ))}
+          {tab === 'modelo' && <ModelTab ho={ho} hr={hr} t={snap.t} sel={snap.sel} select={select} />}
           {tab === 'datos' && <DataPanel ho={ho} hr={hr} />}
         </div>
       </aside>

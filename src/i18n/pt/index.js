@@ -4,5 +4,6 @@ import occlusion from './occlusion.js'
 import workload from './workload.js'
 import analysis from './analysis.js'
 import steps from './steps.js'
+import modelo from './modelo.js'
 
-export default { ...app, ...occlusion, ...workload, ...analysis, ...steps }
+export default { ...app, ...occlusion, ...workload, ...analysis, ...steps, ...modelo }
