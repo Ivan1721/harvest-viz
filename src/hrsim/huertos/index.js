@@ -1,5 +1,6 @@
 // Sistemas de huerto: el motor recibe el huerto como dato (ver docs/simulador.md, «Sistemas de huerto»).
 import { huertoMatlab2026 } from './matlab2026.js'
+import { ROBOTS } from '../robots.js'
 import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, PALTA_LADERA } from './rectangular.js'
 
 /**
@@ -19,7 +20,9 @@ import { generarRectangular, PALTA_TRADICIONAL, PALTA_ALTA_DENSIDAD, PALTA_LADER
 
 /**
  * Sistemas disponibles. Los generados tienen `generador` (valores de partida de huertoParams) y `params`
- * (parámetros del cultivo que reemplazan a DEFAULTS: DEFAULTS → perfil → sistema → opciones).
+ * (parámetros del cultivo que reemplazan a DEFAULTS: DEFAULTS → perfil → sistema → opciones). Los generados corrigen
+ * el bucle de llamada de MATLAB (fixRecallLoop): con la capacidad real del robot, un trabajador llamado por un robot
+ * lleno quedaría girando a su lado.
  */
 export const SISTEMAS = {
   'matlab-2026': { label: 'MATLAB 2026 (mapa del estudio)', build: huertoMatlab2026 },
@@ -27,24 +30,27 @@ export const SISTEMAS = {
     label: 'Palta tradicional (6 × 6 m, 1 ha)',
     generador: PALTA_TRADICIONAL,
     // 1 unidad = 1 kg; caja de 15 kg. Ritmo calibrado a 320–420 kg por cosechero en 8 h (ver docs/simulador.md)
-    params: { prodPeriod: { 1: 60, 2: 90, 3: 75 } },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-tradicional' }),
+    params: { prodPeriod: { 1: 60, 2: 90, 3: 75 }, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-tradicional', robotAncho: anchoRobot(p) }),
   },
   'palta-alta-densidad': {
     label: 'Palta alta densidad (4 × 2 m, 1 ha)',
     generador: PALTA_ALTA_DENSIDAD,
     // sin escalera; ritmo calibrado a 1.000–1.600 kg por cosechero en 8 h (ver docs/simulador.md)
-    params: { prodPeriod: { 1: 14, 2: 14, 3: 18 } },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-alta-densidad' }),
+    params: { prodPeriod: { 1: 14, 2: 14, 3: 18 }, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-alta-densidad', robotAncho: anchoRobot(p) }),
   },
   'palta-ladera': {
     label: 'Palta en ladera (4 × 2 m, 20 %)',
     generador: PALTA_LADERA,
     // mismo ritmo de cosecha que en plano: la ladera solo cambia la marcha (Tobler) y su gasto (Pandolf)
-    params: { prodPeriod: { 1: 14, 2: 14, 3: 18 } },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-ladera' }),
+    params: { prodPeriod: { 1: 14, 2: 14, 3: 18 }, fixRecallLoop: true },
+    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-ladera', robotAncho: anchoRobot(p) }),
   },
 }
+
+// el robot elegido define si entra a las calles (su ancho)
+const anchoRobot = (p) => (ROBOTS[p.robotTipo] || ROBOTS.warthog).ancho
 
 /** Huerto de una simulación a partir de sus parámetros resueltos. */
 export function buildHuerto(p) {

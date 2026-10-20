@@ -156,6 +156,7 @@ const ROBOT_TIME = [
   ['stop', 'Descargando o cargando', '#94a3b8'],
   ['safety', 'Parada de seguridad', '#dc2626'],
   ['slow', 'Velocidad reducida por seguridad', '#8b5cf6'],
+  ['traction', 'Sin tracción (pendiente o carga)', '#7c2d12'],
 ]
 
 // exposición por zona de Hall, total del equipo, separada en robot en movimiento / detenido
@@ -221,6 +222,32 @@ function Fluency({ a, run, seek, select }) {
             <span>{t('Detenido')}</span>
             <b>{pc(rt.stopped)}</b>
           </div>
+        </>
+      )}
+      {f.energia && (
+        <>
+          <div className="muted small" style={{ marginTop: 8 }}>
+            {t('Energía del robot ({r})', { r: f.energia.robot ?? '' })}
+          </div>
+          <div className="row">
+            <span>{t('Energía usada · por kg entregado')}</span>
+            <b>
+              {fmtNum(f.energia.wh, { maximumFractionDigits: 0 })} Wh ·{' '}
+              {f.energia.whPorKg == null ? '—' : `${fmtNum(f.energia.whPorKg, { maximumFractionDigits: 2 })} Wh/kg`}
+            </b>
+          </div>
+          <div className="row">
+            <span>{t('Batería restante · descargas en el acopio')}</span>
+            <b>
+              {f.energia.bateriaPct == null ? '—' : `${fmtNum(f.energia.bateriaPct, { maximumFractionDigits: 0 })} %`} · {f.energia.descargas}
+            </b>
+          </div>
+          {f.energia.traccion_s > 0 && (
+            <div className="row">
+              <span>{t('Sin tracción suficiente (no sube)')}</span>
+              <b className="warn">{fmtNum(f.energia.traccion_s, { maximumFractionDigits: 0 })} s</b>
+            </div>
+          )}
         </>
       )}
       <div className="muted small" style={{ marginTop: 8 }}>

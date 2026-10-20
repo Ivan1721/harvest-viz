@@ -66,6 +66,12 @@ export const FLUENCY_COLS = [
   'HR_eventos_Sp',
   'HR_dist_min_m',
   'HR_dist_p5_mov_m',
+  'HR_robot',
+  'HR_energia_Wh',
+  'HR_Wh_por_kg',
+  'HR_bateria_pct',
+  'HR_descargas',
+  'HR_traccion_s',
 ]
 INDEX_HEAD.push(...FLUENCY_COLS)
 

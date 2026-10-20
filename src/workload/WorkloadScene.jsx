@@ -5,6 +5,7 @@ import { TagLayer } from '../shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { MAP, toW, setMap } from './spec.js'
 import { sceneGeometry } from './geometry.js'
+import { ROBOTS } from '../hrsim/robots.js'
 import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
 import { protectionDistance } from '../hrsim/ssm.js'
@@ -182,6 +183,10 @@ function RobotCarrier({ run, onSelect, selected }) {
   const prot = useRef(),
     warn = useRef()
   const ssm = run.meta?.params?.ssm?.enabled ? run.meta.params.ssm : null
+  // huertos generados: el robot elegido (el modelo 3D es el Warthog escalado a sus medidas) y su capacidad real
+  const spec = ROBOTS[run.meta?.params?.robotTipo] || null
+  const cap = (run.meta?.params?.capacityBoxes ?? 68) * 15
+  const body = spec ? [spec.largo / ROBOT.L, spec.alto / ROBOT.H, spec.ancho / ROBOT.W] : [1, 1, 1]
   useFrame(() => {
     const smp = sampleAt(run.n, run.dt, play.t),
       i = smp.i
@@ -225,8 +230,8 @@ function RobotCarrier({ run, onSelect, selected }) {
     else if (target > sh.v) sh.v = Math.min(target, sh.v + (15 / 3.6) * dts)
     else sh.v = Math.max(target, sh.v - (15 / 1.44) * dts)
     sh.t = play.t
-    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / ROBOT.capacity))
-    lab.current = `RB-01 · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap: ROBOT.capacity })}`
+    if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / cap))
+    lab.current = `RB-01 · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap })}`
   })
   return (
     <group
@@ -270,50 +275,52 @@ function RobotCarrier({ run, onSelect, selected }) {
         <circleGeometry args={[1.5, 24, -Math.PI / 2, Math.PI]} />
         <meshBasicMaterial color="#2f6bff" transparent opacity={0.1} depthWrite={false} />
       </mesh>
-      {/* chasis entre las ruedas: de la holgura (0,254 m) a la altura total (0,83 m) */}
-      <mesh position={[0, (ROBOT.clear + ROBOT.H) / 2, 0]} castShadow>
-        <boxGeometry args={[ROBOT.L - 0.2, ROBOT.H - ROBOT.clear, ROBOT.W - 2 * ROBOT.tireW - 0.04]} />
-        <meshStandardMaterial color="#f4f6fb" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, ROBOT.H + 0.02, 0]}>
-        <boxGeometry args={[ROBOT.L - 0.16, 0.04, ROBOT.W - 2 * ROBOT.tireW + 0.1]} />
-        <meshStandardMaterial color="#2f6bff" />
-      </mesh>
-      {[
-        [WX, WZ],
-        [WX, -WZ],
-        [-WX, WZ],
-        [-WX, -WZ],
-      ].map(([x, z], i) => (
-        <group key={i} position={[x, ROBOT.r, z]}>
-          {/* eje del cilindro (y local) alineado con z del vehículo; la rodadura gira sobre ese eje */}
-          <group rotation={[Math.PI / 2, 0, 0]}>
-            <group ref={(m) => (wheels.current[i] = m)}>
-              <mesh>
-                <cylinderGeometry args={[ROBOT.r, ROBOT.r, ROBOT.tireW, 24]} />
-                <meshStandardMaterial color="#2b3447" roughness={0.9} />
-              </mesh>
-              {[ROBOT.tireW / 2 + 0.005, -ROBOT.tireW / 2 - 0.005].map((y) => (
-                <mesh key={y} position={[0.17, y, 0]}>
-                  <boxGeometry args={[0.18, 0.02, 0.07]} />
-                  <meshStandardMaterial color="#9aa6bf" />
+      <group scale={body}>
+        {/* chasis entre las ruedas: de la holgura (0,254 m) a la altura total (0,83 m) */}
+        <mesh position={[0, (ROBOT.clear + ROBOT.H) / 2, 0]} castShadow>
+          <boxGeometry args={[ROBOT.L - 0.2, ROBOT.H - ROBOT.clear, ROBOT.W - 2 * ROBOT.tireW - 0.04]} />
+          <meshStandardMaterial color="#f4f6fb" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, ROBOT.H + 0.02, 0]}>
+          <boxGeometry args={[ROBOT.L - 0.16, 0.04, ROBOT.W - 2 * ROBOT.tireW + 0.1]} />
+          <meshStandardMaterial color="#2f6bff" />
+        </mesh>
+        {[
+          [WX, WZ],
+          [WX, -WZ],
+          [-WX, WZ],
+          [-WX, -WZ],
+        ].map(([x, z], i) => (
+          <group key={i} position={[x, ROBOT.r, z]}>
+            {/* eje del cilindro (y local) alineado con z del vehículo; la rodadura gira sobre ese eje */}
+            <group rotation={[Math.PI / 2, 0, 0]}>
+              <group ref={(m) => (wheels.current[i] = m)}>
+                <mesh>
+                  <cylinderGeometry args={[ROBOT.r, ROBOT.r, ROBOT.tireW, 24]} />
+                  <meshStandardMaterial color="#2b3447" roughness={0.9} />
                 </mesh>
-              ))}
+                {[ROBOT.tireW / 2 + 0.005, -ROBOT.tireW / 2 - 0.005].map((y) => (
+                  <mesh key={y} position={[0.17, y, 0]}>
+                    <boxGeometry args={[0.18, 0.02, 0.07]} />
+                    <meshStandardMaterial color="#9aa6bf" />
+                  </mesh>
+                ))}
+              </group>
             </group>
           </group>
+        ))}
+        {/* carga a bordo: crece sobre la cubierta hasta la capacidad (68 cajas = 1020 u) */}
+        <group ref={load} position={[0, ROBOT.H + 0.04, 0]} scale={[1, 0.001, 1]}>
+          <mesh position={[0, 0.25, 0]}>
+            <boxGeometry args={[0.9, 0.5, 0.75]} />
+            <meshStandardMaterial color="#c8a36a" />
+          </mesh>
         </group>
-      ))}
-      {/* carga a bordo: crece sobre la cubierta hasta la capacidad (68 cajas = 1020 u) */}
-      <group ref={load} position={[0, ROBOT.H + 0.04, 0]} scale={[1, 0.001, 1]}>
-        <mesh position={[0, 0.25, 0]}>
-          <boxGeometry args={[0.9, 0.5, 0.75]} />
-          <meshStandardMaterial color="#c8a36a" />
+        <mesh position={[0.55, ROBOT.H + 0.3, 0.3]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.5, 10]} />
+          <meshStandardMaterial color="#2b3447" />
         </mesh>
       </group>
-      <mesh position={[0.55, ROBOT.H + 0.3, 0.3]}>
-        <cylinderGeometry args={[0.025, 0.025, 0.5, 10]} />
-        <meshStandardMaterial color="#2b3447" />
-      </mesh>
       <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current, videoAccent: true, tagColor: '#2f6bff' }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
@@ -321,6 +328,38 @@ function RobotCarrier({ run, onSelect, selected }) {
           <meshBasicMaterial color="#2f6bff" />
         </mesh>
       )}
+    </group>
+  )
+}
+
+// Carro del robot de arrastre: sigue la pose registrada por el motor (remolque con enganche en el eje)
+function Trailer({ run }) {
+  const g = useRef()
+  const cr = ROBOTS[run.meta.params.robotTipo]?.carro || { largo: 1.2, ancho: 0.92 }
+  useFrame(() => {
+    const T = run.robot.trailer,
+      i = Math.min(run.n - 1, Math.max(0, Math.floor(play.t / run.dt)))
+    const [px, , pz] = toW(T.x[i], T.y[i])
+    g.current.position.set(px, 0, pz)
+    g.current.rotation.y = T.th[i]
+  })
+  return (
+    <group ref={g}>
+      <mesh position={[0, 0.45, 0]} castShadow>
+        <boxGeometry args={[cr.largo, 0.35, cr.ancho]} />
+        <meshStandardMaterial color="#9a7b4f" roughness={0.9} />
+      </mesh>
+      {[-1, 1].map((sd) => (
+        <mesh key={sd} position={[0, 0.2, (sd * cr.ancho) / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
+          <meshStandardMaterial color="#2b3447" />
+        </mesh>
+      ))}
+      {/* barra de tiro hacia el enganche */}
+      <mesh position={[cr.largo / 2 + 0.45, 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.9, 6]} />
+        <meshStandardMaterial color="#2b3447" />
+      </mesh>
     </group>
   )
 }
@@ -527,6 +566,7 @@ function World({ run, selected, onSelect, version, look, geom }) {
           <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />
         ))}
         {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}
+        {run.robot?.trailer && <Trailer run={run} />}
       </group>
     </>
   )

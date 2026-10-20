@@ -201,9 +201,9 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
   const T = n * DT
   const robotTime = st
     ? (() => {
-        const c = [0, 0, 0, 0, 0]
-        for (let i = 0; i < n; i++) if (st[i] <= 4) c[st[i]]++
-        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, exact: true }
+        const c = [0, 0, 0, 0, 0, 0]
+        for (let i = 0; i < n; i++) if (st[i] <= 5) c[st[i]]++
+        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, traction: c[5] / n, exact: true }
       })()
     : (() => {
         let m = 0
@@ -265,8 +265,26 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
     return { t0: a * DT, dur: (b - a + 1) * DT, h: run.workers[k].h, minD: dist[best * nw + k], v: vcAt[best], sp: protectionDistance(vcAt[best], ssm) }
   })
   const safetyStops = st ? spans(n, (i) => st[i] === 3).map(([a, b]) => ({ t0: a * DT, dur: (b - a + 1) * DT })) : []
+  // energía (huertos generados): Wh acumulados, por kg entregado y batería restante
+  const E = run.robot.energy
+  const energia = E
+    ? (() => {
+        const wh = E[n - 1],
+          kg = run.series.cargo[n - 1],
+          bat = run.meta?.params?.energia?.bateriaWh
+        return {
+          wh,
+          whPorKg: kg > 0 ? wh / kg : null,
+          bateriaPct: bat ? 100 * Math.max(0, 1 - wh / bat) : null,
+          descargas: run.robot.unloads.filter((u) => u.amount > 0).length,
+          traccion_s: st ? st.reduce((a, x) => a + (x === 5 ? DT : 0), 0) : 0,
+          robot: run.meta?.params?.robotTipo,
+        }
+      })()
+    : null
   const fluency = {
     exact: !!st,
+    energia,
     safetyStops,
     robotTime,
     robotWait,
@@ -304,6 +322,12 @@ export function fluencyIndex(a) {
     HR_eventos_Sp: f.protection.n,
     HR_dist_min_m: r(f.minDist, 2),
     HR_dist_p5_mov_m: r(f.p5Moving, 2),
+    HR_robot: f.energia?.robot ?? '',
+    HR_energia_Wh: r(f.energia?.wh, 1),
+    HR_Wh_por_kg: r(f.energia?.whPorKg, 3),
+    HR_bateria_pct: r(f.energia?.bateriaPct, 1),
+    HR_descargas: f.energia ? f.energia.descargas : '',
+    HR_traccion_s: r(f.energia?.traccion_s, 1),
   }
 }
 

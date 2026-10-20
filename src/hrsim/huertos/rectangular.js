@@ -61,7 +61,7 @@ export function validarRectangular(g) {
  * Genera el huerto. `nw` define cuántos tramos se asignan al inicio.
  * @returns {import('./index.js').Huerto}
  */
-export function generarRectangular(g, { nw, sistema }) {
+export function generarRectangular(g, { nw, sistema, robotAncho = ROBOT_ANCHO }) {
   validarRectangular(g)
   const { calle, sobreHilera, hileras, arbolesPorHilera: nA, radioCopa: R, cabecera } = g
   const w = hileras * calle,
@@ -74,12 +74,13 @@ export function generarRectangular(g, { nw, sistema }) {
     for (let t = 0; t < nA; t++) arboles.push({ x: rowX(r), y: treeY(t), z: zOf(treeY(t)), hilera: r, pos: t, altura: g.altura, radio: R, carga: g.cargaArbol })
   const tree = (r, t) => r * nA + t
   const ejes = Array.from({ length: hileras - 1 }, (_, s) => calle * (s + 1))
-  const acopio = [w / 2, cabecera / 2]
+  // acopio sobre el carril del robot en la cabecera inferior (a un tercio de su ancho): llega y sale sin girar en U
+  const acopio = [w / 2, cabecera / 3]
   // terreno: plano inclinado a lo largo de las hileras; el acopio (cabecera inferior) queda al pie o en la cima
   const sl = g.pendiente / 100
   const z = (x, y) => (g.acopioEnCima ? sl * (h - y) : sl * y)
   const anchoLibre = calle - 2 * R
-  const robotCabe = anchoLibre >= ROBOT_ANCHO + HOLGURA_CALLE
+  const robotCabe = anchoLibre >= robotAncho + HOLGURA_CALLE
 
   // lados de hilera que dan a cada calle, de la calle más cercana al acopio hacia afuera (a igual distancia, la izquierda)
   const calles = ejes.map((x, s) => ({ s, x })).sort((a, b) => Math.abs(a.x - acopio[0]) - Math.abs(b.x - acopio[0]) || a.x - b.x)

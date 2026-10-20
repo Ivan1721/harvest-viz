@@ -93,6 +93,13 @@ export function simToRun(sim, { robot }) {
       unloads: sim.ev.unloads.map((e) => ({ ...e })),
       crates: (sim.ev.crates || []).map((e) => ({ ...e })),
       onboard,
+      // huertos generados: energía acumulada (Wh) y pose del carro del robot de arrastre
+      ...(rec.energy
+        ? {
+            energy: f32(rec.energy),
+            trailer: rec.cx.some((v) => Number.isFinite(v)) ? { x: f32(rec.cx), y: f32(rec.cy), th: f32(rec.cth) } : null,
+          }
+        : {}),
     }
   }
   return {
