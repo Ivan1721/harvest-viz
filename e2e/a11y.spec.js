@@ -31,6 +31,9 @@ test('Simulador (pasos abiertos y capas) sin violaciones críticas ni graves', a
   for (const id of ['crew-params', 'robot-params']) await page.getByTestId(id).click()
   await page.getByText('Capas y estilo').click()
   await audit(page, 'Simulador')
+  await page.getByRole('tab', { name: 'Modelo' }).click()
+  await page.getByTestId('odd-inicializacion').locator('summary').click()
+  await audit(page, 'Modelo')
 })
 
 test('Oclusión sin violaciones críticas ni graves', async ({ page }) => {

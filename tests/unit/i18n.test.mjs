@@ -70,3 +70,24 @@ test('los textos de la estructura de la interfaz (I1) están traducidos al ingl�
   }
   assert.deepEqual(missing, [])
 })
+
+test('los textos del modelo de agentes (I3) están traducidos: estados, reglas y descripción ODD', async () => {
+  const m = await import('../../src/workload/modelo.js')
+  const { profileDefaults } = await import('../../src/hrsim/common.js')
+  const keys = new Set()
+  for (const e of [...m.ESTADOS_HR, ...m.ESTADOS_HO, ...m.ESTADOS_ROBOT]) keys.add(e.label)
+  for (const x of [...m.TRANSICIONES_HR, ...m.TRANSICIONES_HO, ...m.ESTADOS_ROBOT]) if (x.regla) keys.add(x.regla)
+  for (const p of [profileDefaults('matlab-2026'), { ...profileDefaults('hri', 'palta-ladera', 'burro'), semilla: 3, variacionRitmo: 0.1 }])
+    for (const s of m.describirModelo(p)) {
+      keys.add(s.titulo)
+      for (const x of s.textos || []) keys.add(x)
+      for (const f of s.tabla || []) {
+        keys.add(f.label)
+        if (f.fuente) keys.add(f.fuente)
+        if (typeof f.valor === 'string') keys.add(f.valor)
+      }
+    }
+  const missing = []
+  for (const k of keys) for (const [n, d] of Object.entries({ en, pt })) if (!(k in d)) missing.push(`${n}: ${k}`)
+  assert.deepEqual(missing, [])
+})

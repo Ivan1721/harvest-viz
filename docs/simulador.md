@@ -110,6 +110,14 @@ El perfil `hri` también activa `fixRecallLoop`: sin él, un trabajador llamado 
 
 En el visor: dos anillos alrededor del robot (protección S_p, naranja/rojo al detenerse; advertencia, gris/violeta al ir lento), marcas de parada en la franja de proximidad y, en Interacción → Fluidez, paradas, tiempo lento y el resto de métricas. Los parámetros se editan en Agentes → Ajustar el robot.
 
+## Modelo de agentes en la interfaz (I3)
+
+La pestaña **Modelo** muestra las máquinas de estado del cosechero (con y sin robot) y del robot tal como las implementa el
+motor, con el estado del agente elegido en el instante de la línea de tiempo, la regla de cada transición con los valores
+de la corrida y el tiempo en cada estado. Debajo, la descripción ODD (Grimm et al. 2020) generada desde los parámetros de
+la corrida; se copia como Markdown. Definición en `src/workload/modelo.js`; `tests/model/modelo.test.mjs` verifica que
+cada cambio de estado que hace el motor esté en el diagrama.
+
 ## Variabilidad entre cosecheros (H6)
 
 Por defecto el motor es determinista: misma configuración, mismo resultado. Con `semilla` (entero ≥ 0) cada cosechero
