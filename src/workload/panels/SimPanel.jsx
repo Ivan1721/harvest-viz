@@ -7,6 +7,7 @@ import { Field, Seg } from '../ui.jsx'
 import { ACTS } from '../library.js'
 import { ACT_LABEL } from '../spec.js'
 import { COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
+import { robotVariante } from '../variantes.js'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
@@ -117,7 +118,23 @@ const differs = (a, b, keys) => keys.some((k) => JSON.stringify(a[k]) !== JSON.s
  * 1 Escenario (qué huerto), 2 Agentes (cuadrilla y robot), 3 Simulación (correr, exportar).
  * Nada simula solo: los cambios se aplican al pulsar «Simular» y, mientras tanto, la escena avisa que está desactualizada.
  */
-export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, busy, stale, info, onExport, onCopyLink, copied, videoPanel }) {
+export function SimSteps({
+  params,
+  setParams,
+  cfg,
+  pickCfg,
+  cmp = 'sinrobot',
+  setCmp,
+  onRun,
+  onCancel,
+  busy,
+  stale,
+  info,
+  onExport,
+  onCopyLink,
+  copied,
+  videoPanel,
+}) {
   useLang()
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   const row = (k, l, st, src, min, max) => (
@@ -344,6 +361,38 @@ export function SimSteps({ params, setParams, cfg, pickCfg, onRun, onCancel, bus
 
       <Step n={3} title={t('Simulación')} changed={steps.has(3)} onReset={() => setParams((p) => resetStep(p, base, 3))} testid="step-simulacion">
         <div className="params">{row(...DURATION)}</div>
+        {setCmp && (
+          <Field label={t('Comparar con')}>
+            <Seg
+              size="mini"
+              value={cmp.startsWith('robot:') ? 'robot' : cmp}
+              onChange={(k) => setCmp(k === 'robot' ? `robot:${robotVariante('', params)}` : k)}
+              options={[
+                ['sinrobot', t('Sin robot')],
+                ['robot', t('Otro robot'), !generated, generated ? undefined : t('Solo en los huertos generados')],
+                ['perfil', t('Otro comportamiento')],
+              ]}
+            />
+            {cmp.startsWith('robot:') && generated && (
+              <Seg
+                size="mini"
+                label={t('Robot de la comparación')}
+                value={robotVariante(cmp, params)}
+                onChange={(r) => setCmp(`robot:${r}`)}
+                options={Object.entries(ROBOTS)
+                  .filter(([k]) => k !== params.robotTipo)
+                  .map(([k, v]) => [k, t(v.label)])}
+              />
+            )}
+            {cmp === 'perfil' && (
+              <div className="note" style={{ marginTop: 4 }}>
+                {t('La segunda escena corre el mismo escenario {c}.', {
+                  c: t(params.profile === 'hri' ? 'como en MATLAB (sin regla de seguridad)' : 'con la regla de seguridad'),
+                })}
+              </div>
+            )}
+          </Field>
+        )}
         {busy ? (
           <button className="btn" onClick={onCancel} data-testid="sim-cancel">
             {t('Simulando… · Cancelar')}

@@ -4,7 +4,16 @@ import { Seg, f0 } from '../ui.jsx'
 import { t as tr, fmtNum, useLang } from '../../i18n/index.js'
 
 /* ---------------------------------------------------------------- tabla comparativa */
-export function Compare({ ho, hr, t, mode, setMode }) {
+// nombres de las dos corridas: sin variante, «Sin robot» y «Con robot» (en el idioma activo al dibujar)
+const DEF = {
+  get ho() {
+    return tr('Sin robot')
+  },
+  get hr() {
+    return tr('Con robot')
+  },
+}
+export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
   useLang()
   const at = (run, f) => {
     if (!run) return null
@@ -18,6 +27,9 @@ export function Compare({ ho, hr, t, mode, setMode }) {
     ['Carga de trabajo total', 'kcal', (r, i) => r.series.work[i]],
     ['Carga por trabajador', 'kcal', (r, i) => r.series.work[i] / r.workers.length, false, 1],
     ['Energía por unidad entregada', 'kcal/u', (r, i) => (r.series.cargo[i] > 0 ? r.series.work[i] / r.series.cargo[i] : null), false, 2],
+    // del análisis de la corrida completa: solo en «Final»
+    ['Energía del robot por kg entregado', 'Wh/kg', (r, i) => (i === r.n - 1 ? r.hri?.fluency.energia?.whPorKg : null), true, 2],
+    ['Espera media de las cajas', 's', (r, i) => (i === r.n - 1 ? r.hri?.fluency.boxWait.mean : null), true],
   ]
   return (
     <div>
@@ -39,11 +51,11 @@ export function Compare({ ho, hr, t, mode, setMode }) {
             <th>{tr('Métrica')}</th>
             <th>
               <i className="sw" style={{ background: SC.ho.color }} />
-              {tr('Sin robot')}
+              {labels.ho}
             </th>
             <th>
               <i className="sw" style={{ background: SC.hr.color }} />
-              {tr('Con robot')}
+              {labels.hr}
             </th>
             <th>Δ</th>
           </tr>
@@ -52,6 +64,7 @@ export function Compare({ ho, hr, t, mode, setMode }) {
           {M.map(([name, unit, f, onlyHR, dg]) => {
             const a = at(ho, f),
               b = at(hr, f)
+            if (onlyHR && b == null) return null
             const fmt = (v) => (v == null ? '—' : dg ? fmtNum(v, { minimumFractionDigits: dg, maximumFractionDigits: dg }) : f0(v))
             const d = a != null && b != null && a > 0 ? ((b - a) / a) * 100 : null
             return (
@@ -60,7 +73,7 @@ export function Compare({ ho, hr, t, mode, setMode }) {
                   {tr(name)}
                   <span className="muted small"> {unit}</span>
                 </td>
-                <td>{onlyHR ? '—' : fmt(a)}</td>
+                <td>{onlyHR && !ho.robot ? '—' : fmt(a)}</td>
                 <td>{fmt(b)}</td>
                 <td>
                   {d == null
@@ -76,18 +89,18 @@ export function Compare({ ho, hr, t, mode, setMode }) {
   )
 }
 
-export function Summary({ ho, hr, t, seek }) {
+export function Summary({ ho, hr, t, seek, labels = DEF }) {
   useLang()
   const [mode, setMode] = useState('final')
   const dur = Math.max(ho?.series.t[ho.n - 1] || 0, hr?.series.t[hr.n - 1] || 0)
   const ser = (key, fn) =>
     [
-      ho && { key: 'ho', name: tr(SC.ho.label), color: SC.ho.color, t: ho.series.t, y: fn(ho) },
-      hr && { key: 'hr', name: tr(SC.hr.label), color: SC.hr.color, t: hr.series.t, y: fn(hr) },
+      ho && { key: 'ho', name: labels.ho, color: SC.ho.color, t: ho.series.t, y: fn(ho) },
+      hr && { key: 'hr', name: labels.hr, color: SC.hr.color, t: hr.series.t, y: fn(hr) },
     ].filter(Boolean)
   return (
     <>
-      {ho && hr && <Compare ho={ho} hr={hr} t={t} mode={mode} setMode={setMode} />}
+      {ho && hr && <Compare ho={ho} hr={hr} t={t} mode={mode} setMode={setMode} labels={labels} />}
       {!(ho && hr) && <div className="note">{tr('Para comparar, carga o selecciona una configuración con corrida sin robot y con robot.')}</div>}
       <LineChart
         title={tr('Entrega a la zona de carga')}
@@ -105,16 +118,6 @@ export function Summary({ ho, hr, t, seek }) {
         t={t}
         onSeek={seek}
       />
-      {hr && (
-        <LineChart
-          title={tr('Cultivo a bordo del robot')}
-          unit={tr('unidades')}
-          series={[{ key: 'hr', name: tr('A bordo'), color: SC.hr.color, t: hr.series.t, y: hr.robot?.onboard || new Float32Array(hr.n) }]}
-          tmax={dur}
-          t={t}
-          onSeek={seek}
-        />
-      )}
     </>
   )
 }

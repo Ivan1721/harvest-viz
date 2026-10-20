@@ -1600,3 +1600,12 @@ table.mini th + th {
 .wb .odd-t td {
   vertical-align: top;
 }
+
+/* I4: títulos de sección en las pestañas de resultados */
+.wb h4.sec {
+  margin: 12px 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
