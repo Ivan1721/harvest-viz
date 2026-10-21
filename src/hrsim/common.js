@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.5.0'
+export const ENGINE_VERSION = '0.6.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -109,6 +109,9 @@ export function resolveParams(opts = {}, extra = {}) {
   // acopio con acopiador, bins y camión (H7, fase A): solo si se pide; sin él, el acopio de siempre
   if (opts.acopio && opts.acopio.enabled !== false) p.acopio = { ...ACOPIO_DEFAULTS, ...opts.acopio, enabled: true }
   else delete p.acopio
+  // carga variable por árbol y ritmo que cae (H7, fase B): solo en huertos generados (fruta finita por árbol)
+  if (opts.carga && opts.carga.enabled !== false && sis?.generador) p.carga = { cv: cvDe(p.huerto), ...CARGA_DEFAULTS, ...opts.carga, enabled: true }
+  else delete p.carga
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -133,6 +136,11 @@ export function resolveParams(opts = {}, extra = {}) {
   if (p.acopio)
     for (const k of ['binKg', 'topeBins', 'camionBins', 'viajeS', 'intervaloS', 'cargaBinS'])
       if (!(Number.isFinite(p.acopio[k]) && p.acopio[k] > 0)) bad(`acopio.${k} debe ser > 0`)
+  if (p.carga) {
+    if (!(Number.isFinite(p.carga.cv) && p.carga.cv >= 0 && p.carga.cv <= 3)) bad(`carga.cv debe estar entre 0 y 3 (es ${p.carga.cv})`)
+    if (!(Number.isFinite(p.carga.k) && p.carga.k >= 0)) bad(`carga.k debe ser ≥ 0 (es ${p.carga.k})`)
+    if (!(Number.isFinite(p.carga.umbral) && p.carga.umbral > 1)) bad(`carga.umbral debe ser > 1 (es ${p.carga.umbral})`)
+  }
   if (p.semilla != null) {
     if (!(Number.isInteger(p.semilla) && p.semilla >= 0)) bad(`semilla debe ser un entero ≥ 0 (es ${p.semilla})`)
     if (!(p.variacionRitmo >= 0 && p.variacionRitmo < 1)) bad(`variacionRitmo debe estar entre 0 y 1 (es ${p.variacionRitmo})`)
@@ -245,6 +253,7 @@ import { SISTEMAS, buildHuerto } from './huertos/index.js'
 import { validarRectangular } from './huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from './robots.js'
 import { ACOPIO_DEFAULTS } from './acopio.js'
+import { CARGA_DEFAULTS, cvDe } from './carga.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

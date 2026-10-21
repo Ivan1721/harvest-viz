@@ -1,9 +1,10 @@
 // Modelo de agentes (I3): máquinas de estado del cosechero y del robot, tal como las implementa el motor
 // (src/hrsim/engine.js y humanonly.js), y la descripción del modelo con el protocolo ODD (Grimm et al. 2020).
 // Todo texto es una clave en español para t(); los valores salen de los parámetros de la corrida, no se escriben a mano.
-import { ACOPIO, COSTS, CREW, HUERTO, ROBOT, SSM } from './parametros.js'
+import { ACOPIO, CARGA, COSTS, CREW, HUERTO, ROBOT, SSM } from './parametros.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { ROBOTS, MU } from '../hrsim/robots.js'
+import { fMinima } from '../hrsim/carga.js'
 
 /**
  * Cosechero con robot (HRSim, protocolo worker_loads). x, y = posición del nodo en el diagrama (viewBox 380 × 340).
@@ -27,7 +28,7 @@ export const ESTADOS_HR = [
 export const TRANSICIONES_HR = [
   { de: 1, a: 6, regla: 'La bolsa llega a {maxProd} kg (o unidades) y cosecha desde el suelo.' },
   { de: 1, a: 2, regla: 'La bolsa se llena o el lado del árbol se agota, y está en la escalera.' },
-  { de: 1, a: 13, regla: 'Se agota la fruta de su lado del árbol: camina al siguiente árbol de su tramo.' },
+  { de: 1, a: 13, regla: 'Se agota la fruta de su lado del árbol (con el ritmo que cae, queda tan poca que la deja): camina al siguiente árbol de su tramo.' },
   { de: 1, a: 15, regla: 'No queda fruta en su tramo ni tramos libres.' },
   { de: 2, a: 6, regla: 'Termina de bajar ({ladderTime} s) con la bolsa llena.' },
   { de: 2, a: 13, regla: 'Termina de bajar ({ladderTime} s) para ir a otro árbol.' },
@@ -64,7 +65,7 @@ export const ESTADOS_HO = [
 export const TRANSICIONES_HO = [
   { de: 1, a: 3, regla: 'La bolsa llega a {maxProd} kg (o unidades) y cosecha desde el suelo: sale al acopio.' },
   { de: 1, a: 2, regla: 'La bolsa se llena o el lado del árbol se agota, y está en la escalera.' },
-  { de: 1, a: 13, regla: 'Se agota la fruta de su lado del árbol: camina al siguiente árbol de su tramo.' },
+  { de: 1, a: 13, regla: 'Se agota la fruta de su lado del árbol (con el ritmo que cae, queda tan poca que la deja): camina al siguiente árbol de su tramo.' },
   { de: 1, a: 15, regla: 'No queda fruta en su tramo ni tramos libres.' },
   { de: 2, a: 3, regla: 'Termina de bajar ({ladderTime} s) con la bolsa llena.' },
   { de: 2, a: 13, regla: 'Termina de bajar ({ladderTime} s) para ir a otro árbol.' },
@@ -179,9 +180,18 @@ export function describirModelo(p) {
         p.acopio
           ? 'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.'
           : 'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).',
+        ...(p.carga
+          ? [
+              'Carga y ritmo: la carga de cada árbol varía (lognormal, CV {cv}); el periodo de cosecha crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), y el cosechero deja el lado cuando supera {umbral} × T₀ (queda {fmin} % de su fruta).',
+            ]
+          : []),
         'Sin aprendizaje ni adaptación: las reglas son fijas durante la corrida.',
       ],
-      vars: { semilla: p.semilla, var: Math.round((p.variacionRitmo ?? 0.1) * 100) },
+      vars: {
+        semilla: p.semilla,
+        var: Math.round((p.variacionRitmo ?? 0.1) * 100),
+        ...(p.carga ? { cv: p.carga.cv, umbral: p.carga.umbral, fmin: +(100 * fMinima(p.carga.k, p.carga.umbral)).toFixed(1) } : {}),
+      },
     },
     {
       id: 'inicializacion',
@@ -200,6 +210,7 @@ export function describirModelo(p) {
         ...ROBOT.map(([k, l, , src]) => fila(k, l, p[k], src)),
         ...(generado ? HUERTO.map(([k, l]) => fila(`huertoParams.${k}`, l, hp[k], 'Generador del sistema')) : []),
         ...(generado ? [fila('huertoParams.pendiente', 'Pendiente a lo largo de las hileras (%)', hp.pendiente, 'Generador del sistema')] : []),
+        ...(p.carga ? CARGA.map(([k, l, , src]) => fila(`carga.${k}`, l, p.carga[k], src)) : []),
         ...(p.acopio ? ACOPIO.map(([k, l, , src]) => fila(`acopio.${k}`, l, p.acopio[k], src)) : []),
         ...(p.ssm ? SSM.map(([k, l, , src]) => fila(`ssm.${k}`, l, p.ssm[k], src)) : []),
       ],

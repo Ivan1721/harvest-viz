@@ -7,6 +7,7 @@ import { buildHuerto } from './huertos/index.js'
 import { Cosecha, rutaCalles } from './huertos/rectangular.js'
 import { paso } from './huertos/pendiente.js'
 import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
+import { prepararCarga, resumenCarga } from './carga.js'
 
 export class HOSim {
   constructor(opts = {}) {
@@ -23,7 +24,8 @@ export class HOSim {
     this.ladder = ladder
     this.cargo = [...huerto.acopio]
     // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
-    this.cosecha = huerto.calles ? new Cosecha(huerto, W) : null
+    // carga variable por árbol y ritmo que cae (H7, fase B; opcional)
+    this.cosecha = huerto.calles ? new Cosecha(huerto, W, p.carga ? prepararCarga(p.carga, huerto.arboles.length, p.semilla) : null) : null
     this.delivered = 0
     // acopio con acopiador, bins y camión (H7, fase A; opcional): el mismo que con robot
     this.acopio = p.acopio ? new Acopio(p.acopio, dt, { recibir: C.walkingCarrying, cargar: C.harvestGround }) : null
@@ -32,6 +34,7 @@ export class HOSim {
       delivered: [],
       work: [],
       ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
+      ...(this.cosecha?.carga ? { dej: [] } : {}),
       prod: Array.from({ length: NH }, () => []),
       workH: Array.from({ length: NH }, () => []),
       flag: Array.from({ length: NH }, () => []),
@@ -55,6 +58,7 @@ export class HOSim {
     r.delivered.push(this.delivered)
     r.work.push(this.W.reduce((a, w) => a + w.work, 0) + (this.acopio ? this.acopio.work : 0))
     if (this.acopio) recordAcopio(r, this.acopio)
+    if (r.dej) r.dej.push(this.cosecha.dejado)
     this.W.forEach((w, h) => {
       r.prod[h].push(w.prod)
       r.workH[h].push(w.work)
@@ -79,20 +83,21 @@ export class HOSim {
       return reached || Math.hypot(pose[0] - target[0], pose[1] - target[1]) <= p.tolerance
     }
     switch (w.state) {
-      case 1:
+      case 1: {
         w.cont += 1
-        if (w.cont >= w.tInc) {
+        const tInc = this.cosecha?.carga ? w.tInc * this.cosecha.periodo(w) : w.tInc // fase B: el periodo crece al vaciarse el lado
+        if (w.cont >= tInc) {
           const inc = Math.min(p.costProduction * dt, p.maxProd - w.prod)
           w.prod = this.cosecha ? w.prod + this.cosecha.take(w, inc) : Math.min(w.prod + p.costProduction * dt, p.maxProd)
           w.last = w.prod
-          w.cont = p.semilla == null ? 0 : w.cont - w.tInc // con semilla el periodo no es entero: se guarda el resto
+          w.cont = p.semilla == null && !p.carga ? 0 : w.cont - tInc // periodo no entero (semilla o fase B): se guarda el resto
         } else w.prod = w.last
         w.work += w.cost * dt
         w.flag = 1
         if (w.prod >= p.maxProd) {
           if (w.ladder === 1) w.state = 2
           else this._startTrip(w)
-        } else if (this.cosecha && this.cosecha.empty(w)) {
+        } else if (this.cosecha && this.cosecha.agotado(w)) {
           // el lado del árbol se agotó: baja de la escalera si hace falta y camina al siguiente árbol
           if (w.ladder === 1) {
             w.goNext = true
@@ -100,6 +105,7 @@ export class HOSim {
           } else this._goNextTree(w)
         }
         break
+      }
       case 2:
         w.work += C.ladderDown * dt
         w.flag = 4
@@ -271,6 +277,7 @@ export class HOSim {
       RemainingCropsBoxes_crop_units: 0,
       RemainingCropsRobot_crop_units: 0,
       TotalRecollectedCrops_crop_units: this.delivered + V5,
+      ...(this.cosecha?.carga ? resumenCarga(this.cosecha, this.W, this.rec.wst, this.dt) : {}),
       ...(this.acopio ? resumenAcopio(this.acopio, 0, this.rec.t.length) : {}),
     }
   }

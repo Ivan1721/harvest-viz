@@ -65,3 +65,9 @@ export const ACOPIO = [
   ['intervaloS', 'El camión sale como máximo cada (s)', 60, 'Supuesto: 3600 (60 min)', 60, 14400],
   ['cargaBinS', 'Cargar un bin al camión (s)', 5, 'Supuesto: 90', 1, 3600],
 ]
+// carga variable por árbol y ritmo que cae (H7, fase B): [clave, etiqueta, paso, fuente, mínimo, máximo]
+export const CARGA = [
+  ['cv', 'Variabilidad de la carga entre árboles (CV)', 0.05, 'Supuesto: 0,5 en palta, 0,3 en otros (Olalla y Rodríguez 1991: 0,74)', 0, 3],
+  ['k', 'Forma de la caída del ritmo k (0 = sin caída)', 10, 'Roka y Hyman 2008 (cítricos): 460', 0, 100000],
+  ['umbral', 'Deja el árbol cuando el periodo supera (× T₀)', 0.1, 'Supuesto: 2', 1.1, 10],
+]

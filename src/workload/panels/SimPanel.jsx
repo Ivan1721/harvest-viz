@@ -6,8 +6,9 @@ import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
 import { Field, Seg } from '../ui.jsx'
 import { ACTS } from '../library.js'
 import { ACT_LABEL } from '../spec.js'
-import { ACOPIO, COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
+import { ACOPIO, CARGA, COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
 import { ACOPIO_DEFAULTS } from '../../hrsim/acopio.js'
+import { CARGA_DEFAULTS, cvDe, fMinima } from '../../hrsim/carga.js'
 import { robotVariante } from '../variantes.js'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
@@ -58,7 +59,7 @@ export const CULTIVOS = [
 ]
 export const cultivoDe = (huerto) => CULTIVOS.find(([, , ss]) => ss.some(([k]) => k === huerto)) || CULTIVOS[0]
 /** Paso k (de 1 a 3) cuyos valores cambian con la clave `k` de los parámetros. */
-const STEP_OF = (k) => (k === 'huertoParams' || k === 'acopio' ? 1 : k === 'duration' ? 3 : 2)
+const STEP_OF = (k) => (k === 'huertoParams' || k === 'acopio' || k === 'carga' ? 1 : k === 'duration' ? 3 : 2)
 /** Valores de partida de un paso: devuelve `params` con las claves de ese paso tomadas de `base`. */
 export function resetStep(params, base, n) {
   const out = { ...params }
@@ -290,6 +291,58 @@ export function SimSteps({
                   max={max}
                   label={t(l)}
                   onCommit={(v) => (!int || Number.isInteger(v)) && setParams((p) => ({ ...p, acopio: { ...p.acopio, [k]: v } }))}
+                />
+              </label>
+            ))}
+          </Group>
+        )}
+        {params.huertoParams && (
+          <Field label={t('Árboles')}>
+            <label className="checkline">
+              <input
+                type="checkbox"
+                checked={!!params.carga}
+                data-testid="carga-on"
+                onChange={(e) =>
+                  setParams((p) => {
+                    const q = { ...p }
+                    if (e.target.checked) q.carga = { cv: cvDe(p.huerto), ...CARGA_DEFAULTS }
+                    else delete q.carga
+                    return q
+                  })
+                }
+              />
+              {t('Carga variable y ritmo que cae')}
+            </label>
+            <div className="note" style={{ marginTop: 2 }}>
+              {params.carga
+                ? t('Cada árbol con su carga; el cosechero lo deja con {f} % de su fruta.', {
+                    f: fmtNum(100 * fMinima(params.carga.k, params.carga.umbral), { maximumFractionDigits: 1 }),
+                  })
+                : t('Todos los árboles con la misma carga y ritmo constante hasta vaciarlos.')}
+            </div>
+          </Field>
+        )}
+        {params.huertoParams && params.carga && (
+          <Group
+            title={t('Ajustar la carga y el ritmo')}
+            changed={differs(
+              params.carga,
+              { cv: cvDe(params.huerto), ...CARGA_DEFAULTS },
+              CARGA.map((r) => r[0]),
+            )}
+            testid="carga-params"
+          >
+            {CARGA.map(([k, l, st, src, min, max]) => (
+              <label key={k} title={t(src)}>
+                <span>{t(l)}</span>
+                <NumField
+                  value={params.carga[k]}
+                  step={st}
+                  min={min}
+                  max={max}
+                  label={t(l)}
+                  onCommit={(v) => setParams((p) => ({ ...p, carga: { ...p.carga, [k]: v } }))}
                 />
               </label>
             ))}

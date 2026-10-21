@@ -62,17 +62,20 @@ test('valores inválidos se ignoran y se informan', () => {
   assert.equal('inventado' in r2.params, false)
 })
 
-test('H7: el acopio (opción ausente en los valores de partida) viaja en `ajustes` y vuelve igual', async () => {
+test('H7: el acopio y la carga (opciones ausente en los valores de partida) viaja en `ajustes` y vuelve igual', async () => {
   const { ACOPIO_DEFAULTS } = await import('../../src/hrsim/acopio.js')
   const p = profileDefaults('hri', 'palta-alta-densidad', 'warthog')
   p.acopio = { ...ACOPIO_DEFAULTS, camionBins: 6 }
+  p.carga = { cv: 0.4, k: 460, umbral: 2.5 }
   const sp = writeRunState(new URLSearchParams(), p, CFG0)
   const r = readRunState(new URLSearchParams(sp.toString()), CFG0)
   assert.equal(r.error, null)
   assert.deepEqual(r.params.acopio, p.acopio)
+  assert.deepEqual(r.params.carga, p.carga)
   assert.equal(paramsHash(resolveParams(r.params)), paramsHash(resolveParams(p)))
   // sin acopio no aparece
   delete p.acopio
+  delete p.carga
   const r2 = readRunState(new URLSearchParams(writeRunState(new URLSearchParams(), p, CFG0).toString()), CFG0)
   assert.equal('acopio' in r2.params, false)
 })

@@ -21,8 +21,8 @@ export default {
   'Sin tracción': 'No traction',
   'La bolsa llega a {maxProd} kg (o unidades) y cosecha desde el suelo.': 'The bag reaches {maxProd} kg (or units) and they harvest from the ground.',
   'La bolsa se llena o el lado del árbol se agota, y está en la escalera.': 'The bag fills up or the tree side runs out, and they are on the ladder.',
-  'Se agota la fruta de su lado del árbol: camina al siguiente árbol de su tramo.':
-    'The fruit on their side of the tree runs out: they walk to the next tree in their section.',
+  'Se agota la fruta de su lado del árbol (con el ritmo que cae, queda tan poca que la deja): camina al siguiente árbol de su tramo.':
+    'The fruit on their side of the tree runs out (with the falling rate, so little is left that they leave it): they walk to the next tree in their section.',
   'No queda fruta en su tramo ni tramos libres.': 'No fruit left in their section and no free sections.',
   'Termina de bajar ({ladderTime} s) con la bolsa llena.': 'Finishes climbing down ({ladderTime} s) with a full bag.',
   'Termina de bajar ({ladderTime} s) para ir a otro árbol.': 'Finishes climbing down ({ladderTime} s) to go to another tree.',
@@ -178,4 +178,6 @@ export default {
     'Collection point: what arrives counts as delivered (no collection-point worker or truck).',
   'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.':
     'Collection point: a worker serves in order of arrival; receives the boxes from the robot and the harvesters, empties them into bins and loads the truck, which leaves when full or at a set interval.',
+  'Carga y ritmo: la carga de cada árbol varía (lognormal, CV {cv}); el periodo de cosecha crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), y el cosechero deja el lado cuando supera {umbral} × T₀ (queda {fmin} % de su fruta).':
+    "Load and rate: each tree's load varies (lognormal, CV {cv}); the harvesting period grows as the side empties, T(f) = T₀·ln(1 + k)/ln(1 + k·f), and the harvester leaves the side when it exceeds {umbral} × T₀ ({fmin} % of its fruit remains).",
 }

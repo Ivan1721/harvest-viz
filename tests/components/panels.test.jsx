@@ -30,6 +30,7 @@ function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_S
       <output data-testid="walk">{params.walkSpeed}</output>
       <output data-testid="huerto">{params.huerto}</output>
       <output data-testid="nw">{cfg.nw}</output>
+      <output data-testid="carga">{params.carga ? JSON.stringify(params.carga) : ''}</output>
       <output data-testid="acopio">{params.acopio ? JSON.stringify(params.acopio) : ''}</output>
     </>
   )
@@ -164,6 +165,22 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     fireEvent.click(screen.getByTestId('reset-1'))
     expect(screen.getByTestId('acopio').textContent).toBe('')
     expect(screen.queryByText('Ajustar el acopio')).toBeNull()
+  })
+
+  it('H7 B: «Carga variable y ritmo que cae» solo en huertos generados, con el CV del cultivo y la fruta que se deja', () => {
+    render(<Harness />)
+    expect(screen.queryByTestId('carga-on')).toBeNull() // mapa del estudio: sin fruta por árbol
+    fireEvent.click(screen.getByText('Tradicional'))
+    fireEvent.click(screen.getByTestId('carga-on'))
+    expect(JSON.parse(screen.getByTestId('carga').textContent)).toEqual({ cv: 0.5, k: 460, umbral: 2 })
+    expect(screen.getByText(/lo deja con 4[,.]5 % de su fruta/)).toBeTruthy()
+    fireEvent.click(screen.getByText('Ajustar la carga y el ritmo'))
+    const u = screen.getByLabelText('Deja el árbol cuando el periodo supera (× T₀)')
+    fireEvent.change(u, { target: { value: '1' } })
+    fireEvent.blur(u)
+    expect(JSON.parse(screen.getByTestId('carga').textContent).umbral).toBe(2) // bajo el mínimo: no se aplica
+    fireEvent.click(screen.getByTestId('carga-on'))
+    expect(screen.getByTestId('carga').textContent).toBe('')
   })
 
   it('changedSteps asigna cada parámetro a su paso', () => {
