@@ -93,4 +93,22 @@ export default {
   'Supuesto: 2': 'Suposto: 2',
   'Fruta dejada en los árboles': 'Frutos deixados nas árvores',
   'Ritmo real cosechando (toda la corrida)': 'Ritmo real colhendo (toda a execução)',
+  'Avance del bloque': 'Avanço do talhão',
+  'Parte del huerto ya cosechada en días anteriores, desde las calles del acopio hacia afuera; la cuadrilla parte en las que siguen.':
+    'Parte do pomar já colhida em dias anteriores, das ruas do ponto de recolha para fora; a turma começa nas seguintes.',
+  'Reparto de la cuadrilla': 'Distribuição da turma',
+  'Cerca del acopio': 'Perto do ponto de recolha',
+  Frente: 'Frente',
+  Repartida: 'Espalhada',
+  'Árboles por tramo': 'Árvores por trecho',
+  'Uno por calle a la misma altura, sobre el doble de calles, con tramos cortos; el frente avanza hacia el fondo.':
+    'Um por rua na mesma altura, no dobro de ruas, com trechos curtos; a frente avança para o fundo.',
+  'Parejas en calles espaciadas a todo el ancho del huerto; cada uno avanza por su hilera.':
+    'Pares em ruas espaçadas por toda a largura do pomar; cada um avança pela sua fileira.',
+  'Bajo cada planta: gris = cosechada, ámbar = en curso; sin marca = pendiente': 'Sob cada planta: cinza = colhida, âmbar = em andamento; sem marca = pendente',
+  'Estado de las plantas': 'Estado das plantas',
+  'Caminata media por cosechero': 'Caminhada média por colhedor',
+  'Calles recorridas por el robot': 'Ruas percorridas pelo robô',
+  'Calles recorridas': 'Ruas percorridas',
+  'Caminado hasta ahora': 'Caminhado até agora',
 }

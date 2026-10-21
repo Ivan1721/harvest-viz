@@ -59,7 +59,7 @@ export const CULTIVOS = [
 ]
 export const cultivoDe = (huerto) => CULTIVOS.find(([, , ss]) => ss.some(([k]) => k === huerto)) || CULTIVOS[0]
 /** Paso k (de 1 a 3) cuyos valores cambian con la clave `k` de los parámetros. */
-const STEP_OF = (k) => (k === 'huertoParams' || k === 'acopio' || k === 'carga' ? 1 : k === 'duration' ? 3 : 2)
+const STEP_OF = (k) => (k === 'huertoParams' || k === 'acopio' || k === 'carga' || k === 'avance' ? 1 : k === 'duration' ? 3 : 2)
 /** Valores de partida de un paso: devuelve `params` con las claves de ese paso tomadas de `base`. */
 export function resetStep(params, base, n) {
   const out = { ...params }
@@ -348,6 +348,25 @@ export function SimSteps({
             ))}
           </Group>
         )}
+        {params.huertoParams && (
+          <Field label={t('Avance del bloque')}>
+            <Seg
+              value={params.avance ?? 0}
+              options={[0, 0.25, 0.5, 0.75].map((v) => [v, `${v * 100} %`])}
+              onChange={(v) =>
+                setParams((p) => {
+                  const q = { ...p }
+                  if (v > 0) q.avance = v
+                  else delete q.avance
+                  return q
+                })
+              }
+            />
+            <div className="note" style={{ marginTop: 2 }}>
+              {t('Parte del huerto ya cosechada en días anteriores, desde las calles del acopio hacia afuera; la cuadrilla parte en las que siguen.')}
+            </div>
+          </Field>
+        )}
       </Step>
 
       <Step n={2} title={t('Agentes')} changed={steps.has(2)} onReset={() => setParams((p) => resetStep(p, base, 2))} testid="step-agentes">
@@ -361,7 +380,48 @@ export function SimSteps({
         <Field label={t('Actividad')}>
           <Seg value={cfg?.act} options={acts.map((a) => [a, t(ACT_LABEL[a])])} onChange={(v) => pickCfg('act', v)} />
         </Field>
-        {generated && <div className="note">{t('Los cosecheros trabajan por parejas en las calles frente al acopio y avanzan por la hilera.')}</div>}
+        {generated && (
+          <Field label={t('Reparto de la cuadrilla')}>
+            <Seg
+              value={params.reparto?.modo ?? 'acopio'}
+              options={[
+                ['acopio', t('Cerca del acopio')],
+                ['frente', t('Frente')],
+                ['repartida', t('Repartida')],
+              ]}
+              onChange={(v) =>
+                setParams((p) => {
+                  const q = { ...p }
+                  if (v === 'acopio') delete q.reparto
+                  else q.reparto = { modo: v, tramo: p.reparto?.tramo ?? 4 }
+                  return q
+                })
+              }
+            />
+            <div className="note" style={{ marginTop: 2 }} data-testid="reparto-nota">
+              {t(
+                params.reparto?.modo === 'frente'
+                  ? 'Uno por calle a la misma altura, sobre el doble de calles, con tramos cortos; el frente avanza hacia el fondo.'
+                  : params.reparto?.modo === 'repartida'
+                    ? 'Parejas en calles espaciadas a todo el ancho del huerto; cada uno avanza por su hilera.'
+                    : 'Los cosecheros trabajan por parejas en las calles frente al acopio y avanzan por la hilera.',
+              )}
+            </div>
+            {params.reparto?.modo === 'frente' && (
+              <label className="inline-num">
+                <span>{t('Árboles por tramo')}</span>
+                <NumField
+                  value={params.reparto.tramo}
+                  step={1}
+                  min={1}
+                  max={50}
+                  label={t('Árboles por tramo')}
+                  onCommit={(v) => Number.isInteger(v) && setParams((p) => ({ ...p, reparto: { ...p.reparto, tramo: v } }))}
+                />
+              </label>
+            )}
+          </Field>
+        )}
         <Group title={t('Ajustar la cuadrilla')} changed={crewChanged} testid="crew-params">
           {CREW.map((r) => row(...r))}
           <div className="note">{t('Costos metabólicos (kcal/s)')}</div>

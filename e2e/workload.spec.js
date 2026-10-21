@@ -332,3 +332,32 @@ test('carga variable y ritmo que cae: se activa, se simula y muestra la fruta de
   }
   expect(errors).toEqual([])
 })
+
+test('reparto «frente» y avance del bloque: se simulan, se ven las plantas cosechadas y viajan en el enlace (H7 C)', async ({ page }) => {
+  const errors = await openWorkload(page, { mode: 'sim' })
+  await page.getByRole('button', { name: 'Alta densidad', exact: true }).click()
+  await page.getByTestId('huerto-params').click()
+  await page.getByLabel('Hileras', { exact: true }).fill('10')
+  await page.getByLabel('Árboles por hilera', { exact: true }).fill('12')
+  await page.getByRole('button', { name: '50 %', exact: true }).click()
+  await page.getByRole('button', { name: 'Frente', exact: true }).click()
+  await expect(page.getByTestId('reparto-nota')).toContainText('tramos cortos')
+  await page.getByLabel('Duración (s)').fill('900')
+  await simulate(page)
+  await setRange(page.locator('.timeline2 input[type=range]'), 900)
+  await expect(page.locator('table.cmp tr', { hasText: 'Caminata media por cosechero' })).toBeVisible()
+  await expect(page.locator('table.cmp tr', { hasText: 'Calles recorridas por el robot' })).toBeVisible()
+  const aj = JSON.parse(Buffer.from(new URL(page.url()).searchParams.get('ajustes'), 'base64url').toString())
+  expect(aj).toMatchObject({ avance: 0.5, reparto: { modo: 'frente', tramo: 4 } })
+  await page.getByRole('tab', { name: 'Personas', exact: true }).click()
+  await page.locator('.wl .li').first().click()
+  await expect(page.getByTestId('caminata')).toContainText(' m')
+  if (process.env.SHOT12) {
+    await page.getByRole('tab', { name: 'Resumen', exact: true }).click()
+    await page.getByRole('button', { name: 'Cenital', exact: true }).click()
+    await page.getByRole('button', { name: 'Humano-robot', exact: true }).click()
+    await page.waitForTimeout(500)
+    await page.screenshot({ path: process.env.SHOT12 })
+  }
+  expect(errors).toEqual([])
+})

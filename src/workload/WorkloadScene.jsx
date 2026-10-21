@@ -561,6 +561,82 @@ function Parron({ trees, techo }) {
   )
 }
 
+// H7 fase C: la ruta del robot sigue a la cuadrilla; se ve la vigente en el instante de la reproducción
+function RutaRobot({ run }) {
+  const rutas = useMemo(() => run.robot.rutas.map((r) => ({ idx: r.idx, pts: r.puntos.map(([x, y]) => [toW(x, y)[0], 0.05, toW(x, y)[2]]) })), [run])
+  const refs = useRef([])
+  useFrame(() => {
+    const i = Math.floor(play.t / run.dt)
+    let k = 0
+    for (let j = 0; j < rutas.length; j++) if (rutas[j].idx <= i) k = j
+    refs.current.forEach((m, j) => m && (m.visible = j === k))
+  })
+  return rutas.map((r, j) => (
+    <Line
+      key={j}
+      ref={(m) => (refs.current[j] = m)}
+      points={r.pts}
+      color="#2f6bff"
+      lineWidth={1.5}
+      dashed
+      dashSize={0.5}
+      gapSize={0.35}
+      transparent
+      opacity={0.7}
+    />
+  ))
+}
+
+// H7 fase C: estado de cada planta en el instante de la reproducción — una marca en el suelo, gris si ya se cosechó
+// (sus dos lados), ámbar si está en curso; las pendientes no llevan marca
+const EST_COLOR = [null, new THREE.Color('#f59e0b'), new THREE.Color('#64748b')]
+function EstadoPlantas({ run, trees, R }) {
+  const ref = useRef()
+  const prev = useMemo(() => new Uint8Array(trees.length).fill(255), [trees])
+  const m4 = useMemo(() => new THREE.Matrix4(), [])
+  // los colores por instancia tienen que existir antes del primer dibujo (si no, el material se compila sin ellos)
+  useLayoutEffect(() => {
+    const mesh = ref.current
+    const z = new THREE.Matrix4().makeScale(0, 0, 0)
+    for (let k = 0; k < trees.length; k++) {
+      mesh.setMatrixAt(k, z)
+      mesh.setColorAt(k, EST_COLOR[1])
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.instanceColor.needsUpdate = true
+    prev.fill(0)
+  }, [trees, prev])
+  useFrame(() => {
+    const mesh = ref.current
+    if (!mesh) return
+    const t = play.t,
+      on = play.plantas !== false
+    let changed = false
+    for (let k = 0; k < trees.length; k++) {
+      const e = !on ? 0 : run.plantas.fin[k] <= t ? 2 : run.plantas.ini[k] <= t ? 1 : 0
+      if (e === prev[k]) continue
+      prev[k] = e
+      changed = true
+      const s = e ? R * 1.35 : 0
+      m4.makeRotationX(-Math.PI / 2)
+      m4.scale(new THREE.Vector3(s, s, 1))
+      m4.setPosition(trees[k].x, 0.04, trees[k].z)
+      mesh.setMatrixAt(k, m4)
+      if (e) mesh.setColorAt(k, EST_COLOR[e])
+    }
+    if (changed) {
+      mesh.instanceMatrix.needsUpdate = true
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    }
+  })
+  return (
+    <instancedMesh ref={ref} args={[null, null, trees.length]} frustumCulled={false}>
+      <circleGeometry args={[1, 24]} />
+      <meshBasicMaterial transparent opacity={0.8} depthWrite={false} />
+    </instancedMesh>
+  )
+}
+
 function Ground({ run, real, geom }) {
   // árboles en coordenadas de mundo (dependen del mapa activo)
   const trees = useMemo(
@@ -597,7 +673,13 @@ function Ground({ run, real, geom }) {
         </>
       )}
       {geom.forma === 'parron' ? <Parron trees={trees} techo={geom.techo} /> : <Orchard trees={trees} R={geom.R} H={geom.H} real={real} canopy={play.canopy} />}
-      {run.robot && <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />}
+      {run.plantas && run.plantas.ini.length === trees.length && <EstadoPlantas run={run} trees={trees} R={geom.R} />}
+      {run.robot &&
+        (run.robot.rutas ? (
+          <RutaRobot run={run} />
+        ) : (
+          <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />
+        ))}
     </group>
   )
 }

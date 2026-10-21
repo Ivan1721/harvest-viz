@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.6.0'
+export const ENGINE_VERSION = '0.7.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -112,6 +112,12 @@ export function resolveParams(opts = {}, extra = {}) {
   // carga variable por árbol y ritmo que cae (H7, fase B): solo en huertos generados (fruta finita por árbol)
   if (opts.carga && opts.carga.enabled !== false && sis?.generador) p.carga = { cv: cvDe(p.huerto), ...CARGA_DEFAULTS, ...opts.carga, enabled: true }
   else delete p.carga
+  // reparto de la cuadrilla y avance del bloque (H7, fase C): solo en huertos generados y solo si se piden
+  const modo = opts.reparto?.modo
+  if (sis?.generador && modo && modo !== 'acopio') p.reparto = { modo, tramo: 4, ...opts.reparto }
+  else delete p.reparto
+  if (sis?.generador && opts.avance > 0) p.avance = opts.avance
+  else delete p.avance
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -136,6 +142,11 @@ export function resolveParams(opts = {}, extra = {}) {
   if (p.acopio)
     for (const k of ['binKg', 'topeBins', 'camionBins', 'viajeS', 'intervaloS', 'cargaBinS'])
       if (!(Number.isFinite(p.acopio[k]) && p.acopio[k] > 0)) bad(`acopio.${k} debe ser > 0`)
+  if (p.reparto) {
+    if (!['frente', 'repartida'].includes(p.reparto.modo)) bad(`reparto.modo debe ser acopio, frente o repartida (es ${p.reparto.modo})`)
+    if (!(Number.isInteger(p.reparto.tramo) && p.reparto.tramo >= 1)) bad(`reparto.tramo debe ser un entero ≥ 1 (es ${p.reparto.tramo})`)
+  }
+  if (p.avance != null && !(Number.isFinite(p.avance) && p.avance > 0 && p.avance <= 0.9)) bad(`avance debe estar entre 0 y 0,9 (es ${p.avance})`)
   if (p.carga) {
     if (!(Number.isFinite(p.carga.cv) && p.carga.cv >= 0 && p.carga.cv <= 3)) bad(`carga.cv debe estar entre 0 y 3 (es ${p.carga.cv})`)
     if (!(Number.isFinite(p.carga.k) && p.carga.k >= 0)) bad(`carga.k debe ser ≥ 0 (es ${p.carga.k})`)

@@ -92,6 +92,10 @@ export function ViewBar({ view, setView, hasHO, hasHR, labels, preset, setPreset
               <input type="checkbox" disabled={!hasHR} checked={ov.intent} onChange={(e) => setOv({ ...ov, intent: e.target.checked })} />
               {t('Ruta anticipada')}
             </label>
+            <label className={ov.plantas ? 'on' : ''} title={t('Bajo cada planta: gris = cosechada, ámbar = en curso; sin marca = pendiente')}>
+              <input type="checkbox" checked={ov.plantas} onChange={(e) => setOv({ ...ov, plantas: e.target.checked })} />
+              {t('Estado de las plantas')}
+            </label>
           </div>
         </div>
       </details>

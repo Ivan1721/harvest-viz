@@ -180,4 +180,14 @@ export default {
     'Ponto de recolha: um recolhedor atende por ordem de chegada; recebe as caixas do robô e dos colhedores, esvazia-as em bins e carrega o caminhão, que sai cheio ou a cada intervalo.',
   'Carga y ritmo: la carga de cada árbol varía (lognormal, CV {cv}); el periodo de cosecha crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), y el cosechero deja el lado cuando supera {umbral} × T₀ (queda {fmin} % de su fruta).':
     'Carga e ritmo: a carga de cada árvore varia (lognormal, CV {cv}); o período de colheita cresce ao esvaziar o lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), e o colhedor deixa o lado quando supera {umbral} × T₀ (resta {fmin} % de seus frutos).',
+  'Reparto: frente; uno por calle a la misma altura con tramos de {tramo} árboles, y el frente avanza hacia el fondo. Al terminar, el árbol siguiente del tramo y luego el tramo libre más cercano.':
+    'Distribuição: frente; um por rua na mesma altura com trechos de {tramo} árvores, e a frente avança para o fundo. Ao terminar, a árvore seguinte do trecho e depois o trecho livre mais próximo.',
+  'Reparto: repartida; parejas en calles espaciadas a todo el ancho, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.':
+    'Distribuição: espalhada; pares em ruas espaçadas por toda a largura, um lado de fileira cada um. Ao terminar, o trecho livre mais próximo.',
+  'Reparto: parejas en las calles más cercanas al acopio, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.':
+    'Distribuição: pares nas ruas mais próximas do ponto de recolha, um lado de fileira cada um. Ao terminar, o trecho livre mais próximo.',
+  'Ruta del robot: al terminar cada vuelta se recalcula con las calles que tienen cosecheros o cajas esperando.':
+    'Rota do robô: ao final de cada volta é recalculada com as ruas que têm colhedores ou caixas esperando.',
+  'Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).':
+    'Avanço do talhão: {avance} % dos lados de fileira já colhidos, das ruas do ponto de recolha para fora (suposto).',
 }

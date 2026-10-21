@@ -67,15 +67,21 @@ test('H7: el acopio y la carga (opciones ausente en los valores de partida) viaj
   const p = profileDefaults('hri', 'palta-alta-densidad', 'warthog')
   p.acopio = { ...ACOPIO_DEFAULTS, camionBins: 6 }
   p.carga = { cv: 0.4, k: 460, umbral: 2.5 }
+  p.reparto = { modo: 'frente', tramo: 6 }
+  p.avance = 0.25
   const sp = writeRunState(new URLSearchParams(), p, CFG0)
   const r = readRunState(new URLSearchParams(sp.toString()), CFG0)
   assert.equal(r.error, null)
   assert.deepEqual(r.params.acopio, p.acopio)
   assert.deepEqual(r.params.carga, p.carga)
+  assert.deepEqual(r.params.reparto, p.reparto)
+  assert.equal(r.params.avance, 0.25)
   assert.equal(paramsHash(resolveParams(r.params)), paramsHash(resolveParams(p)))
   // sin acopio no aparece
   delete p.acopio
   delete p.carga
+  delete p.reparto
+  delete p.avance
   const r2 = readRunState(new URLSearchParams(writeRunState(new URLSearchParams(), p, CFG0).toString()), CFG0)
   assert.equal('acopio' in r2.params, false)
 })

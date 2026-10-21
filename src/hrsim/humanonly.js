@@ -246,6 +246,7 @@ export class HOSim {
   step() {
     if (this.idx >= this.N - 1) return false
     this.idx += 1
+    if (this.cosecha) this.cosecha.t = this.idx * this.dt
     for (const w of this.W) {
       w.flag = 0
       this._stepWorker(w)

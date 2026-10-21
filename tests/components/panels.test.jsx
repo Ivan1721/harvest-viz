@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useState } from 'react'
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, waitFor, within } from '@testing-library/react'
 import { SimSteps, DEFAULTS_SIM, changedSteps, resetStep } from '../../src/workload/panels/SimPanel.jsx'
 import { profileDefaults } from '../../src/hrsim/common.js'
 import { Validation } from '../../src/workload/panels/Validation.jsx'
@@ -30,6 +30,8 @@ function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_S
       <output data-testid="walk">{params.walkSpeed}</output>
       <output data-testid="huerto">{params.huerto}</output>
       <output data-testid="nw">{cfg.nw}</output>
+      <output data-testid="avance">{params.avance ?? ''}</output>
+      <output data-testid="reparto">{params.reparto ? JSON.stringify(params.reparto) : ''}</output>
       <output data-testid="carga">{params.carga ? JSON.stringify(params.carga) : ''}</output>
       <output data-testid="acopio">{params.acopio ? JSON.stringify(params.acopio) : ''}</output>
     </>
@@ -181,6 +183,29 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     expect(JSON.parse(screen.getByTestId('carga').textContent).umbral).toBe(2) // bajo el mínimo: no se aplica
     fireEvent.click(screen.getByTestId('carga-on'))
     expect(screen.getByTestId('carga').textContent).toBe('')
+  })
+
+  it('H7 C: avance del bloque (paso 1) y reparto de la cuadrilla (paso 2), con su restablecer', () => {
+    render(<Harness />)
+    expect(screen.queryByRole('group', { name: 'Reparto de la cuadrilla' })).toBeNull()
+    fireEvent.click(screen.getByText('Alta densidad'))
+    fireEvent.click(screen.getByRole('button', { name: '50 %' }))
+    expect(screen.getByTestId('avance').textContent).toBe('0.5')
+    const rep = screen.getByRole('group', { name: 'Reparto de la cuadrilla' })
+    fireEvent.click(within(rep).getByText('Frente'))
+    expect(JSON.parse(screen.getByTestId('reparto').textContent)).toEqual({ modo: 'frente', tramo: 4 })
+    expect(screen.getByTestId('reparto-nota').textContent).toMatch(/tramos cortos/)
+    const tr = screen.getByLabelText('Árboles por tramo')
+    fireEvent.change(tr, { target: { value: '6' } })
+    fireEvent.blur(tr)
+    expect(JSON.parse(screen.getByTestId('reparto').textContent).tramo).toBe(6)
+    fireEvent.click(within(rep).getByText('Repartida'))
+    expect(JSON.parse(screen.getByTestId('reparto').textContent)).toEqual({ modo: 'repartida', tramo: 6 })
+    fireEvent.click(screen.getByTestId('reset-2'))
+    expect(screen.getByTestId('reparto').textContent).toBe('')
+    expect(screen.getByTestId('avance').textContent).toBe('0.5') // el paso 1 no se toca
+    fireEvent.click(screen.getByTestId('reset-1'))
+    expect(screen.getByTestId('avance').textContent).toBe('')
   })
 
   it('changedSteps asigna cada parámetro a su paso', () => {

@@ -177,6 +177,17 @@ export function describirModelo(p) {
         p.semilla != null
           ? 'Estocasticidad: semilla {semilla}; el ritmo de cada cosechero varía ±{var} %.'
           : 'Estocasticidad: ninguna; misma configuración, mismo resultado.',
+        ...(generado
+          ? [
+              p.reparto?.modo === 'frente'
+                ? 'Reparto: frente; uno por calle a la misma altura con tramos de {tramo} árboles, y el frente avanza hacia el fondo. Al terminar, el árbol siguiente del tramo y luego el tramo libre más cercano.'
+                : p.reparto?.modo === 'repartida'
+                  ? 'Reparto: repartida; parejas en calles espaciadas a todo el ancho, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.'
+                  : 'Reparto: parejas en las calles más cercanas al acopio, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.',
+              'Ruta del robot: al terminar cada vuelta se recalcula con las calles que tienen cosecheros o cajas esperando.',
+              ...(p.avance ? ['Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).'] : []),
+            ]
+          : []),
         p.acopio
           ? 'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.'
           : 'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).',
@@ -190,6 +201,8 @@ export function describirModelo(p) {
       vars: {
         semilla: p.semilla,
         var: Math.round((p.variacionRitmo ?? 0.1) * 100),
+        tramo: p.reparto?.tramo,
+        avance: p.avance != null ? Math.round(p.avance * 100) : null,
         ...(p.carga ? { cv: p.carga.cv, umbral: p.carga.umbral, fmin: +(100 * fMinima(p.carga.k, p.carga.umbral)).toFixed(1) } : {}),
       },
     },

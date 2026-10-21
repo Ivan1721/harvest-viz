@@ -1609,3 +1609,16 @@ table.mini th + th {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* H7 fase C: campo numérico en línea bajo un selector (árboles por tramo del reparto «frente») */
+.inline-num {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+.inline-num input {
+  width: 72px;
+}

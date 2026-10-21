@@ -4,7 +4,19 @@
 // (inmediato con setPlay, y a lo sumo ~5 veces por segundo mientras corre la reproducción).
 import { useEffect, useState } from 'react'
 
-export const play = { t: 0, playing: true, speed: 10, colorBy: 'rate', selected: null, zones: false, intent: false, driver: null, tEnd: 0, canopy: { v: 0.42 } }
+export const play = {
+  t: 0,
+  playing: true,
+  speed: 10,
+  colorBy: 'rate',
+  selected: null,
+  zones: false,
+  intent: false,
+  plantas: true,
+  driver: null,
+  tEnd: 0,
+  canopy: { v: 0.42 },
+}
 export const anim = { t: 0 }
 
 const listeners = new Set()

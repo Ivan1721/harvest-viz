@@ -31,21 +31,21 @@ export const SISTEMAS = {
     generador: PALTA_TRADICIONAL,
     // 1 unidad = 1 kg; caja de 15 kg. Ritmo calibrado a 320–420 kg por cosechero en 8 h (ver docs/simulador.md)
     params: { prodPeriod: { 1: 60, 2: 90, 3: 75 }, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-tradicional', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'palta-tradicional')),
   },
   'palta-alta-densidad': {
     label: 'Palta alta densidad (4 × 2 m, 1 ha)',
     generador: PALTA_ALTA_DENSIDAD,
     // sin escalera; ritmo calibrado a 1.000–1.600 kg por cosechero en 8 h (ver docs/simulador.md)
     params: { prodPeriod: { 1: 14, 2: 14, 3: 18 }, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-alta-densidad', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'palta-alta-densidad')),
   },
   'palta-ladera': {
     label: 'Palta en ladera (4 × 2 m, 20 %)',
     generador: PALTA_LADERA,
     // mismo ritmo de cosecha que en plano: la ladera solo cambia la marcha (Tobler) y su gasto (Pandolf)
     params: { prodPeriod: { 1: 14, 2: 14, 3: 18 }, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'palta-ladera', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'palta-ladera')),
   },
   // H5: el ritmo de cosecha (s por kg, igual para todas las actividades: no hay escalera) está calibrado a la fuente de
   // cada cultivo; maxProd = kg de la caja o bandeja que el cosechero llena y entrega (ver docs/simulador.md)
@@ -53,24 +53,26 @@ export const SISTEMAS = {
     label: 'Uva de mesa en parrón (3,5 × 3,5 m)',
     generador: UVA_PARRON,
     params: { prodPeriod: { 1: 90, 2: 90, 3: 90 }, maxProd: 9, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'uva-parron', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'uva-parron')),
   },
   arandano: {
     label: 'Arándano (3 × 1 m)',
     generador: ARANDANO,
     params: { prodPeriod: { 1: 340, 2: 340, 3: 340 }, maxProd: 2, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'arandano', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'arandano')),
   },
   'cerezo-ufo': {
     label: 'Cerezo peatonal UFO (3,2 × 1,8 m)',
     generador: CEREZO_UFO,
     params: { prodPeriod: { 1: 63, 2: 63, 3: 63 }, maxProd: 5, fixRecallLoop: true },
-    build: (p) => generarRectangular(p.huertoParams, { nw: p.nw, sistema: 'cerezo-ufo', robotAncho: anchoRobot(p) }),
+    build: (p) => generarRectangular(p.huertoParams, opcionesGen(p, 'cerezo-ufo')),
   },
 }
 
 // el robot elegido define si entra a las calles (su ancho)
 const anchoRobot = (p) => (ROBOTS[p.robotTipo] || ROBOTS.warthog).ancho
+// opciones del generador; reparto y avance del bloque (H7, fase C) solo si se piden
+const opcionesGen = (p, sistema) => ({ nw: p.nw, sistema, robotAncho: anchoRobot(p), reparto: p.reparto ?? null, avance: p.avance ?? 0 })
 
 /** Huerto de una simulación a partir de sus parámetros resueltos. */
 export function buildHuerto(p) {

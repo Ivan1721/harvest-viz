@@ -180,4 +180,14 @@ export default {
     'Collection point: a worker serves in order of arrival; receives the boxes from the robot and the harvesters, empties them into bins and loads the truck, which leaves when full or at a set interval.',
   'Carga y ritmo: la carga de cada árbol varía (lognormal, CV {cv}); el periodo de cosecha crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), y el cosechero deja el lado cuando supera {umbral} × T₀ (queda {fmin} % de su fruta).':
     "Load and rate: each tree's load varies (lognormal, CV {cv}); the harvesting period grows as the side empties, T(f) = T₀·ln(1 + k)/ln(1 + k·f), and the harvester leaves the side when it exceeds {umbral} × T₀ ({fmin} % of its fruit remains).",
+  'Reparto: frente; uno por calle a la misma altura con tramos de {tramo} árboles, y el frente avanza hacia el fondo. Al terminar, el árbol siguiente del tramo y luego el tramo libre más cercano.':
+    'Layout: front; one per lane at the same height with sections of {tramo} trees, and the front moves towards the far end. When done, the next tree in the section and then the nearest free section.',
+  'Reparto: repartida; parejas en calles espaciadas a todo el ancho, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.':
+    'Layout: spread out; pairs in lanes spaced across the whole width, one row side each. When done, the nearest free section.',
+  'Reparto: parejas en las calles más cercanas al acopio, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.':
+    'Layout: pairs in the lanes nearest the collection point, one row side each. When done, the nearest free section.',
+  'Ruta del robot: al terminar cada vuelta se recalcula con las calles que tienen cosecheros o cajas esperando.':
+    'Robot route: at the end of each lap it is recomputed with the lanes that have harvesters or waiting boxes.',
+  'Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).':
+    'Block progress: {avance} % of the row sides already harvested, from the lanes near the collection point outwards (assumed).',
 }
