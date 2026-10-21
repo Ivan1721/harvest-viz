@@ -474,6 +474,63 @@ function CargoPile({ run, real, geom }) {
   )
 }
 
+// H7: acopio con acopiador — bins llenos en el acopio (hasta el tope) y el camión, con los bins que ya cargó,
+// cuando no está de viaje. Se actualiza por cuadro según el instante de la reproducción.
+const BIN = [1.2, 0.75, 1.0]
+function AcopioBins({ run, geom }) {
+  const CARGO = geom.cargo
+  const [cx, , cz] = toW((CARGO.x[0] + CARGO.x[1]) / 2, (CARGO.y[0] + CARGO.y[1]) / 2)
+  const tope = Math.min(24, run.acopio.cfg.topeBins || 8),
+    cap = Math.min(12, run.acopio.cfg.camionBins || 4)
+  const bins = useRef([]),
+    camion = useRef(),
+    carga = useRef([])
+  useFrame(() => {
+    const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
+    const nb = run.acopio.bins[i],
+      cam = run.acopio.camion[i]
+    bins.current.forEach((m, k) => m && (m.visible = k < nb))
+    if (camion.current) camion.current.visible = cam >= 0
+    carga.current.forEach((m, k) => m && (m.visible = k < cam))
+  })
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.03, cz]}>
+        <planeGeometry args={[CARGO.x[1] - CARGO.x[0], CARGO.y[1] - CARGO.y[0]]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.35} />
+      </mesh>
+      {Array.from({ length: tope }, (_, k) => (
+        <mesh
+          key={k}
+          ref={(m) => (bins.current[k] = m)}
+          position={[cx - 2 + (k % 4) * 1.35, BIN[1] / 2 + Math.floor(k / 8) * BIN[1], cz + 1.6 + (Math.floor(k / 4) % 2) * 1.15]}
+          visible={false}
+          castShadow
+        >
+          <boxGeometry args={BIN} />
+          <meshStandardMaterial color="#8a5a2b" />
+        </mesh>
+      ))}
+      <group ref={camion} position={[cx + 5, 0, cz + 1.8]} visible={false}>
+        <mesh position={[0, 0.55, 0]} castShadow>
+          <boxGeometry args={[1.0 + cap * 1.3, 0.25, 2.2]} />
+          <meshStandardMaterial color="#475569" />
+        </mesh>
+        <mesh position={[(1.0 + cap * 1.3) / 2 + 0.8, 1.2, 0]} castShadow>
+          <boxGeometry args={[1.5, 1.6, 2.2]} />
+          <meshStandardMaterial color="#1f3a8a" />
+        </mesh>
+        {Array.from({ length: cap }, (_, k) => (
+          <mesh key={k} ref={(m) => (carga.current[k] = m)} position={[-(cap * 1.3) / 2 + 0.65 + k * 1.3, 0.68 + BIN[1] / 2, 0]} visible={false}>
+            <boxGeometry args={BIN} />
+            <meshStandardMaterial color="#8a5a2b" />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  )
+}
+
 // Parrón (uva de mesa): postes en cada planta y un techo verde semitransparente a la altura del parrón; la opacidad
 // sigue al control de transparencia del follaje para ver a cosecheros y robot debajo
 function Parron({ trees, techo }) {
@@ -590,7 +647,7 @@ function World({ run, selected, onSelect, version, look, geom }) {
       {/* en ladera todo (suelo, árboles, personas, robot) se inclina con el terreno; en plano tilt = 0 */}
       <group rotation={[geom.tilt || 0, 0, 0]}>
         <Ground run={run} real={real} geom={geom} />
-        <CargoPile run={run} real={real} geom={geom} />
+        {run.acopio ? <AcopioBins run={run} geom={geom} /> : <CargoPile run={run} real={real} geom={geom} />}
         {run.robot && <Intent run={run} />}
         <Boxes run={run} real={real} />
         {run.workers.map((w) => (

@@ -6,7 +6,8 @@ import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
 import { Field, Seg } from '../ui.jsx'
 import { ACTS } from '../library.js'
 import { ACT_LABEL } from '../spec.js'
-import { COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
+import { ACOPIO, COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
+import { ACOPIO_DEFAULTS } from '../../hrsim/acopio.js'
 import { robotVariante } from '../variantes.js'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
@@ -57,7 +58,7 @@ export const CULTIVOS = [
 ]
 export const cultivoDe = (huerto) => CULTIVOS.find(([, , ss]) => ss.some(([k]) => k === huerto)) || CULTIVOS[0]
 /** Paso k (de 1 a 3) cuyos valores cambian con la clave `k` de los parámetros. */
-const STEP_OF = (k) => (k === 'huertoParams' ? 1 : k === 'duration' ? 3 : 2)
+const STEP_OF = (k) => (k === 'huertoParams' || k === 'acopio' ? 1 : k === 'duration' ? 3 : 2)
 /** Valores de partida de un paso: devuelve `params` con las claves de ese paso tomadas de `base`. */
 export function resetStep(params, base, n) {
   const out = { ...params }
@@ -244,6 +245,54 @@ export function SimSteps({
               </label>
             ))}
             {2 * hp.radioCopa >= hp.calle && <div className="note warn">{t('Las copas de hileras vecinas se tocan: no queda calle para caminar.')}</div>}
+          </Group>
+        )}
+        <Field label={t('Acopio')}>
+          <label className="checkline">
+            <input
+              type="checkbox"
+              checked={!!params.acopio}
+              data-testid="acopio-on"
+              onChange={(e) =>
+                setParams((p) => {
+                  const q = { ...p }
+                  if (e.target.checked) q.acopio = { ...ACOPIO_DEFAULTS }
+                  else delete q.acopio
+                  return q
+                })
+              }
+            />
+            {t('Acopiador y camión')}
+          </label>
+          {!params.acopio && (
+            <div className="note" style={{ marginTop: 2 }}>
+              {t('Sin acopiador: lo que llega al acopio se da por entregado.')}
+            </div>
+          )}
+        </Field>
+        {params.acopio && (
+          <Group
+            title={t('Ajustar el acopio')}
+            changed={differs(
+              params.acopio,
+              ACOPIO_DEFAULTS,
+              ACOPIO.map((r) => r[0]),
+            )}
+            testid="acopio-params"
+          >
+            {ACOPIO.map(([k, l, st, src, min, max, int]) => (
+              <label key={k} title={t(src)}>
+                <span>{t(l)}</span>
+                <NumField
+                  value={params.acopio[k]}
+                  step={st}
+                  min={min}
+                  max={max}
+                  label={t(l)}
+                  onCommit={(v) => (!int || Number.isInteger(v)) && setParams((p) => ({ ...p, acopio: { ...p.acopio, [k]: v } }))}
+                />
+              </label>
+            ))}
           </Group>
         )}
       </Step>

@@ -30,6 +30,7 @@ function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_S
       <output data-testid="walk">{params.walkSpeed}</output>
       <output data-testid="huerto">{params.huerto}</output>
       <output data-testid="nw">{cfg.nw}</output>
+      <output data-testid="acopio">{params.acopio ? JSON.stringify(params.acopio) : ''}</output>
     </>
   )
 }
@@ -144,6 +145,25 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     fireEvent.click(screen.getByText('Burro con carro'))
     expect(screen.getByTestId('robot-info').textContent).toMatch(/carro de 60 kg/)
     expect(screen.getByTestId('robot-info').textContent).toMatch(/entra a las calles/)
+  })
+
+  it('H7: «Acopiador y camión» agrega el acopio con sus valores, se ajusta y se quita con restablecer el paso 1', () => {
+    render(<Harness />)
+    expect(screen.getByTestId('acopio').textContent).toBe('')
+    fireEvent.click(screen.getByTestId('acopio-on'))
+    expect(JSON.parse(screen.getByTestId('acopio').textContent)).toMatchObject({ binKg: 380, camionBins: 4, topeBins: 8 })
+    expect(screen.getByTestId('step-escenario').querySelector('.step-dot')).toBeTruthy()
+    fireEvent.click(screen.getByText('Ajustar el acopio'))
+    const bins = screen.getByLabelText('Bins por camión')
+    fireEvent.change(bins, { target: { value: '2.5' } })
+    fireEvent.blur(bins)
+    expect(JSON.parse(screen.getByTestId('acopio').textContent).camionBins).toBe(4) // entero
+    fireEvent.change(bins, { target: { value: '6' } })
+    fireEvent.blur(bins)
+    expect(JSON.parse(screen.getByTestId('acopio').textContent).camionBins).toBe(6)
+    fireEvent.click(screen.getByTestId('reset-1'))
+    expect(screen.getByTestId('acopio').textContent).toBe('')
+    expect(screen.queryByText('Ajustar el acopio')).toBeNull()
   })
 
   it('changedSteps asigna cada parámetro a su paso', () => {

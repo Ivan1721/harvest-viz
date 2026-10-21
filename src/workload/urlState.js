@@ -14,6 +14,8 @@ const ACTS = ['ground', 'ladder', 'picker', 'mixed']
 const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'perfil', 'dur', 'cmp', 'ajustes']
 // parámetros que viajan en claves legibles (o que se derivan de ellas) y no en `ajustes`
 const FUERA = new Set(['profile', 'huerto', 'robotTipo', 'duration'])
+// opciones que no están en los valores de partida y se activan con su objeto (H7: acopio)
+const OPCIONALES = new Set(['acopio'])
 
 const b64url = {
   enc: (s) => {
@@ -94,7 +96,7 @@ export function readRunState(search, cfg0) {
     try {
       const d = JSON.parse(b64url.dec(search.get('ajustes')))
       for (const [k, v] of Object.entries(d)) {
-        if (FUERA.has(k) || !(k in params)) continue
+        if (FUERA.has(k) || !(k in params || OPCIONALES.has(k))) continue
         params[k] = v && typeof v === 'object' && !Array.isArray(v) && params[k] && typeof params[k] === 'object' ? { ...params[k], ...v } : v
       }
     } catch {

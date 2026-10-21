@@ -126,6 +126,22 @@ recibe su propio ritmo: su periodo de cosecha se multiplica por U(1 − v, 1 + v
 corridas quedan pareadas. Como el periodo deja de ser un número entero de ticks, el contador guarda el resto y el ritmo
 medio es exacto. Sin `semilla` esos parámetros no existen: la réplica de MATLAB y los hashes no cambian.
 
+## Acopio con acopiador y camión (H7, fase A)
+
+Opcional (`acopio`, apagado por defecto). Sin él, lo que llega al acopio se da por entregado, como en MATLAB. Con él,
+un **acopiador** atiende por orden de llegada (FIFO): recibe las cajas del robot y de los cosecheros (tarda lo mismo que
+la descarga del robot, `unloadTimePerBox` por caja) y las vacía en **bins** de `binKg` = 380 kg (González-Araya et al.
+2017). Cuando hay un **camión** en el acopio, le carga los bins llenos (`cargaBinS` = 90 s cada uno); el camión sale con
+`camionBins` = 4 bins o, si ya lleva algo, cuando se cumple `intervaloS` = 3600 s, y vuelve vacío tras `viajeS` = 2400 s.
+Con `topeBins` = 8 bins llenos el acopio no recibe más hasta que el camión se los lleve. El acopiador prioriza cargar
+cuando el acopio está lleno, cuando completaría el camión o cuando vence el intervalo; si no, recibe. Salvo el bin, los
+valores son supuestos (ver el documento de diseño de H7).
+
+Mientras espera, el cosechero de Solo humano pasa al estado 16 «Espera en el acopio» y el robot al estado 6; la
+producción entregada solo cuenta al terminar la recepción, y «Despachado en camión» (`dispatched`) es lo que salió del
+huerto. El acopiador gasta como caminata con carga mientras recibe y como cosecha de suelo mientras carga; su gasto entra
+en el total. Sin `acopio` los parámetros resueltos no lo incluyen: la réplica de MATLAB y los hashes no cambian.
+
 ## Experimentos en lote (H6)
 
 `npm run experimentos -- experimentos/h6.json` corre todas las celdas de un diseño en paralelo (un hilo por núcleo) y

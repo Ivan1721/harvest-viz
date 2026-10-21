@@ -1,7 +1,7 @@
 // Modelo de agentes (I3): máquinas de estado del cosechero y del robot, tal como las implementa el motor
 // (src/hrsim/engine.js y humanonly.js), y la descripción del modelo con el protocolo ODD (Grimm et al. 2020).
 // Todo texto es una clave en español para t(); los valores salen de los parámetros de la corrida, no se escriben a mano.
-import { COSTS, CREW, HUERTO, ROBOT, SSM } from './parametros.js'
+import { ACOPIO, COSTS, CREW, HUERTO, ROBOT, SSM } from './parametros.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { ROBOTS, MU } from '../hrsim/robots.js'
 
@@ -57,8 +57,9 @@ export const ESTADOS_HO = [
   { id: 13, label: 'Va al siguiente árbol', x: 60, y: 130 },
   { id: 15, label: 'Sin fruta', x: 190, y: 130 },
   { id: 3, label: 'Lleva la caja al acopio', x: 320, y: 130 },
-  { id: 5, label: 'Vuelve al árbol', x: 120, y: 220 },
-  { id: 4, label: 'Descarga en el acopio', x: 320, y: 220 },
+  { id: 16, label: 'Espera en el acopio', x: 320, y: 220 },
+  { id: 5, label: 'Vuelve al árbol', x: 120, y: 300 },
+  { id: 4, label: 'Descarga en el acopio', x: 320, y: 300 },
 ]
 export const TRANSICIONES_HO = [
   { de: 1, a: 3, regla: 'La bolsa llega a {maxProd} kg (o unidades) y cosecha desde el suelo: sale al acopio.' },
@@ -67,7 +68,9 @@ export const TRANSICIONES_HO = [
   { de: 1, a: 15, regla: 'No queda fruta en su tramo ni tramos libres.' },
   { de: 2, a: 3, regla: 'Termina de bajar ({ladderTime} s) con la bolsa llena.' },
   { de: 2, a: 13, regla: 'Termina de bajar ({ladderTime} s) para ir a otro árbol.' },
-  { de: 3, a: 4, regla: 'Llega al acopio.' },
+  { de: 3, a: 4, regla: 'Llega al acopio (con acopiador, este lo atiende de inmediato).' },
+  { de: 3, a: 16, regla: 'Con acopiador: llega al acopio y el acopiador está ocupado; hace cola con su caja.' },
+  { de: 16, a: 4, regla: 'El acopiador lo atiende.' },
   { de: 4, a: 5, regla: 'Descarga ({cargoUnloadTime} s) y vuelve.' },
   { de: 5, a: 1, regla: 'Llega a su árbol y cosecha desde el suelo.' },
   { de: 5, a: 7, regla: 'Llega a su árbol y sube a la escalera.' },
@@ -84,6 +87,7 @@ export const ESTADOS_ROBOT = [
   { id: 3, label: 'Parada de seguridad', regla: 'Con la regla SSM: una persona está dentro de S_p(v); reanuda tras {tResume} s libre.' },
   { id: 4, label: 'Velocidad reducida', regla: 'Con la regla SSM: una persona está en el margen de advertencia o lo atiende; va a {vSlow} m/s.' },
   { id: 5, label: 'Sin tracción', regla: 'La pendiente pide más fuerza que la adherencia de sus ruedas (μ = {mu}): no avanza.' },
+  { id: 6, label: 'Espera en el acopio', regla: 'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.' },
 ]
 
 /** Valores para las reglas: parámetros de la corrida con formato corto. */
@@ -157,7 +161,7 @@ export function describirModelo(p) {
       id: 'proceso',
       titulo: 'Proceso y calendario',
       textos: [
-        'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) se registran posiciones, estados, producción y gasto.',
+        'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.',
         'La corrida termina al cumplir la duración. No hay eventos asíncronos: todo ocurre en ticks de {dt} s.',
       ],
     },
@@ -172,6 +176,9 @@ export function describirModelo(p) {
         p.semilla != null
           ? 'Estocasticidad: semilla {semilla}; el ritmo de cada cosechero varía ±{var} %.'
           : 'Estocasticidad: ninguna; misma configuración, mismo resultado.',
+        p.acopio
+          ? 'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.'
+          : 'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).',
         'Sin aprendizaje ni adaptación: las reglas son fijas durante la corrida.',
       ],
       vars: { semilla: p.semilla, var: Math.round((p.variacionRitmo ?? 0.1) * 100) },
@@ -193,6 +200,7 @@ export function describirModelo(p) {
         ...ROBOT.map(([k, l, , src]) => fila(k, l, p[k], src)),
         ...(generado ? HUERTO.map(([k, l]) => fila(`huertoParams.${k}`, l, hp[k], 'Generador del sistema')) : []),
         ...(generado ? [fila('huertoParams.pendiente', 'Pendiente a lo largo de las hileras (%)', hp.pendiente, 'Generador del sistema')] : []),
+        ...(p.acopio ? ACOPIO.map(([k, l, , src]) => fila(`acopio.${k}`, l, p.acopio[k], src)) : []),
         ...(p.ssm ? SSM.map(([k, l, , src]) => fila(`ssm.${k}`, l, p.ssm[k], src)) : []),
       ],
     },

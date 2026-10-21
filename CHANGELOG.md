@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+**Motor 0.5.0** (solo cambian las corridas con acopio activado; la réplica de MATLAB no cambia).
+
+### Agregado
+
+- **Acopio con acopiador y camión** (H7, fase A), opcional en el paso Escenario: cola por orden de llegada, bins de 380 kg con tope, camión que sale lleno o cada 60 min; estados «Espera en el acopio» del cosechero (16) y del robot (6), «Despachado en camión» en el Resumen, bins y camión en la escena.
+
 ## [0.7.0] — 2026-10-20
 
 De la réplica de MATLAB a un simulador de sistemas de cosecha: métricas de interacción, seguridad, huertos generados, robots y experimentos en lote. **Motor 0.4.0** (los huertos generados cambian resultados desde la 0.3.0; la réplica de MATLAB no cambia y sigue pasando sus 720 configuraciones).
