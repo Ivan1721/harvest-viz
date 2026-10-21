@@ -21,8 +21,8 @@ export default {
   'Sin tracción': 'Sem tração',
   'La bolsa llega a {maxProd} kg (o unidades) y cosecha desde el suelo.': 'A sacola chega a {maxProd} kg (ou unidades) e colhe do chão.',
   'La bolsa se llena o el lado del árbol se agota, y está en la escalera.': 'A sacola enche ou o lado da árvore se esgota, e está na escada.',
-  'Se agota la fruta de su lado del árbol: camina al siguiente árbol de su tramo.':
-    'A fruta do seu lado da árvore se esgota: caminha até a próxima árvore do seu trecho.',
+  'Se agota la fruta de su lado del árbol (con el ritmo que cae, queda tan poca que la deja): camina al siguiente árbol de su tramo.':
+    'A fruta do seu lado da árvore se esgota (com o ritmo decrescente, resta tão pouca que a deixa): caminha até a próxima árvore do seu trecho.',
   'No queda fruta en su tramo ni tramos libres.': 'Não resta fruta no seu trecho nem trechos livres.',
   'Termina de bajar ({ladderTime} s) con la bolsa llena.': 'Termina de descer ({ladderTime} s) com a sacola cheia.',
   'Termina de bajar ({ladderTime} s) para ir a otro árbol.': 'Termina de descer ({ladderTime} s) para ir a outra árvore.',
@@ -178,4 +178,6 @@ export default {
     'Ponto de recolha: o que chega conta como entregue (sem recolhedor nem caminhão).',
   'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.':
     'Ponto de recolha: um recolhedor atende por ordem de chegada; recebe as caixas do robô e dos colhedores, esvazia-as em bins e carrega o caminhão, que sai cheio ou a cada intervalo.',
+  'Carga y ritmo: la carga de cada árbol varía (lognormal, CV {cv}); el periodo de cosecha crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), y el cosechero deja el lado cuando supera {umbral} × T₀ (queda {fmin} % de su fruta).':
+    'Carga e ritmo: a carga de cada árvore varia (lognormal, CV {cv}); o período de colheita cresce ao esvaziar o lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), e o colhedor deixa o lado quando supera {umbral} × T₀ (resta {fmin} % de seus frutos).',
 }

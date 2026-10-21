@@ -28,6 +28,7 @@ export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
     ['Carga por trabajador', 'kcal', (r, i) => r.series.work[i] / r.workers.length, false, 1],
     ['Energía por unidad entregada', 'kcal/u', (r, i) => (r.series.cargo[i] > 0 ? r.series.work[i] / r.series.cargo[i] : null), false, 2],
     ['Despachado en camión', 'u', (r, i) => (r.acopio ? r.acopio.desp[i] : null), true],
+    ['Fruta dejada en los árboles', 'u', (r, i) => (r.carga ? r.carga.dej[i] : null), true],
     // del análisis de la corrida completa: solo en «Final»
     ['Energía del robot por kg entregado', 'Wh/kg', (r, i) => (i === r.n - 1 ? r.hri?.fluency.energia?.whPorKg : null), true, 2],
     ['Espera media de las cajas', 's', (r, i) => (i === r.n - 1 ? r.hri?.fluency.boxWait.mean : null), true],

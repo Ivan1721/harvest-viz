@@ -14,8 +14,8 @@ const ACTS = ['ground', 'ladder', 'picker', 'mixed']
 const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'perfil', 'dur', 'cmp', 'ajustes']
 // parámetros que viajan en claves legibles (o que se derivan de ellas) y no en `ajustes`
 const FUERA = new Set(['profile', 'huerto', 'robotTipo', 'duration'])
-// opciones que no están en los valores de partida y se activan con su objeto (H7: acopio)
-const OPCIONALES = new Set(['acopio'])
+// opciones que no están en los valores de partida y se activan con su objeto (H7: acopio, carga)
+const OPCIONALES = new Set(['acopio', 'carga'])
 
 const b64url = {
   enc: (s) => {

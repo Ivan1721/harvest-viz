@@ -302,3 +302,33 @@ test('acopio con acopiador y camión: se activa, se simula, se despacha y viaja 
   }
   expect(errors).toEqual([])
 })
+
+test('carga variable y ritmo que cae: se activa, se simula y muestra la fruta dejada y el ritmo real (H7 B)', async ({ page }) => {
+  const errors = await openWorkload(page, { mode: 'sim' })
+  await page.getByRole('button', { name: 'Tradicional', exact: true }).click()
+  await page.getByTestId('huerto-params').click()
+  await page.getByLabel('Hileras', { exact: true }).fill('4')
+  await page.getByLabel('Árboles por hilera', { exact: true }).fill('12')
+  await page.getByLabel('Carga por árbol (kg)').fill('10')
+  await page.getByTestId('carga-on').check()
+  // en 15 min se dejan pocos árboles: un umbral bajo hace que cada lado se deje con más fruta (35,8 %)
+  await page.getByTestId('carga-params').click()
+  await page.getByLabel('Deja el árbol cuando el periodo supera (× T₀)').fill('1.2')
+  await page.getByLabel('Deja el árbol cuando el periodo supera (× T₀)').press('Tab')
+  await expect(page.getByText(/lo deja con 35,8 % de su fruta/)).toBeVisible()
+  await page.getByLabel('Duración (s)').fill('900')
+  await simulate(page)
+  const fila = page.locator('table.cmp tr', { hasText: 'Fruta dejada en los árboles' })
+  await expect(fila).toBeVisible()
+  await setRange(page.locator('.timeline2 input[type=range]'), 900)
+  await expect(fila.locator('td').nth(1)).not.toHaveText(/^(0|—)$/)
+  expect(JSON.parse(Buffer.from(new URL(page.url()).searchParams.get('ajustes'), 'base64url').toString()).carga).toMatchObject({ cv: 0.5, umbral: 1.2 })
+  await page.getByRole('tab', { name: 'Personas', exact: true }).click()
+  await page.locator('.wl .li').first().click()
+  await expect(page.getByTestId('ritmo-real')).toContainText('kg/h')
+  if (process.env.SHOT11) {
+    await page.getByRole('tab', { name: 'Resumen', exact: true }).click()
+    await page.screenshot({ path: process.env.SHOT11 })
+  }
+  expect(errors).toEqual([])
+})

@@ -16,6 +16,7 @@ import { Cosecha, rutaCalles, ejeCercano } from './huertos/rectangular.js'
 import { paso } from './huertos/pendiente.js'
 import { ROBOTS, potencia, fuerzaAvance, limiteTraccion, frenadaEfectiva } from './robots.js'
 import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
+import { prepararCarga, resumenCarga } from './carga.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -51,7 +52,8 @@ export class HRSim {
     this.ladder = ladder
     this.W = W
     // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
-    this.cosecha = huerto.calles ? new Cosecha(huerto, W) : null
+    // carga variable por árbol y ritmo que cae (H7, fase B; opcional)
+    this.cosecha = huerto.calles ? new Cosecha(huerto, W, p.carga ? prepararCarga(p.carga, huerto.arboles.length, p.semilla) : null) : null
     // --- ruta base del robot ---
     const lap = huerto.vueltaRobot
     this.baseRoute = []
@@ -111,6 +113,7 @@ export class HRSim {
       rst: [],
       ...(this.cosecha ? { energy: [], cx: [], cy: [], cth: [] } : {}),
       ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
+      ...(this.cosecha?.carga ? { dej: [] } : {}),
       wx: Array.from({ length: NH }, () => []),
       wy: Array.from({ length: NH }, () => []),
       wth: Array.from({ length: NH }, () => []),
@@ -199,6 +202,7 @@ export class HRSim {
     r.onboard.push(this.prodRobot)
     r.work.push(this.W.reduce((a, w) => a + w.work, 0) + (this.acopio ? this.acopio.work : 0))
     if (this.acopio) recordAcopio(r, this.acopio)
+    if (r.dej) r.dej.push(this.cosecha.dejado)
     r.rx.push(this.rpose[0])
     r.ry.push(this.rpose[1])
     r.rth.push(this.rpose[2])
@@ -248,19 +252,20 @@ export class HRSim {
       case 1: {
         const prevProd = w.prod
         w.cont += 1
-        if (w.cont >= w.tInc) {
+        const tInc = this.cosecha?.carga ? w.tInc * this.cosecha.periodo(w) : w.tInc // fase B: el periodo crece al vaciarse el lado
+        if (w.cont >= tInc) {
           // huertos generados: no se cosecha más fruta de la que queda en el lado del árbol
           // huertos generados: no se saca del árbol más de lo que cabe en la bolsa (el MATLAB recorta la bolsa y descarta
           // el excedente; con fruta finita eso rompería la conservación)
           w.prod = prevProd + (this.cosecha ? this.cosecha.take(w, Math.max(0, Math.min(p.costProduction * dt, maxProd - prevProd))) : p.costProduction * dt)
           w.last = w.prod
-          w.cont = p.semilla == null ? 0 : w.cont - w.tInc // con semilla el periodo no es entero: se guarda el resto
+          w.cont = p.semilla == null && !p.carga ? 0 : w.cont - tInc // periodo no entero (semilla o fase B): se guarda el resto
         } else w.prod = w.last
         if (prevProd >= maxProd) {
           w.prod = maxProd
           w.last = maxProd
           w.state = w.ladder === 1 ? 2 : 6
-        } else if (this.cosecha && this.cosecha.empty(w)) this._leaveTree(w)
+        } else if (this.cosecha && this.cosecha.agotado(w)) this._leaveTree(w)
         w.work += w.cost * dt
         w.flag = 1
         if (loads && w.state === 1 && w.call && w.stage === 0) startHandoff()
@@ -926,6 +931,7 @@ export class HRSim {
       waypointSkips: this.skips,
       capacityBlocked: this.capacityBlocked,
       ...(this.p.ssm?.enabled ? { safetyStops: this.ssmStops } : {}),
+      ...(this.cosecha?.carga ? resumenCarga(this.cosecha, this.W, this.rec.wst, this.dt) : {}),
       ...(this.acopio ? resumenAcopio(this.acopio, this.rec.rst ? this.rec.rst.filter((v) => v === 6).length * this.dt : 0, this.rec.t.length) : {}),
       ...(this.robotSpec
         ? {

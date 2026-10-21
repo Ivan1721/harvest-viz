@@ -120,6 +120,14 @@ export function simToRun(sim, { robot }) {
           cfg: { ...p.acopio },
         }
       : null,
+    // H7 fase B: fruta dejada en los árboles (por tick) y ritmo real de cada cosechero mientras cosecha
+    carga: rec.dej
+      ? (() => {
+          // del motor (pruebas) o del worker (resumen ya calculado)
+          const c = (typeof sim.summary === 'function' ? sim.summary() : sim.summary).carga
+          return { dej: f32(rec.dej), ritmo: c.ritmo_kgh, fMin: c.fMin, cfg: { ...p.carga } }
+        })()
+      : null,
     rateMax,
     name: `SIM-${robot ? 'HR' : 'HO'}-${NH}-${p.row}-${p.act}-${p.rp}`,
     rowAt: (t) => Math.min(n - 1, Math.max(0, Math.floor(t / dt))),

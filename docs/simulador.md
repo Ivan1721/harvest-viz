@@ -142,6 +142,25 @@ producción entregada solo cuenta al terminar la recepción, y «Despachado en c
 huerto. El acopiador gasta como caminata con carga mientras recibe y como cosecha de suelo mientras carga; su gasto entra
 en el total. Sin `acopio` los parámetros resueltos no lo incluyen: la réplica de MATLAB y los hashes no cambian.
 
+## Carga variable por árbol y ritmo que cae (H7, fase B)
+
+Opcional (`carga`, apagada por defecto y solo en huertos generados). Con ella:
+
+- **Carga por árbol**: la media del sistema × un factor lognormal de media 1 y variabilidad `cv` (0,5 en palta, 0,3 en
+  los demás; supuesto acotado por el 74 % que midieron Olalla y Rodríguez 1991 en palta). Los factores se reescalan para
+  que la carga total del cuartel no cambie. El sorteo usa `semilla` (0 si no hay) en una corriente propia, así que no
+  cambia el sorteo de ritmos de H6.
+- **Ritmo que cae**: el periodo crece al vaciarse el lado, T(f) = T₀·ln(1 + k)/ln(1 + k·f), con f = fruta que queda /
+  fruta inicial del lado. k = 460 ajusta a Roka y Hyman 2008 (cítricos: 5,4 cajas/h con 25 cajas por acre y 10,4 con
+  500, es decir, 52 % del ritmo con 5 % de la fruta). k = 0 apaga la caída.
+- **Dejar el árbol**: el cosechero pasa al árbol siguiente cuando T(f) supera `umbral` × T₀ (2 por defecto, con lo que
+  deja el 4,5 % de la fruta del lado). Esa fruta no se cosecha y se cuenta como «Fruta dejada en los árboles».
+- **Calibración**: T₀ se escala para que el periodo medio de una pasada sea el calibrado del cultivo; los rendimientos de
+  H2–H5 se mantienen (prueba en `tests/model/carga.test.mjs`) y k solo da la forma de la caída.
+
+Personas muestra el ritmo real de cada cosechero mientras cosecha (kg/h de toda la corrida). Con CV 0 y k = 0 el
+resultado es idéntico al de siempre; sin `carga` los parámetros resueltos no la incluyen y los hashes no cambian.
+
 ## Experimentos en lote (H6)
 
 `npm run experimentos -- experimentos/h6.json` corre todas las celdas de un diseño en paralelo (un hilo por núcleo) y

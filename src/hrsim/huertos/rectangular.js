@@ -252,13 +252,17 @@ export function rutaCalles(huerto, a, b) {
  * Lo usan HRSim y HOSim (mismas reglas en ambos).
  */
 export class Cosecha {
-  constructor(huerto, W, fraccion = 1) {
+  /** @param {object|null} carga carga variable y ritmo que cae (H7, fase B), de prepararCarga; null = como siempre */
+  constructor(huerto, W, carga = null) {
     this.h = huerto
+    this.carga = carga
     // fruta por lado: índice 2·árbol + (lado > 0 ? 1 : 0); mitad de la carga en cada lado
     this.fruta = new Float64Array(huerto.arboles.length * 2)
     huerto.arboles.forEach((a, i) => {
-      this.fruta[2 * i] = this.fruta[2 * i + 1] = (a.carga * fraccion) / 2
+      this.fruta[2 * i] = this.fruta[2 * i + 1] = (a.carga * (carga ? carga.factores[i] : 1)) / 2
     })
+    this.ini = carga ? Float64Array.from(this.fruta) : null
+    this.dejado = 0 // fruta que quedó en los lados que los cosecheros dejaron (fase B)
     this.inicial = this.fruta.reduce((s, v) => s + v, 0)
     this.reserva = huerto.reserva.map((t) => ({ ...t }))
     W.forEach((w, k) => {
@@ -277,7 +281,26 @@ export class Cosecha {
     const i = this._idx(w),
       got = Math.min(kg, this.fruta[i])
     this.fruta[i] -= got
+    w.cosechado = (w.cosechado || 0) + got
     return got
+  }
+
+  /** Multiplicador del periodo de cosecha según la fruta que queda en el lado (fase B; 1 sin carga variable). */
+  periodo(w) {
+    const c = this.carga
+    if (!c || !(c.k > 0) || !w.tramo) return 1
+    const i = this._idx(w),
+      f = this.ini[i] > 0 ? this.fruta[i] / this.ini[i] : 0
+    return c.escala * (Math.log1p(c.k) / Math.log1p(c.k * Math.max(f, 1e-9)))
+  }
+
+  /** ¿Deja el lado? Sin fruta o, con el ritmo que cae, cuando cosechar lo que queda ya no conviene. */
+  agotado(w) {
+    if (this.empty(w)) return true
+    const c = this.carga
+    if (!c || !(c.fmin > 0)) return false
+    const i = this._idx(w)
+    return this.fruta[i] < c.fmin * this.ini[i] - 1e-12
   }
 
   /** ¿Se agotó el lado del árbol que cosecha? */
@@ -287,6 +310,7 @@ export class Cosecha {
 
   /** Avanza al siguiente árbol del tramo o toma el tramo libre más cercano; devuelve el puesto o null si no queda fruta. */
   next(w) {
+    if (this.carga && w.tramo) this.dejado += this.fruta[this._idx(w)] // lo que queda en el lado que deja
     while (w.tramo) {
       if (w.ti < w.tramo.arboles.length - 1) w.ti++
       else {
@@ -305,7 +329,7 @@ export class Cosecha {
         w.ti = 0
         if (!w.tramo) return null
       }
-      if (!this.empty(w)) break
+      if (!this.agotado(w)) break
     }
     if (!w.tramo) return null
     const ti = w.tramo.arboles[w.ti]
