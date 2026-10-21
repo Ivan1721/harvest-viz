@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { SC } from '../charts.jsx'
+import { ROBOTS } from '../../hrsim/robots.js'
 import { FLAG, onboard } from '../run.js'
 import { ACT_LABEL } from '../spec.js'
 import { ACT_COLOR, f0, f1 } from '../ui.jsx'
@@ -48,7 +49,7 @@ export function Stack({ run, w }) {
   )
 }
 
-export function WorkerList({ ho, hr, t, sel, select }) {
+export function WorkerList({ ho, hr, t, sel, select, labels }) {
   useLang()
   const ref = hr || ho
   if (!ref) return null
@@ -92,15 +93,15 @@ export function WorkerList({ ho, hr, t, sel, select }) {
       </div>
       {ho && hr && (
         <div className="note">
-          {tr('Carga acumulada en kcal:')} <span style={{ color: SC.ho.color }}>{tr('solo humano')}</span> ·{' '}
-          <span style={{ color: SC.hr.color }}>{tr('con robot')}</span>.
+          {tr('Carga acumulada en kcal:')} <span style={{ color: SC.ho.color }}>{labels ? labels.ho : tr('solo humano')}</span> ·{' '}
+          <span style={{ color: SC.hr.color }}>{labels ? labels.hr : tr('con robot')}</span>.
         </div>
       )}
     </>
   )
 }
 
-export function Detail({ ho, hr, t, sel }) {
+export function Detail({ ho, hr, t, sel, labels }) {
   useLang()
   const run = hr || ho
   if (!run) return null
@@ -116,7 +117,7 @@ export function Detail({ ho, hr, t, sel }) {
             <div className="muted small">{tr('ROBOT TRANSPORTADOR')}</div>
             <div className="detail-title">RB-01</div>
           </div>
-          <span className="pill blue">Warthog 4WS</span>
+          <span className="pill blue">{tr(ROBOTS[hr.meta?.params?.robotTipo]?.label ?? 'Warthog 4WS')}</span>
         </div>
         <div className="row">
           <span>{tr('Posición (x, y)')}</span>
@@ -175,7 +176,7 @@ export function Detail({ ho, hr, t, sel }) {
       </div>
       {wo && (
         <div className="row">
-          <span>{tr('… sin robot (mismo instante)')}</span>
+          <span>{labels ? tr('… {v} (mismo instante)', { v: labels.ho }) : tr('… sin robot (mismo instante)')}</span>
           <b style={{ color: SC.ho.color }}>{f1(wo.work[ho.rowAt(t)])} kcal</b>
         </div>
       )}

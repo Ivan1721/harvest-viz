@@ -1,7 +1,7 @@
 // Enlace reproducible (I2): la URL guarda el escenario, los agentes y la duración de la corrida que se ve.
 // Como el motor es determinista, abrir el enlace reproduce exactamente esa corrida.
 //
-//   ?modo=sim&huerto=palta-alta-densidad&nw=12&act=mixed&robot=burro&perfil=hri&dur=2700&ajustes=<base64url>
+//   ?modo=sim&huerto=palta-alta-densidad&nw=12&act=mixed&robot=burro&perfil=hri&dur=2700&cmp=robot:warthog&ajustes=<base64url>
 //
 // Las claves legibles cubren lo que se elige con botones; `ajustes` lleva solo los parámetros que difieren de los
 // valores de partida del perfil, el huerto y el robot (JSON en base64url). Se ignoran las demás claves de la URL
@@ -11,7 +11,7 @@ import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { ROBOTS } from '../hrsim/robots.js'
 
 const ACTS = ['ground', 'ladder', 'picker', 'mixed']
-const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'perfil', 'dur', 'ajustes']
+const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'perfil', 'dur', 'cmp', 'ajustes']
 // parámetros que viajan en claves legibles (o que se derivan de ellas) y no en `ajustes`
 const FUERA = new Set(['profile', 'huerto', 'robotTipo', 'duration'])
 
@@ -46,7 +46,7 @@ function diff(p, base) {
 }
 
 /** Escribe en `search` (URLSearchParams, se modifica) los parámetros y la configuración de una corrida. */
-export function writeRunState(search, params, cfg) {
+export function writeRunState(search, params, cfg, cmp = 'sinrobot') {
   for (const k of LEGIBLES) search.delete(k)
   search.set('huerto', params.huerto)
   search.set('nw', String(cfg.nw))
@@ -58,6 +58,7 @@ export function writeRunState(search, params, cfg) {
   if (params.robotTipo) search.set('robot', params.robotTipo)
   search.set('perfil', params.profile)
   search.set('dur', String(params.duration))
+  if (cmp && cmp !== 'sinrobot') search.set('cmp', cmp)
   const d = diff(params, profileDefaults(params.profile, params.huerto, params.robotTipo))
   if (Object.keys(d).length) search.set('ajustes', b64url.enc(JSON.stringify(d)))
   return search
@@ -113,5 +114,7 @@ export function readRunState(search, cfg0) {
     }
   const act = pick('act', (v) => ACTS.includes(v))
   if (act) cfg.act = act
-  return { params, cfg, error: malos.length ? malos : null }
+  // «Comparar con» (I4): sinrobot | perfil | robot:<tipo>
+  const cmp = pick('cmp', (v) => v === 'sinrobot' || v === 'perfil' || (/^robot:/.test(v) && v.slice(6) in ROBOTS)) ?? 'sinrobot'
+  return { params, cfg, cmp, error: malos.length ? malos : null }
 }

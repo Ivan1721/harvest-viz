@@ -6,13 +6,15 @@ import { saveSimulation } from './saveSim.js'
 import { SC } from './charts.jsx'
 import { heatGradient } from './hri.js'
 import { cfgKey, entriesFromFiles, loadManifest, realize } from './library.js'
-import { Analysis } from './panels/Analysis.jsx'
+import { Analysis, Attention } from './panels/Analysis.jsx'
 import { ModelTab } from './panels/ModelTab.jsx'
 import { ConfigPanel } from './panels/ConfigPanel.jsx'
 import { DataPanel } from './panels/DataPanel.jsx'
 import { DEFAULTS_SIM } from './panels/SimPanel.jsx'
 import { StaleBanner, ViewBar } from './panels/ViewBar.jsx'
 import { readRunState, writeRunState } from './urlState.js'
+import { CMP_DEFAULT, cmpValido, variante } from './variantes.js'
+import { RobotPanel } from './panels/RobotPanel.jsx'
 import { Summary } from './panels/Summary.jsx'
 import { Validation } from './panels/Validation.jsx'
 import { Detail, WorkerList } from './panels/Workers.jsx'
@@ -31,7 +33,7 @@ const base = import.meta.env.BASE_URL // constante del build (ruta de publicaci�
 
 const CFG0 = { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }
 /** Clave de lo configurado: si cambia después de simular, los resultados están desactualizados. */
-const simKeyOf = (params, cfg) => JSON.stringify({ ...params, ...cfg })
+const simKeyOf = (params, cfg, cmp = CMP_DEFAULT) => JSON.stringify({ ...params, ...cfg, cmp })
 /** Clave del escenario (paso 1): si cambia, la escena muestra la vista previa del huerto nuevo en vez de resultados viejos. */
 const scenKeyOf = (p, c) => JSON.stringify([p.huerto, p.huertoParams ?? null, p.huerto === 'matlab-2026' ? [c?.row, c?.rp] : null])
 // la vista previa es una corrida de 1 s: el huerto, los cosecheros en sus puestos y el robot en su punto de partida
@@ -78,6 +80,11 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   // de refs, así que editar no simula. simKey guarda qué configuración produjo los resultados que se ven.
   const paramsRef = useRef(params)
   paramsRef.current = params
+  // «Comparar con» (I4): la segunda escena es sin robot, otro robot u otro comportamiento
+  const [cmp, setCmp] = useState(() => fromUrl?.cmp ?? CMP_DEFAULT)
+  const cmpEff = cmpValido(cmp, params) ? cmp : CMP_DEFAULT
+  const cmpRef = useRef(cmpEff)
+  cmpRef.current = cmpEff
   const cfgRef = useRef(cfg)
   cfgRef.current = cfg
   const [simKey, setSimKey] = useState(null)
@@ -136,17 +143,27 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     setErr(null)
     const c = cfgRef.current,
       p = paramsRef.current,
-      key = simKeyOf(p, c)
-    runSimulation({ ...p, ...c })
-      .then(({ ho, hr, ms }) => {
+      k = cmpRef.current,
+      key = simKeyOf(p, c, k),
+      v = variante(k, p)
+    // con variante: dos corridas con robot, una tras otra (el worker corre una simulación a la vez)
+    const correr = v
+      ? runSimulation({ ...p, ...c }, ['hr']).then((main) =>
+          alive
+            ? runSimulation({ ...v.params, ...c }, ['hr']).then((alt) => ({ ho: alt.hr, hr: main.hr, ms: main.ms + alt.ms, labels: v.labels }))
+            : Promise.reject(Object.assign(new Error('cancelada'), { name: 'AbortError' })),
+        )
+      : runSimulation({ ...p, ...c })
+    correr
+      .then(({ ho, hr, ms, labels }) => {
         if (!alive) return
-        setRuns({ ho, hr })
+        setRuns({ ho, hr, labels: labels || null })
         setSimKey(key)
         setSimScen(scenKeyOf(p, c))
         setPreview(null)
         // la URL pasa a describir esta corrida: copiarla o recargar la página la reproduce
         try {
-          const sp = writeRunState(new URLSearchParams(window.location.search), p, c)
+          const sp = writeRunState(new URLSearchParams(window.location.search), p, c, k)
           sp.set('modo', 'sim')
           window.history.replaceState(window.history.state, '', `${window.location.pathname}?${sp}${window.location.hash}`)
         } catch {
@@ -156,12 +173,14 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
         setLoading(false)
         const s = hr.summary
         // se guardan los valores (no el texto) para que el aviso siga el idioma activo
-        setSimInfo({ ms: Math.round(ms), hr: hr.series.work[hr.n - 1], ho: ho.series.work[ho.n - 1], n: s.handoffs })
+        setSimInfo({ ms: Math.round(ms), hr: hr.series.work[hr.n - 1], ho: ho.series.work[ho.n - 1], n: s.handoffs, labels: labels || null })
         setPlay({ t: 0, playing: true, selected: null })
-        // con `npm run dev`: copia en la carpeta local del proyecto (no bloquea ni falla la simulación)
-        saveSimulation(ho, hr).then((r) => {
-          if (r && alive) setSimInfo((i) => i && { ...i, saved: r })
-        })
+        // con `npm run dev`: copia en la carpeta local del proyecto (no bloquea ni falla la simulación).
+        // Solo el par sin robot / con robot: es lo que espera la carpeta de simulaciones guardadas.
+        if (!labels)
+          saveSimulation(ho, hr).then((r) => {
+            if (r && alive) setSimInfo((i) => i && { ...i, saved: r })
+          })
       })
       .catch((e) => {
         if (alive && e.name !== 'AbortError') setErr(e.message)
@@ -265,7 +284,10 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   }
 
   const ref = hr || ho
-  const stale = source === 'sim' && !!simKey && !simBusy && simKeyOf(params, cfg) !== simKey
+  const stale = source === 'sim' && !!simKey && !simBusy && simKeyOf(params, cfg, cmpEff) !== simKey
+  // nombres de las dos escenas (en el idioma activo): sin variante, Solo humano / Humano-robot
+  const labels = runs.labels && !showPreview ? { ho: t(runs.labels.ho), hr: t(runs.labels.hr) } : { ho: t(SC.ho.label), hr: t(SC.hr.label) }
+  const cmpLabels = runs.labels ? labels : { ho: t('Sin robot'), hr: t('Con robot') }
   const runNow = () => setSimNonce((n) => n + 1)
   // el título describe lo que se ve (la corrida simulada), no lo que se está configurando
   const tc = source === 'sim' ? ref?.meta?.params || null : cfg
@@ -326,14 +348,24 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           onCancel: () => cancelSimulation(),
           busy: simBusy,
           stale,
+          cmp: cmpEff,
+          setCmp,
           info:
             simInfo &&
-            t('Simulado en {ms} ms · carga total {hr} kcal (HR) vs {ho} kcal (HO) · {n} entregas a robot', {
-              ms: simInfo.ms,
-              hr: f0(simInfo.hr),
-              ho: f0(simInfo.ho),
-              n: simInfo.n,
-            }) + (simInfo.saved ? ` · ${t(simInfo.saved.existed ? 'ya guardada en {dir}' : 'guardada en {dir}', { dir: simInfo.saved.dir })}` : ''),
+            (simInfo.labels
+              ? t('Simulado en {ms} ms · carga total {hr} kcal ({a}) vs {ho} kcal ({b})', {
+                  ms: simInfo.ms,
+                  hr: f0(simInfo.hr),
+                  ho: f0(simInfo.ho),
+                  a: t(simInfo.labels.hr),
+                  b: t(simInfo.labels.ho),
+                })
+              : t('Simulado en {ms} ms · carga total {hr} kcal (HR) vs {ho} kcal (HO) · {n} entregas a robot', {
+                  ms: simInfo.ms,
+                  hr: f0(simInfo.hr),
+                  ho: f0(simInfo.ho),
+                  n: simInfo.n,
+                })) + (simInfo.saved ? ` · ${t(simInfo.saved.existed ? 'ya guardada en {dir}' : 'guardada en {dir}', { dir: simInfo.saved.dir })}` : ''),
           onExport: source === 'sim' && (hr || ho) ? () => downloadRuns([ho, hr].filter(Boolean)) : null,
           copied,
           onCopyLink:
@@ -367,6 +399,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           view={view}
           setView={setView}
           hasHO={!!ho}
+          labels={labels}
           hasHR={!!hr}
           preset={preset}
           setPreset={setPreset}
@@ -417,12 +450,12 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
             (k) =>
               vis[k] && (
                 <div key={k} className="wb-view">
-                  <ErrorBoundary label={t('la vista {v}', { v: t(SC[k].label) })} resetKey={vis[k].entryId}>
+                  <ErrorBoundary label={t('la vista {v}', { v: labels[k] })} resetKey={vis[k].entryId}>
                     <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
                   </ErrorBoundary>
                   <div className="wb-chip" data-testid={showPreview ? 'preview-chip' : undefined}>
                     <i style={{ background: SC[k].color }} />
-                    {showPreview ? t('Vista previa del escenario · sin simular') : t(SC[k].label)}
+                    {showPreview ? t('Vista previa del escenario · sin simular') : labels[k]}
                     {!showPreview && <span className="muted"> · {fmtT(snap.t)}</span>}
                   </div>
                 </div>
@@ -439,7 +472,8 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           onChange={setTab}
           options={[
             ['resumen', t('Resumen')],
-            ['trab', t('Trabajadores')],
+            ['trab', t('Personas')],
+            ['robot', t('Robot')],
             ['hri', t('Interacción')],
             ['modelo', t('Modelo')],
             ...(source === 'data' ? [['valid', t('Validación')]] : []),
@@ -452,13 +486,20 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           </div>
         )}
         <div className="wb-scroll">
-          {tab === 'resumen' && <Summary ho={ho} hr={hr} t={snap.t} seek={seek} />}
+          {tab === 'resumen' && <Summary ho={ho} hr={hr} t={snap.t} seek={seek} labels={cmpLabels} />}
           {tab === 'trab' && (
             <>
-              <WorkerList ho={ho} hr={hr} t={snap.t} sel={snap.sel} select={select} />
-              <Detail ho={ho} hr={hr} t={snap.t} sel={snap.sel} />
+              <WorkerList ho={ho} hr={hr} t={snap.t} sel={snap.sel} select={select} labels={runs.labels ? labels : null} />
+              <Detail ho={ho} hr={hr} t={snap.t} sel={snap.sel} labels={runs.labels ? labels : null} />
+              {hr?.hri && (
+                <>
+                  <h4 className="sec">{t('Atención al robot')}</h4>
+                  <Attention a={hr.hri} select={select} />
+                </>
+              )}
             </>
           )}
+          {tab === 'robot' && <RobotPanel ho={ho} hr={hr} labels={labels} t={snap.t} seek={seek} />}
           {tab === 'hri' && (
             <Analysis
               run={hr}
@@ -468,6 +509,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
                 select(h)
                 setTab('trab')
               }}
+              note={runs.labels ? t('Interacción y seguridad de {r}.', { r: labels.hr }) : null}
             />
           )}
           {tab === 'valid' &&

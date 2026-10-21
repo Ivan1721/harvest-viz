@@ -6,7 +6,7 @@ import { t, useLang } from '../../i18n/index.js'
  * Barra sobre la escena: qué se ve y cómo. No cambia la simulación, por eso no está en los pasos de la izquierda.
  * Lo frecuente (qué corrida, cámara) queda a la vista; estilo, follaje, color y capas, en «Capas y estilo».
  */
-export function ViewBar({ view, setView, hasHO, hasHR, preset, setPreset, look, setLook, canopy, setCanopy, colorBy, setColorBy, ov, setOv }) {
+export function ViewBar({ view, setView, hasHO, hasHR, labels, preset, setPreset, look, setLook, canopy, setCanopy, colorBy, setColorBy, ov, setOv }) {
   useLang()
   const pop = useRef()
   // el menú se cierra al hacer clic fuera o con Escape
@@ -30,8 +30,8 @@ export function ViewBar({ view, setView, hasHO, hasHR, preset, setPreset, look, 
         value={view}
         onChange={setView}
         options={[
-          ['ho', t('Solo humano'), !hasHO],
-          ['hr', t('Humano-robot'), !hasHR],
+          ['ho', labels?.ho ?? t('Solo humano'), !hasHO],
+          ['hr', labels?.hr ?? t('Humano-robot'), !hasHR],
           ['cmp', t('Comparar'), !(hasHO && hasHR)],
         ]}
       />

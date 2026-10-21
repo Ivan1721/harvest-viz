@@ -6,8 +6,8 @@ import { Tabs, fmtT } from '../ui.jsx'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 import { protectionDistance } from '../../hrsim/ssm.js'
 
-/* ---------------------------------------------------------------- análisis HRI (corrida con robot) */
-export function Analysis({ run, i, seek, select }) {
+/* ---------------------------------------------------------------- interacción y seguridad (corrida con robot) */
+export function Analysis({ run, i, seek, select, note }) {
   useLang()
   const [tab, setTab] = useState('cortesia')
   const a = run?.hri
@@ -17,10 +17,15 @@ export function Analysis({ run, i, seek, select }) {
     ['cortesia', t('Cortesía')],
     ['encuentros', t('Encuentros')],
     ['asign', t('Asignación')],
-    ['fluidez', t('Fluidez')],
+    ['seguridad', t('Seguridad')],
   ]
   return (
     <>
+      {note && (
+        <div className="note" style={{ marginTop: 0 }}>
+          {note}
+        </div>
+      )}
       <Tabs className="seg" label={t('Análisis de interacción')} value={tab} onChange={setTab} options={tabs} />
       {tab === 'cortesia' && (
         <>
@@ -139,7 +144,7 @@ export function Analysis({ run, i, seek, select }) {
           </div>
         </>
       )}
-      {tab === 'fluidez' && <Fluency a={a} run={run} seek={seek} select={select} />}
+      {tab === 'seguridad' && <Safety a={a} run={run} seek={seek} />}
       <div className="note">
         {t(
           'Posiciones reconstruidas a partir de banderas de actividad y del log: las distancias son aproximadas. Registrar la pose por tick en MATLAB las hace exactas.',
@@ -186,13 +191,12 @@ function ZoneSplit({ a }) {
   )
 }
 
-function Fluency({ a, run, seek, select }) {
-  const f = a.fluency
-  const rule = !!run.meta?.params?.ssm?.enabled
-  const rt = f.robotTime
+/** Reparto del tiempo del robot (exacto en el simulador; en movimiento / detenido en CSV de MATLAB). */
+export function RobotTime({ a }) {
+  useLang()
+  const rt = a.fluency.robotTime
   return (
     <>
-      <div className="muted small">{t('Reparto del tiempo del robot')}</div>
       <div className="stackbar" role="img" aria-label={t('Reparto del tiempo del robot')}>
         {rt.exact ? (
           ROBOT_TIME.filter(([k]) => rt[k] > 0).map(([k, , c]) => <i key={k} style={{ width: `${rt[k] * 100}%`, background: c }} />)
@@ -224,35 +228,45 @@ function Fluency({ a, run, seek, select }) {
           </div>
         </>
       )}
-      {f.energia && (
-        <>
-          <div className="muted small" style={{ marginTop: 8 }}>
-            {t('Energía del robot ({r})', { r: f.energia.robot ?? '' })}
-          </div>
-          <div className="row">
-            <span>{t('Energía usada · por kg entregado')}</span>
-            <b>
-              {fmtNum(f.energia.wh, { maximumFractionDigits: 0 })} Wh ·{' '}
-              {f.energia.whPorKg == null ? '—' : `${fmtNum(f.energia.whPorKg, { maximumFractionDigits: 2 })} Wh/kg`}
-            </b>
-          </div>
-          <div className="row">
-            <span>{t('Batería restante · descargas en el acopio')}</span>
-            <b>
-              {f.energia.bateriaPct == null ? '—' : `${fmtNum(f.energia.bateriaPct, { maximumFractionDigits: 0 })} %`} · {f.energia.descargas}
-            </b>
-          </div>
-          {f.energia.traccion_s > 0 && (
-            <div className="row">
-              <span>{t('Sin tracción suficiente (no sube)')}</span>
-              <b className="warn">{fmtNum(f.energia.traccion_s, { maximumFractionDigits: 0 })} s</b>
-            </div>
-          )}
-        </>
-      )}
-      <div className="muted small" style={{ marginTop: 8 }}>
-        {t('Retardos')}
+    </>
+  )
+}
+
+/** Energía, batería, descargas y tracción del robot (huertos generados). */
+export function RobotEnergy({ a }) {
+  useLang()
+  const e = a.fluency.energia
+  if (!e) return <div className="note">{t('El robot del mapa del estudio no tiene modelo de energía.')}</div>
+  return (
+    <>
+      <div className="row">
+        <span>{t('Energía usada · por kg entregado')}</span>
+        <b>
+          {fmtNum(e.wh, { maximumFractionDigits: 0 })} Wh · {e.whPorKg == null ? '—' : `${fmtNum(e.whPorKg, { maximumFractionDigits: 2 })} Wh/kg`}
+        </b>
       </div>
+      <div className="row">
+        <span>{t('Batería restante · descargas en el acopio')}</span>
+        <b>
+          {e.bateriaPct == null ? '—' : `${fmtNum(e.bateriaPct, { maximumFractionDigits: 0 })} %`} · {e.descargas}
+        </b>
+      </div>
+      {e.traccion_s > 0 && (
+        <div className="row">
+          <span>{t('Sin tracción suficiente (no sube)')}</span>
+          <b className="warn">{fmtNum(e.traccion_s, { maximumFractionDigits: 0 })} s</b>
+        </div>
+      )}
+    </>
+  )
+}
+
+/** Retardos: cuánto esperan las cajas al robot y el robot a los trabajadores. */
+export function Delays({ a }) {
+  useLang()
+  const f = a.fluency
+  return (
+    <>
       <div className="row">
         <span>{t('La caja espera al robot (media · p90)')}</span>
         <b>
@@ -267,6 +281,16 @@ function Fluency({ a, run, seek, select }) {
         <span>{t('Equidad de la espera de cajas (Jain)')}</span>
         <b className={a.assign.jain < 0.8 ? 'warn' : ''}>{a.assign.jain.toFixed(2)}</b>
       </div>
+    </>
+  )
+}
+
+/** Tiempo de cada trabajador atendiendo al robot y su equidad (Jain). */
+export function Attention({ a, select }) {
+  useLang()
+  const f = a.fluency
+  return (
+    <>
       <div className="row">
         <span>{t('Equidad del tiempo atendiendo al robot (Jain)')}</span>
         <b className={f.jainAttend != null && f.jainAttend < 0.8 ? 'warn' : ''}>{f.jainAttend == null ? '—' : f.jainAttend.toFixed(2)}</b>
@@ -291,6 +315,17 @@ function Fluency({ a, run, seek, select }) {
           </div>
         </>
       )}
+    </>
+  )
+}
+
+/** Seguridad medida (ISO/TS 15066): paradas, tiempo dentro de S_p(v), distancias y eventos. */
+export function Safety({ a, run, seek }) {
+  useLang()
+  const f = a.fluency
+  const rule = !!run.meta?.params?.ssm?.enabled
+  return (
+    <>
       <div className="muted small" style={{ marginTop: 8 }}>
         {rule ? t('Seguridad (ISO/TS 15066, regla activa)') : t('Seguridad (ISO/TS 15066, solo se mide)')}
       </div>
