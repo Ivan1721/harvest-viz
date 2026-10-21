@@ -77,8 +77,6 @@ export default {
   Duración: 'Duration',
   'Estudio: 2700': 'Study: 2700',
   'Proceso y calendario': 'Process overview and scheduling',
-  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) se registran posiciones, estados, producción y gasto.':
-    'Each tick, in this order: (1) each harvester, from H1 to Hn, advances its state machine; (2) the robot detects boxes, chooses its next waypoint, applies the safety rule and its physical limits, moves and picks up or unloads; (3) positions, states, production and expenditure are recorded.',
   'La corrida termina al cumplir la duración. No hay eventos asíncronos: todo ocurre en ticks de {dt} s.':
     'The run ends when the duration is reached. There are no asynchronous events: everything happens in {dt} s ticks.',
   'Conceptos de diseño': 'Design concepts',
@@ -167,4 +165,17 @@ export default {
   'Energía del robot por kg entregado': 'Robot energy per kg delivered',
   'como en MATLAB (sin regla de seguridad)': 'as in MATLAB (no safety rule)',
   'con la regla de seguridad': 'with the safety rule',
+  'Espera en el acopio': 'Waits at the collection point',
+  'Llega al acopio (con acopiador, este lo atiende de inmediato).': 'Reaches the collection point (with a collection-point worker, they serve it right away).',
+  'Con acopiador: llega al acopio y el acopiador está ocupado; hace cola con su caja.':
+    'With a collection-point worker: reaches the collection point while the worker is busy; queues with the box.',
+  'El acopiador lo atiende.': 'The collection-point worker serves them.',
+  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.':
+    'With a collection-point worker: arrived to unload while the worker is busy, or the collection point reached its bin limit.',
+  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.':
+    'At each tick, in this order: (1) each harvester, H1 to Hn, advances its state machine; (2) the robot detects boxes, chooses its next waypoint, applies the safety rule and its physical limits, moves and picks up or unloads; (3) if there is a collection-point worker, they serve the collection point and the truck; (4) positions, states, production and expenditure are recorded.',
+  'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).':
+    'Collection point: what arrives counts as delivered (no collection-point worker or truck).',
+  'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.':
+    'Collection point: a worker serves in order of arrival; receives the boxes from the robot and the harvesters, empties them into bins and loads the truck, which leaves when full or at a set interval.',
 }

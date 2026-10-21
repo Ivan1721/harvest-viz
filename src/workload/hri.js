@@ -196,14 +196,15 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
 
   // --- Fluidez y seguridad (fase 2) ---
   // estado del robot por tick (solo motor JS): 0 se mueve, 1 espera al trabajador, 2 descarga/carga,
-  // 3 parada de seguridad, 4 velocidad reducida por seguridad (los dos últimos solo en el perfil hri)
+  // 3 parada de seguridad, 4 velocidad reducida por seguridad (los dos últimos solo en el perfil hri),
+  // 5 sin tracción, 6 en la cola del acopio (H7, con acopiador)
   const st = run.robot.status
   const T = n * DT
   const robotTime = st
     ? (() => {
-        const c = [0, 0, 0, 0, 0, 0]
-        for (let i = 0; i < n; i++) if (st[i] <= 5) c[st[i]]++
-        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, traction: c[5] / n, exact: true }
+        const c = [0, 0, 0, 0, 0, 0, 0]
+        for (let i = 0; i < n; i++) if (st[i] <= 6) c[st[i]]++
+        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, traction: c[5] / n, acopio: c[6] / n, exact: true }
       })()
     : (() => {
         let m = 0

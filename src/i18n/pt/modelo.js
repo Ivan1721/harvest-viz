@@ -75,8 +75,6 @@ export default {
   Duración: 'Duração',
   'Estudio: 2700': 'Estudo: 2700',
   'Proceso y calendario': 'Processo e calendário',
-  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) se registran posiciones, estados, producción y gasto.':
-    'Em cada tick, nesta ordem: (1) cada colhedor, de H1 a Hn, avança sua máquina de estados; (2) o robô detecta caixas, decide seu próximo waypoint, aplica a regra de segurança e seus limites físicos, move-se e recolhe ou descarrega; (3) registram-se posições, estados, produção e gasto.',
   'La corrida termina al cumplir la duración. No hay eventos asíncronos: todo ocurre en ticks de {dt} s.':
     'A execução termina ao cumprir a duração. Não há eventos assíncronos: tudo ocorre em ticks de {dt} s.',
   'Conceptos de diseño': 'Conceitos de projeto',
@@ -167,4 +165,17 @@ export default {
   'Energía del robot por kg entregado': 'Energia do robô por kg entregue',
   'como en MATLAB (sin regla de seguridad)': 'como no MATLAB (sem regra de segurança)',
   'con la regla de seguridad': 'com a regra de segurança',
+  'Espera en el acopio': 'Espera no ponto de recolha',
+  'Llega al acopio (con acopiador, este lo atiende de inmediato).': 'Chega ao ponto de recolha (com recolhedor, ele atende de imediato).',
+  'Con acopiador: llega al acopio y el acopiador está ocupado; hace cola con su caja.':
+    'Com recolhedor: chega ao ponto de recolha e o recolhedor está ocupado; faz fila com a caixa.',
+  'El acopiador lo atiende.': 'O recolhedor o atende.',
+  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.':
+    'Com recolhedor: chegou para descarregar e o recolhedor está ocupado, ou o ponto de recolha atingiu o máximo de bins.',
+  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.':
+    'Em cada tick, nesta ordem: (1) cada colhedor, de H1 a Hn, avança sua máquina de estados; (2) o robô detecta caixas, decide seu próximo waypoint, aplica a regra de segurança e seus limites físicos, move-se e recolhe ou descarrega; (3) se houver recolhedor, ele atende o ponto de recolha e o caminhão; (4) registram-se posições, estados, produção e gasto.',
+  'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).':
+    'Ponto de recolha: o que chega conta como entregue (sem recolhedor nem caminhão).',
+  'Acopio: un acopiador atiende por orden de llegada; recibe las cajas del robot y de los cosecheros, las vacía en bins y carga el camión, que sale lleno o cada cierto intervalo.':
+    'Ponto de recolha: um recolhedor atende por ordem de chegada; recebe as caixas do robô e dos colhedores, esvazia-as em bins e carrega o caminhão, que sai cheio ou a cada intervalo.',
 }

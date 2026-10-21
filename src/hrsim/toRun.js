@@ -109,6 +109,17 @@ export function simToRun(sim, { robot }) {
     series,
     workers,
     robot: rob,
+    // H7: acopio con acopiador, bins y camión (estado por tick y lo despachado)
+    acopio: rec.desp
+      ? {
+          desp: f32(rec.desp),
+          estado: Uint8Array.from(rec.acop),
+          bins: Uint8Array.from(rec.bins),
+          camion: Int8Array.from(rec.cam),
+          cola: Uint8Array.from(rec.cola),
+          cfg: { ...p.acopio },
+        }
+      : null,
     rateMax,
     name: `SIM-${robot ? 'HR' : 'HO'}-${NH}-${p.row}-${p.act}-${p.rp}`,
     rowAt: (t) => Math.min(n - 1, Math.max(0, Math.floor(t / dt))),

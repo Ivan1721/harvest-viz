@@ -23,6 +23,7 @@ const CASOS = [
   { nw: 12, row: 3, act: 'mixed', rp: 0, duration: 2700 }, // mapa del estudio, con escalera
   { huerto: 'palta-tradicional', nw: 12, act: 'mixed', duration: 1800, huertoParams: { cargaArbol: 8 } }, // árboles que se agotan
   { huerto: 'palta-alta-densidad', nw: 24, act: 'mixed', duration: 3600, huertoParams: { hileras: 8, arbolesPorHilera: 12, cargaArbol: 10 } }, // sin tramos
+  { huerto: 'palta-alta-densidad', nw: 24, act: 'mixed', duration: 2700, capacityBoxes: 4, acopio: { topeBins: 1, viajeS: 3000 } }, // acopio con cola (H7)
 ]
 
 function observadas(sim) {

@@ -162,6 +162,7 @@ const ROBOT_TIME = [
   ['safety', 'Parada de seguridad', '#dc2626'],
   ['slow', 'Velocidad reducida por seguridad', '#8b5cf6'],
   ['traction', 'Sin tracción (pendiente o carga)', '#7c2d12'],
+  ['acopio', 'Esperando en el acopio', '#0d9488'],
 ]
 
 // exposición por zona de Hall, total del equipo, separada en robot en movimiento / detenido

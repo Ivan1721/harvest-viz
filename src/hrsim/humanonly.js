@@ -6,6 +6,7 @@ import { resolveParams, initWorkers, movePose } from './common.js'
 import { buildHuerto } from './huertos/index.js'
 import { Cosecha, rutaCalles } from './huertos/rectangular.js'
 import { paso } from './huertos/pendiente.js'
+import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
 
 export class HOSim {
   constructor(opts = {}) {
@@ -24,10 +25,13 @@ export class HOSim {
     // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
     this.cosecha = huerto.calles ? new Cosecha(huerto, W) : null
     this.delivered = 0
+    // acopio con acopiador, bins y camión (H7, fase A; opcional): el mismo que con robot
+    this.acopio = p.acopio ? new Acopio(p.acopio, dt, { recibir: C.walkingCarrying, cargar: C.harvestGround }) : null
     this.rec = {
       t: [],
       delivered: [],
       work: [],
+      ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
       prod: Array.from({ length: NH }, () => []),
       workH: Array.from({ length: NH }, () => []),
       flag: Array.from({ length: NH }, () => []),
@@ -49,7 +53,8 @@ export class HOSim {
     const r = this.rec
     r.t.push(this.idx * this.dt)
     r.delivered.push(this.delivered)
-    r.work.push(this.W.reduce((a, w) => a + w.work, 0))
+    r.work.push(this.W.reduce((a, w) => a + w.work, 0) + (this.acopio ? this.acopio.work : 0))
+    if (this.acopio) recordAcopio(r, this.acopio)
     this.W.forEach((w, h) => {
       r.prod[h].push(w.prod)
       r.workH[h].push(w.work)
@@ -116,18 +121,30 @@ export class HOSim {
         w.box = [w.pose[0], w.pose[1]]
         if (walkTo(w.route[w.routeIdx])) {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
-          else {
+          else if (this.acopio) {
+            // H7: hace cola hasta que el acopiador lo atiende (16) y espera a que reciba su caja (4)
+            w.state = 16
+            w.recibido = false
+            this.acopio.pedir({ kg: w.carried, dur: p.cargoUnloadTime, onStart: () => (w.state = 4), onDone: () => (w.recibido = true) })
+          } else {
             w.state = 4
             w.timer = 0
           }
         }
+        break
+      case 16:
+        // en la cola del acopio, de pie con la caja
+        w.prod = 0
+        w.work += C.harvestGround * dt
+        w.flag = 3
         break
       case 4:
         w.prod = 0
         w.work += C.walkingCarrying * dt
         w.flag = 3
         w.timer += dt
-        if (w.timer >= p.cargoUnloadTime) {
+        if (this.acopio ? w.recibido : w.timer >= p.cargoUnloadTime) {
+          w.recibido = false
           w.deliveredLoad += w.carried
           this.delivered += w.carried
           w.trips += 1
@@ -227,6 +244,7 @@ export class HOSim {
       w.flag = 0
       this._stepWorker(w)
     }
+    if (this.acopio) this.acopio.step(this.idx * this.dt)
     this._record()
     return true
   }
@@ -253,6 +271,7 @@ export class HOSim {
       RemainingCropsBoxes_crop_units: 0,
       RemainingCropsRobot_crop_units: 0,
       TotalRecollectedCrops_crop_units: this.delivered + V5,
+      ...(this.acopio ? resumenAcopio(this.acopio, 0, this.rec.t.length) : {}),
     }
   }
 }

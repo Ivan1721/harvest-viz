@@ -272,3 +272,33 @@ test('comparar con otro robot: dos escenas con robot, tabla del robot lado a lad
   if (process.env.SHOT9) await page.screenshot({ path: process.env.SHOT9 })
   expect(errors).toEqual([])
 })
+
+test('acopio con acopiador y camión: se activa, se simula, se despacha y viaja en el enlace (H7)', async ({ page }) => {
+  const errors = await openWorkload(page, { mode: 'sim' })
+  await page.getByRole('button', { name: 'Alta densidad', exact: true }).click()
+  await page.getByTestId('huerto-params').click()
+  await page.getByLabel('Hileras', { exact: true }).fill('4')
+  await page.getByLabel('Árboles por hilera', { exact: true }).fill('12')
+  await page.getByTestId('acopio-on').check()
+  await page.getByTestId('acopio-params').click()
+  // huerto chico y 20 min: en ese tiempo llega poca fruta, así que bins chicos y un camión que sale cada 10 min
+  await page.getByLabel('Capacidad del bin (kg)').fill('50')
+  await page.getByLabel('El camión sale como máximo cada (s)').fill('600')
+  await page.getByLabel('Duración (s)').fill('1200')
+  await simulate(page)
+  const fila = page.locator('table.cmp tr', { hasText: 'Despachado en camión' })
+  await expect(fila).toBeVisible()
+  await setRange(page.locator('.timeline2 input[type=range]'), 1200)
+  await expect(fila.locator('td').nth(1)).not.toHaveText(/^(0|—)$/)
+  const aj = JSON.parse(Buffer.from(new URL(page.url()).searchParams.get('ajustes'), 'base64url').toString())
+  expect(aj.acopio).toMatchObject({ binKg: 50, intervaloS: 600 })
+  await page.getByRole('tab', { name: 'Modelo', exact: true }).click()
+  await expect(page.getByText('Espera en el acopio').first()).toBeVisible()
+  if (process.env.SHOT10) {
+    await page.getByRole('tab', { name: 'Resumen', exact: true }).click()
+    await page.getByRole('button', { name: 'Solo humano', exact: true }).click()
+    await setRange(page.locator('.timeline2 input[type=range]'), 590)
+    await page.screenshot({ path: process.env.SHOT10 })
+  }
+  expect(errors).toEqual([])
+})

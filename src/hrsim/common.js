@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.4.0'
+export const ENGINE_VERSION = '0.5.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -106,6 +106,9 @@ export function resolveParams(opts = {}, extra = {}) {
     delete p.semilla
     delete p.variacionRitmo
   }
+  // acopio con acopiador, bins y camión (H7, fase A): solo si se pide; sin él, el acopio de siempre
+  if (opts.acopio && opts.acopio.enabled !== false) p.acopio = { ...ACOPIO_DEFAULTS, ...opts.acopio, enabled: true }
+  else delete p.acopio
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -127,6 +130,9 @@ export function resolveParams(opts = {}, extra = {}) {
   for (const k of [1, 2, 3]) if (!(Number.isFinite(p.prodPeriod[k]) && p.prodPeriod[k] > 0)) bad(`prodPeriod[${k}] debe ser un número positivo`)
   for (const [k, v] of Object.entries(p.costs)) if (!(Number.isFinite(v) && v >= 0)) bad(`costs.${k} debe ser un número ≥ 0`)
   for (const k of ['walkSpeed', 'maxProd', 'capacityBoxes', 'maxBoxStopsPerLap']) if (!(p[k] > 0)) bad(`${k} debe ser > 0`)
+  if (p.acopio)
+    for (const k of ['binKg', 'topeBins', 'camionBins', 'viajeS', 'intervaloS', 'cargaBinS'])
+      if (!(Number.isFinite(p.acopio[k]) && p.acopio[k] > 0)) bad(`acopio.${k} debe ser > 0`)
   if (p.semilla != null) {
     if (!(Number.isInteger(p.semilla) && p.semilla >= 0)) bad(`semilla debe ser un entero ≥ 0 (es ${p.semilla})`)
     if (!(p.variacionRitmo >= 0 && p.variacionRitmo < 1)) bad(`variacionRitmo debe estar entre 0 y 1 (es ${p.variacionRitmo})`)
@@ -238,6 +244,7 @@ import { SSM_DEFAULTS } from './ssm.js'
 import { SISTEMAS, buildHuerto } from './huertos/index.js'
 import { validarRectangular } from './huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from './robots.js'
+import { ACOPIO_DEFAULTS } from './acopio.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

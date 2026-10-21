@@ -59,7 +59,7 @@ describe('ModelTab (pestaña Modelo)', () => {
     const writeText = vi.fn(async () => {})
     vi.stubGlobal('navigator', { clipboard: { writeText } })
     render(<Harness />)
-    expect(screen.getByTestId('sm-robot').querySelectorAll('.sm-chip')).toHaveLength(6)
+    expect(screen.getByTestId('sm-robot').querySelectorAll('.sm-chip')).toHaveLength(7)
     expect(screen.getByTestId('odd-inicializacion').textContent).toMatch(/Velocidad de caminata/)
     fireEvent.click(screen.getByTestId('odd-copiar'))
     await waitFor(() => expect(screen.getByText('Descripción copiada')).toBeTruthy())

@@ -56,3 +56,12 @@ export const PERIODS = [
   [2, 'Escalera'],
   [3, 'Gancho'],
 ]
+// acopio con acopiador, bins y camión (H7, fase A): [clave, etiqueta, paso, fuente, mínimo, máximo, entero]
+export const ACOPIO = [
+  ['binKg', 'Capacidad del bin (kg)', 10, 'González-Araya et al. 2017: 379–386 kg (manzana)', 10, 2000],
+  ['topeBins', 'Tope de bins llenos en el acopio', 1, 'Supuesto: 8', 1, 100, true],
+  ['camionBins', 'Bins por camión', 1, 'Supuesto: 4 (tractor con carro)', 1, 60, true],
+  ['viajeS', 'Viaje de ida y vuelta del camión (s)', 60, 'Supuesto: 2400 (40 min)', 60, 14400],
+  ['intervaloS', 'El camión sale como máximo cada (s)', 60, 'Supuesto: 3600 (60 min)', 60, 14400],
+  ['cargaBinS', 'Cargar un bin al camión (s)', 5, 'Supuesto: 90', 1, 3600],
+]

@@ -15,6 +15,7 @@ import { protectionDistance } from './ssm.js'
 import { Cosecha, rutaCalles, ejeCercano } from './huertos/rectangular.js'
 import { paso } from './huertos/pendiente.js'
 import { ROBOTS, potencia, fuerzaAvance, limiteTraccion, frenadaEfectiva } from './robots.js'
+import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -91,6 +92,10 @@ export class HRSim {
     this.maxPull = 0
     const cr = this.robotSpec?.carro
     this.carro = cr ? this._carroInicial(cr) : null
+    // acopio con acopiador, bins y camión (H7, fase A; opcional)
+    this.acopio = p.acopio ? new Acopio(p.acopio, dt, { recibir: C.walkingCarrying, cargar: C.harvestGround }) : null
+    this.acopioWait = false
+    this.acopioRecibe = false
     // --- registro ---
     this.rec = {
       t: [],
@@ -105,6 +110,7 @@ export class HRSim {
       rth: [],
       rst: [],
       ...(this.cosecha ? { energy: [], cx: [], cy: [], cth: [] } : {}),
+      ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
       wx: Array.from({ length: NH }, () => []),
       wy: Array.from({ length: NH }, () => []),
       wth: Array.from({ length: NH }, () => []),
@@ -191,7 +197,8 @@ export class HRSim {
     r.t.push(this.idx * this.dt)
     r.delivered.push(this.prodRobotTotal)
     r.onboard.push(this.prodRobot)
-    r.work.push(this.W.reduce((a, w) => a + w.work, 0))
+    r.work.push(this.W.reduce((a, w) => a + w.work, 0) + (this.acopio ? this.acopio.work : 0))
+    if (this.acopio) recordAcopio(r, this.acopio)
     r.rx.push(this.rpose[0])
     r.ry.push(this.rpose[1])
     r.rth.push(this.rpose[2])
@@ -614,7 +621,33 @@ export class HRSim {
       this.log(`Robot FULL | going to CARGO ZONE | ${detour.length} waypoints inserted`)
     }
     // descarga en la zona de carga
-    if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0) {
+    if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0 && this.acopio && !this.acopioWait) {
+      // H7: el acopiador recibe la carga cuando está libre; mientras tanto el robot espera en la cola
+      this.goingToUnload = false
+      this.needUnload = false
+      this.lapBoxStops = 0
+      const kg = this.prodRobot
+      this.contaT = 1
+      this.timeT1 = 0
+      if (kg > 0) {
+        this.log(`Robot reached CARGO ZONE | waiting for the loader | ${kg.toFixed(2)} crops on board`)
+        this.acopioWait = true
+        this.acopio.pedir({
+          kg,
+          dur: p.unloadTimePerBox * (kg / unit),
+          onStart: () => (this.acopioRecibe = true),
+          onDone: () => {
+            this.ev.unloads.push({ idx: this.idx, amount: kg })
+            this.prodRobotTotal += kg
+            this.prodRobot -= kg
+            this.acopioWait = false
+            this.acopioRecibe = false
+            this.contaT = 1
+            this.timeT1 = 0
+          },
+        })
+      }
+    } else if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0 && !this.acopio) {
       this.goingToUnload = false
       this.needUnload = false
       this.lapBoxStops = 0
@@ -627,7 +660,7 @@ export class HRSim {
       this.contaT = 1
       this.timeT1 = 0
     }
-    if (this.contaT === 1) this.timeT1 += 1
+    if (this.contaT === 1 && !this.acopioWait) this.timeT1 += 1
     if (this.timeT1 === UNLOAD_COOLDOWN_TICKS) this.contaT = 0
     // control hacia el waypoint actual
     const cur = [
@@ -655,7 +688,7 @@ export class HRSim {
     const nowIdx = this.idx + 1
     // ir lento por seguridad no cuenta como «atascado» en el waypoint; una parada de seguridad sí: si se prolonga
     // más que waypointTimeout, el robot salta al siguiente waypoint (la misma recuperación que ya tiene el MATLAB)
-    if (!sameTarget || this.holdSteps > 0 || this.waiting || this.rstatus === 4) {
+    if (!sameTarget || this.holdSteps > 0 || this.waiting || this.acopioWait || this.rstatus === 4) {
       this.wpTimeoutTarget = [g[0], g[1]]
       this.wpTimeoutStart = nowIdx
     } else if ((nowIdx - this.wpTimeoutStart) * dt > p.waypointTimeout) {
@@ -697,6 +730,10 @@ export class HRSim {
     } else if (this.waiting) {
       wxv = wyv = wth = 0
       this.rstatus = 1
+    } else if (this.acopioWait) {
+      // H7: en la cola del acopio (6) o recibiendo el acopiador su carga (2, descarga)
+      wxv = wyv = wth = 0
+      this.rstatus = this.acopioRecibe ? 2 : 6
     } else if (p.ssm?.enabled) {
       const k = this._ssmScale(wxv, wyv)
       if (k === 0) {
@@ -848,6 +885,7 @@ export class HRSim {
     this.idx += 1
     for (const w of this.W) this._stepWorker(w)
     if (this.p.robot) this._stepRobot()
+    if (this.acopio) this.acopio.step(this.idx * this.dt)
     this._record()
     return true
   }
@@ -888,6 +926,7 @@ export class HRSim {
       waypointSkips: this.skips,
       capacityBlocked: this.capacityBlocked,
       ...(this.p.ssm?.enabled ? { safetyStops: this.ssmStops } : {}),
+      ...(this.acopio ? resumenAcopio(this.acopio, this.rec.rst ? this.rec.rst.filter((v) => v === 6).length * this.dt : 0, this.rec.t.length) : {}),
       ...(this.robotSpec
         ? {
             robot: this.p.robotTipo,
