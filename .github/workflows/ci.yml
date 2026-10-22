@@ -14,7 +14,9 @@ concurrency:
 jobs:
   checks:
     name: Lint, formato, pruebas y cobertura
-    runs-on: ubuntu-latest
+    # runner fijo: con ubuntu-latest, que migra a Ubuntu 26 desde el 19-10-2026, instalar las dependencias de
+    # Chromium pasó de 13 s a 12 min y el job de interfaz superó su límite
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -35,8 +37,9 @@ jobs:
 
   e2e:
     name: Interfaz (Playwright, Chromium) + accesibilidad
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    runs-on: ubuntu-24.04
+    # Playwright con WebGL por software: ~14 min de pruebas, más instalar las dependencias de Chromium
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -69,7 +72,7 @@ jobs:
     # solo si pasan todas las pruebas, incluidas las de interfaz
     needs: [checks, e2e]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       pages: write
