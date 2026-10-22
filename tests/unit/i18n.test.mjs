@@ -77,7 +77,15 @@ test('los textos del modelo de agentes (I3) están traducidos: estados, reglas y
   const keys = new Set()
   for (const e of [...m.ESTADOS_HR, ...m.ESTADOS_HO, ...m.ESTADOS_ROBOT]) keys.add(e.label)
   for (const x of [...m.TRANSICIONES_HR, ...m.TRANSICIONES_HO, ...m.ESTADOS_ROBOT]) if (x.regla) keys.add(x.regla)
-  for (const p of [profileDefaults('matlab-2026'), { ...profileDefaults('hri', 'palta-ladera', 'burro'), semilla: 3, variacionRitmo: 0.1 }])
+  const { resolveParams } = await import('../../src/hrsim/common.js')
+  const conFlota = (estrategia) => resolveParams({ huerto: 'palta-alta-densidad', flota: { n: 2, estrategia } })
+  for (const p of [
+    profileDefaults('matlab-2026'),
+    { ...profileDefaults('hri', 'palta-ladera', 'burro'), semilla: 3, variacionRitmo: 0.1 },
+    conFlota('zonas'),
+    conFlota('opuestas'),
+    conFlota('desfase'),
+  ])
     for (const s of m.describirModelo(p)) {
       keys.add(s.titulo)
       for (const x of s.textos || []) keys.add(x)

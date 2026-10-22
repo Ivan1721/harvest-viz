@@ -1,7 +1,7 @@
 // Modelo de agentes (I3): máquinas de estado del cosechero y del robot, tal como las implementa el motor
 // (src/hrsim/engine.js y humanonly.js), y la descripción del modelo con el protocolo ODD (Grimm et al. 2020).
 // Todo texto es una clave en español para t(); los valores salen de los parámetros de la corrida, no se escriben a mano.
-import { ACOPIO, CARGA, COSTS, CREW, HUERTO, ROBOT, SSM } from './parametros.js'
+import { ACOPIO, CARGA, COSTS, CREW, FLOTA, HUERTO, ROBOT, SSM } from './parametros.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { ROBOTS, MU } from '../hrsim/robots.js'
 import { fMinima } from '../hrsim/carga.js'
@@ -80,7 +80,7 @@ export const TRANSICIONES_HO = [
   { de: 7, a: 1, regla: 'Termina de subir ({ladderTime} s).' },
 ]
 
-/** Estados del robot (rec.rst). Se evalúan en este orden en cada tick; el último que aplica es el que queda. */
+/** Estados del robot (rec.rst). Se evalúan en este orden en cada tick; el último que aplica es el que queda. `flota`: solo con 2 o más robots. */
 export const ESTADOS_ROBOT = [
   { id: 0, label: 'En ruta', regla: 'Sigue sus waypoints con el controlador difuso de búsqueda de meta.' },
   { id: 1, label: 'Espera al cosechero', regla: 'Está a menos de 0,75 m de una caja con espacio: se detiene hasta que el dueño la carga.' },
@@ -88,7 +88,24 @@ export const ESTADOS_ROBOT = [
   { id: 3, label: 'Parada de seguridad', regla: 'Con la regla SSM: una persona está dentro de S_p(v); reanuda tras {tResume} s libre.' },
   { id: 4, label: 'Velocidad reducida', regla: 'Con la regla SSM: una persona está en el margen de advertencia o lo atiende; va a {vSlow} m/s.' },
   { id: 5, label: 'Sin tracción', regla: 'La pendiente pide más fuerza que la adherencia de sus ruedas (μ = {mu}): no avanza.' },
-  { id: 6, label: 'Espera en el acopio', regla: 'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.' },
+  {
+    id: 6,
+    label: 'Espera en el acopio',
+    regla:
+      'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins. Con flota: otro robot está descargando, espera su salida (desfase) o está estacionado sin zona.',
+  },
+  {
+    id: 7,
+    flota: true,
+    label: 'Espera calle libre',
+    regla: 'Con flota: la calle a la que va la tiene otro robot; espera en la cabecera, a menos de {reserva} m de la boca.',
+  },
+  {
+    id: 8,
+    flota: true,
+    label: 'Cede el paso',
+    regla: 'Con flota: un robot de número menor se mueve a menos de {ceder} m y este se le acercaría; se detiene hasta que se aleje.',
+  },
 ]
 
 /** Valores para las reglas: parámetros de la corrida con formato corto. */
@@ -103,6 +120,8 @@ export function valoresReglas(p) {
     tResume: f(p.ssm?.tResume),
     vSlow: f(p.ssm?.vSlow),
     mu: f(MU),
+    reserva: f(p.flota?.reserva ?? 3),
+    ceder: f(p.flota?.ceder ?? 2),
   }
 }
 
@@ -162,9 +181,12 @@ export function describirModelo(p) {
       id: 'proceso',
       titulo: 'Proceso y calendario',
       textos: [
-        'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.',
+        p.flota
+          ? 'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) cada robot, de RB-01 a RB-0{n}, detecta cajas, recoge o descarga, decide su próximo waypoint, reserva su calle y aplica la regla de seguridad y sus límites físicos; (3) los robots ceden el paso entre ellos y se mueven todos a la vez; (4) si hay acopiador, atiende el acopio y el camión; (5) se registran posiciones, estados, producción y gasto.'
+          : 'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.',
         'La corrida termina al cumplir la duración. No hay eventos asíncronos: todo ocurre en ticks de {dt} s.',
       ],
+      vars: { n: p.flota?.n },
     },
     {
       id: 'diseno',
@@ -186,6 +208,16 @@ export function describirModelo(p) {
                   : 'Reparto: parejas en las calles más cercanas al acopio, un lado de hilera cada uno. Al terminar, el tramo libre más cercano.',
               'Ruta del robot: al terminar cada vuelta se recalcula con las calles que tienen cosecheros o cajas esperando.',
               ...(p.avance ? ['Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).'] : []),
+              ...(p.flota
+                ? [
+                    p.flota.estrategia === 'zonas'
+                      ? 'Flota: {nr} robots del mismo tipo en zonas; al terminar cada vuelta, las calles con cosecheros o cajas se reparten en grupos contiguos de peso parecido, uno por robot. Un robot sin calles espera estacionado junto al acopio y se suma cuando el reparto le da alguna.'
+                      : p.flota.estrategia === 'opuestas'
+                        ? 'Flota: {nr} robots del mismo tipo en direcciones opuestas; todos recorren las calles ocupadas, los de número par en un sentido y los impares al revés.'
+                        : 'Flota: {nr} robots del mismo tipo con desfase; todos recorren las calles ocupadas en el mismo sentido y el robot i sale del acopio cuando el primero lleva i/{nr} de su vuelta.',
+                    'Convivencia (supuesto): un robot por calle (se reserva al acercarse a la boca); fuera de las calles, el de número mayor cede el paso; una descarga a la vez en el acopio; cada caja la atiende el primer robot que la detecta.',
+                  ]
+                : []),
             ]
           : []),
         p.acopio
@@ -203,6 +235,7 @@ export function describirModelo(p) {
         var: Math.round((p.variacionRitmo ?? 0.1) * 100),
         tramo: p.reparto?.tramo,
         avance: p.avance != null ? Math.round(p.avance * 100) : null,
+        nr: p.flota?.n,
         ...(p.carga ? { cv: p.carga.cv, umbral: p.carga.umbral, fmin: +(100 * fMinima(p.carga.k, p.carga.umbral)).toFixed(1) } : {}),
       },
     },
@@ -226,6 +259,7 @@ export function describirModelo(p) {
         ...(p.carga ? CARGA.map(([k, l, , src]) => fila(`carga.${k}`, l, p.carga[k], src)) : []),
         ...(p.acopio ? ACOPIO.map(([k, l, , src]) => fila(`acopio.${k}`, l, p.acopio[k], src)) : []),
         ...(p.ssm ? SSM.map(([k, l, , src]) => fila(`ssm.${k}`, l, p.ssm[k], src)) : []),
+        ...(p.flota ? FLOTA.map(([k, l, , src]) => fila(`flota.${k}`, l, p.flota[k], src)) : []),
       ],
     },
     {

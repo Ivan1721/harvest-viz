@@ -8,6 +8,10 @@
 //     8 lleva caja al punto de entrega, 9 vuelve, 7 sube escalera,
 //     10 camina al robot, 11 carga la caja, 12 baja escalera para atender al robot
 //   banderas de actividad (w_flag): 1 cosecha, 2 camina, 3 caja/carga, 4 baja escalera, 5 sube escalera
+//
+// Flota (H8, fase A; opcional): el estado de cada robot vive en su propio objeto (this.R). Sin `flota` hay uno solo
+// y todo ocurre en el mismo orden que antes; con 2 o 3, cada tick primero decide cada robot (en orden de número), luego
+// se aplica la cesión de paso entre robots y al final se mueven todos.
 import { parseFis, evalFis } from './fis.js'
 import { DEFAULTS, resolveParams, hyp, nearestOnPolyline, movePose, initWorkers } from './common.js'
 import { buildHuerto } from './huertos/index.js'
@@ -17,6 +21,7 @@ import { paso } from './huertos/pendiente.js'
 import { ROBOTS, potencia, fuerzaAvance, limiteTraccion, frenadaEfectiva } from './robots.js'
 import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
 import { prepararCarga, resumenCarga } from './carga.js'
+import { vueltaDeRobot, estacionamiento, jain } from './flota.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -33,6 +38,61 @@ const maxOf = (a) => {
   let m = -Infinity
   for (let i = 0; i < a.length; i++) if (a[i] > m) m = a[i]
   return m
+}
+
+/** Estado de un robot: pose, ruta, carga, esperas, seguridad y energía. */
+function nuevoRobot(id, waypoints, pose, NH) {
+  return {
+    id,
+    waypoints,
+    kWp: 1, // índice 0-based (MATLAB k=2)
+    rpose: [...pose],
+    rutaEjes: null,
+    prodRobot: 0,
+    prodRobotTotal: 0,
+    holdSteps: 0,
+    waiting: false,
+    lapBoxStops: 0,
+    contaT: 0,
+    timeT1: 0,
+    boxInserted: new Array(NH).fill(false),
+    boxWpPos: new Array(NH).fill(null),
+    bBox: new Array(NH).fill(0),
+    wpTimeoutTarget: null,
+    wpTimeoutStart: 0,
+    skips: 0,
+    handoffCount: 0,
+    capacityBlocked: 0,
+    rstatus: 0,
+    goingToUnload: false,
+    needUnload: false,
+    // seguridad SSM (fase 3, perfil hri)
+    ssmStopped: false,
+    ssmClear: 0,
+    ssmStops: 0,
+    // energía y carro (huertos generados)
+    energyJ: 0,
+    vPrev: 0,
+    tractionTicks: 0,
+    maxPull: 0,
+    carro: null,
+    // acopio con acopiador (H7, fase A)
+    acopioWait: false,
+    acopioRecibe: false,
+    // flota (H8): calle reservada, esperas, cesión de paso, salida escalonada y lo recorrido
+    carril: null,
+    esperaCalle: false,
+    esperaAcopio: false,
+    cede: false,
+    salida: 0,
+    odo: 0,
+    ticksCalle: 0,
+    ticksCede: 0,
+    ticksAcopio: 0,
+    ticksParado: 0,
+    cajas: 0,
+    cmd: [0, 0, 0],
+  }
 }
 
 export class HRSim {
@@ -54,56 +114,61 @@ export class HRSim {
     // huertos generados: fruta que se agota, tramos y desplazamientos por calles (matlab-2026: null, como MATLAB)
     // carga variable por árbol y ritmo que cae (H7, fase B; opcional)
     this.cosecha = huerto.calles ? new Cosecha(huerto, W, p.carga ? prepararCarga(p.carga, huerto.arboles.length, p.semilla) : null) : null
-    // --- ruta base del robot ---
+    // --- ruta base del robot (con flota: la vuelta por todas las calles ocupadas; ubica las cajas junto a la ruta) ---
     const lap = huerto.vueltaRobot
     this.baseRoute = []
     for (let i = 0; i < p.lapRepeats; i++) for (const w of lap) this.baseRoute.push([w[0], w[1]])
     this.cargoZone = [...huerto.acopio]
     this.initPose = [...huerto.inicioRobot]
-    // --- robot ---
-    this.waypoints = this.baseRoute.map((w) => [w[0], w[1]])
-    // huertos generados (H7, fase C): cada vuelta termina en el acopio (marca `fin`); ahí la ruta se recalcula con las
-    // calles que tienen gente o cajas esperando, así el robot sigue a la cuadrilla cuando cambia de calle
-    if (this.cosecha) {
-      for (let i = 0; i < p.lapRepeats; i++) this.waypoints[(i + 1) * lap.length - 1].fin = true
-      this.rutaEjes = this._ejesOcupados(W)
+    // --- robots ---
+    // flota (H8): solo en huertos generados (resolveParams la borra en matlab-2026)
+    this.flota = p.flota && this.cosecha ? p.flota : null
+    const nR = this.flota ? this.flota.n : 1
+    this.R = []
+    const ejes0 = this.cosecha ? this._ejesOcupados(W) : null
+    for (let i = 0; i < nR; i++) {
+      const mia = this.flota ? vueltaDeRobot(huerto, this.flota.estrategia, i, nR, ejes0, (e) => this._pesoEje(e)) : { ejes: ejes0, lap }
+      const wps = []
+      for (let k = 0; k < p.lapRepeats; k++) for (const w of mia.lap) wps.push([w[0], w[1]])
+      const r = nuevoRobot(i, wps, huerto.inicioRobot, NH)
+      // huertos generados (H7, fase C): cada vuelta termina en el acopio (marca `fin`); ahí la ruta se recalcula con las
+      // calles que tienen gente o cajas esperando, así el robot sigue a la cuadrilla cuando cambia de calle
+      if (this.cosecha) {
+        for (let k = 0; k < p.lapRepeats; k++) r.waypoints[(k + 1) * mia.lap.length - 1].fin = true
+        r.rutaEjes = mia.ejes
+      }
+      // desfase (H8): el robot i sale cuando el primero recorrió i/n de su vuelta
+      if (this.flota?.estrategia === 'desfase' && i > 0) r.salida = (i / nR) * largo(mia.lap)
+      this.R.push(r)
     }
-    this.kWp = 1 // índice 0-based (MATLAB k=2)
-    this.rpose = [...huerto.inicioRobot]
-    this.prodRobot = 0
-    this.prodRobotTotal = 0
-    this.holdSteps = 0
-    this.waiting = false
-    this.lapBoxStops = 0
-    this.contaT = 0
-    this.timeT1 = 0
-    this.boxInserted = new Array(NH).fill(false)
-    this.boxWpPos = new Array(NH).fill(null)
-    this.bBox = new Array(NH).fill(0)
-    this.wpTimeoutTarget = null
-    this.wpTimeoutStart = 0
-    this.skips = 0
-    this.handoffCount = 0
-    this.capacityBlocked = 0
+    // cada caja la atiende un solo robot (H8): el primero que la detecta
+    this.boxOwner = this.flota ? new Array(NH).fill(-1) : null
+    this.minDistRobots = Infinity
+    this.minDistCalle = Infinity
     this.events = []
-    this.ev = { picks: [], boxes: [], unloads: [], crates: [], ...(this.cosecha ? { rutas: [{ idx: 0, puntos: lap.map((q) => [q[0], q[1]]) }] } : {}) }
-    this.rstatus = 0
-    // seguridad SSM (fase 3, perfil hri)
-    this.ssmStopped = false
-    this.ssmClear = 0
-    this.ssmStops = 0
+    const lap0 = this.R[0].waypoints.slice(0, this.flota ? this.R[0].waypoints.findIndex((q) => q.fin) + 1 : lap.length)
+    this.ev = {
+      picks: [],
+      boxes: [],
+      unloads: [],
+      crates: [],
+      ...(this.cosecha ? { rutas: [{ idx: 0, puntos: (this.flota ? lap0 : lap).map((q) => [q[0], q[1]]) }] } : {}),
+      ...(this.flota
+        ? {
+            rutasFlota: this.R.map((r) => ({
+              r: r.id,
+              idx: 0,
+              puntos: r.waypoints.slice(0, r.waypoints.findIndex((q) => q.fin) + 1).map((q) => [q[0], q[1]]),
+            })),
+          }
+        : {}),
+    }
     // robot elegido, energía y carro (solo huertos generados; la réplica de MATLAB no los tiene)
     this.robotSpec = this.cosecha ? ROBOTS[p.robotTipo] || ROBOTS.warthog : null
-    this.energyJ = 0
-    this.vPrev = 0
-    this.tractionTicks = 0
-    this.maxPull = 0
     const cr = this.robotSpec?.carro
-    this.carro = cr ? this._carroInicial(cr) : null
+    if (cr) for (const r of this.R) r.carro = this._carroInicial(cr, r)
     // acopio con acopiador, bins y camión (H7, fase A; opcional)
     this.acopio = p.acopio ? new Acopio(p.acopio, dt, { recibir: C.walkingCarrying, cargar: C.harvestGround }) : null
-    this.acopioWait = false
-    this.acopioRecibe = false
     // --- registro ---
     this.rec = {
       t: [],
@@ -120,6 +185,8 @@ export class HRSim {
       ...(this.cosecha ? { energy: [], cx: [], cy: [], cth: [] } : {}),
       ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
       ...(this.cosecha?.carga ? { dej: [] } : {}),
+      // flota (H8): pose, estado, carga a bordo y energía [Wh] de cada robot (rx…rst y energy son los del robot 1)
+      ...(this.flota ? Object.fromEntries(['fx', 'fy', 'fth', 'fst', 'fon', 'fen'].map((k) => [k, Array.from({ length: nR }, () => [])])) : {}),
       wx: Array.from({ length: NH }, () => []),
       wy: Array.from({ length: NH }, () => []),
       wth: Array.from({ length: NH }, () => []),
@@ -128,8 +195,36 @@ export class HRSim {
     this._record(true)
   }
 
-  log(msg) {
-    this.events.push({ idx: this.idx + 1, t: this.idx * this.dt, msg })
+  // el robot 1, para el código que conoce un solo robot (pruebas, scripts de comparación)
+  get rpose() {
+    return this.R[0].rpose
+  }
+  set rpose(v) {
+    this.R[0].rpose = v
+  }
+  get prodRobot() {
+    return this.R[0].prodRobot
+  }
+  set prodRobot(v) {
+    this.R[0].prodRobot = v
+  }
+  get ssmStopped() {
+    return this.R[0].ssmStopped
+  }
+  set ssmStopped(v) {
+    this.R[0].ssmStopped = v
+  }
+  get waypoints() {
+    return this.R[0].waypoints
+  }
+  /** Entregado por toda la flota. */
+  get prodRobotTotal() {
+    return this.R.reduce((a, r) => a + r.prodRobotTotal, 0)
+  }
+
+  log(msg, r) {
+    // el registro de texto sigue el formato del MATLAB, que tiene un solo robot: con flota, solo el robot 1
+    if (!r || r.id === 0) this.events.push({ idx: this.idx + 1, t: this.idx * this.dt, msg })
   }
 
   /** Camino de a hasta b: por calles en huertos generados; en línea recta en matlab-2026 (como MATLAB). */
@@ -202,23 +297,33 @@ export class HRSim {
 
   _record(first = false) {
     const r = this.rec,
-      NH = this.NH
+      NH = this.NH,
+      R0 = this.R[0]
     r.t.push(this.idx * this.dt)
     r.delivered.push(this.prodRobotTotal)
-    r.onboard.push(this.prodRobot)
+    r.onboard.push(this.R.reduce((a, q) => a + q.prodRobot, 0))
     r.work.push(this.W.reduce((a, w) => a + w.work, 0) + (this.acopio ? this.acopio.work : 0))
     if (this.acopio) recordAcopio(r, this.acopio)
     if (r.dej) r.dej.push(this.cosecha.dejado)
-    r.rx.push(this.rpose[0])
-    r.ry.push(this.rpose[1])
-    r.rth.push(this.rpose[2])
-    r.rst.push(this.rstatus)
+    r.rx.push(R0.rpose[0])
+    r.ry.push(R0.rpose[1])
+    r.rth.push(R0.rpose[2])
+    r.rst.push(R0.rstatus)
     if (r.energy) {
-      r.energy.push(this.energyJ / 3600) // Wh acumulados
-      r.cx.push(this.carro ? this.carro[0] : NaN)
-      r.cy.push(this.carro ? this.carro[1] : NaN)
-      r.cth.push(this.carro ? this.carro[2] : NaN)
+      r.energy.push(R0.energyJ / 3600) // Wh acumulados
+      r.cx.push(R0.carro ? R0.carro[0] : NaN)
+      r.cy.push(R0.carro ? R0.carro[1] : NaN)
+      r.cth.push(R0.carro ? R0.carro[2] : NaN)
     }
+    if (r.fx)
+      this.R.forEach((q, i) => {
+        r.fx[i].push(q.rpose[0])
+        r.fy[i].push(q.rpose[1])
+        r.fth[i].push(q.rpose[2])
+        r.fst[i].push(q.rstatus)
+        r.fon[i].push(q.prodRobot)
+        r.fen[i].push(q.energyJ / 3600)
+      })
     for (let h = 0; h < NH; h++) {
       const w = this.W[h]
       r.prod[h].push(w.prod)
@@ -433,16 +538,31 @@ export class HRSim {
     return [...set].sort((a, b) => a - b)
   }
 
+  /** Peso de una calle para repartir las zonas (H8): cosecheros trabajando en ella + cajas esperando. */
+  _pesoEje(e) {
+    const c = this.huerto.calles
+    let n = 0
+    for (const w of this.W) {
+      if (w.tramo && w.state !== 15 && w.tramo.eje === e) n++
+      if (w.nBoxes > 0 && w.box && ejeCercano(c, w.box[0]) === e) n++
+    }
+    return n
+  }
+
   /** Al terminar una vuelta (en el acopio): si la cuadrilla cambió de calles, las vueltas que quedan se recalculan. */
-  _replanificarRuta() {
-    const ejes = this._ejesOcupados()
-    if (!ejes.length || ejes.join() === this.rutaEjes.join()) return
-    const W = this.waypoints,
-      k = this.kWp
+  _replanificarRuta(r) {
+    const todos = this._ejesOcupados()
+    // con flota, cada robot toma sus calles según la estrategia (zonas: su grupo, repartido de nuevo ahora)
+    const mia = this.flota && todos.length ? vueltaDeRobot(this.huerto, this.flota.estrategia, r.id, this.flota.n, todos, (e) => this._pesoEje(e)) : null
+    const ejes = mia ? mia.ejes : todos
+    if (!todos.length || ejes.join() === r.rutaEjes.join()) return
+    const W = r.waypoints,
+      k = r.kWp
     const resto = W.slice(k + 1)
-    const vueltas = resto.filter((q) => q.fin).length
+    // con flota, un robot sin zona recorre su «vuelta» (quedarse en el acopio) muy rápido: siempre le queda al menos una
+    const vueltas = Math.max(this.flota ? 1 : 0, resto.filter((q) => q.fin).length)
     const cajas = resto.filter((q) => q.caja)
-    const lap = this.huerto.vuelta(ejes)
+    const lap = mia ? mia.lap : this.huerto.vuelta(ejes)
     const nuevo = []
     const marcar = (pts) =>
       pts.forEach((q, j) => {
@@ -451,23 +571,43 @@ export class HRSim {
         nuevo.push(r)
       })
     for (let i = 0; i < vueltas; i++) marcar(lap)
-    this.waypoints = [...W.slice(0, k + 1), ...nuevo]
-    this.baseRoute = lap.map((q) => [q[0], q[1]])
-    for (const q of cajas) this.waypoints.splice(this._insertAt(q), 0, q)
-    this.rutaEjes = ejes
-    this.ev.rutas.push({ idx: this.idx, puntos: lap.map((q) => [q[0], q[1]]) })
-    this.log(`Robot route re-planned | lanes=[${ejes.map((x) => x.toFixed(1)).join(' ')}] | ${vueltas} laps left`)
+    r.waypoints = [...W.slice(0, k + 1), ...nuevo]
+    this.baseRoute = (mia ? this.huerto.vuelta(todos) : lap).map((q) => [q[0], q[1]])
+    for (const q of cajas) r.waypoints.splice(this._insertAt(q, r), 0, q)
+    r.rutaEjes = ejes
+    if (r.id === 0) this.ev.rutas.push({ idx: this.idx, puntos: lap.map((q) => [q[0], q[1]]) })
+    if (this.flota) this.ev.rutasFlota.push({ r: r.id, idx: this.idx, puntos: lap.map((q) => [q[0], q[1]]) })
+    this.log(`Robot route re-planned | lanes=[${ejes.map((x) => x.toFixed(1)).join(' ')}] | ${vueltas} laps left`, r)
+  }
+
+  /** Un robot estacionado sin zona toma las calles que le da el reparto de ahora, si le da alguna. */
+  _sumarseAlReparto(r) {
+    const todos = this._ejesOcupados()
+    if (!todos.length) return
+    const mia = vueltaDeRobot(this.huerto, this.flota.estrategia, r.id, this.flota.n, todos, (e) => this._pesoEje(e))
+    if (!mia.ejes.length) return
+    r.waypoints = []
+    for (let k = 0; k < this.p.lapRepeats; k++)
+      mia.lap.forEach((q, j) => {
+        const w = [q[0], q[1]]
+        if (j === mia.lap.length - 1) w.fin = true
+        r.waypoints.push(w)
+      })
+    r.kWp = 0
+    r.rutaEjes = mia.ejes
+    r.wpTimeoutTarget = null
+    this.ev.rutasFlota.push({ r: r.id, idx: this.idx, puntos: mia.lap.map((q) => [q[0], q[1]]) })
   }
 
   /** Índice donde insertar un waypoint de caja: el del tramo de la ruta próxima más cercano a la caja. */
-  _insertAt(pos) {
-    const W = this.waypoints,
+  _insertAt(pos, r = this.R[0]) {
+    const W = r.waypoints,
       n = W.length
-    let best = this.kWp,
+    let best = r.kWp,
       bd = Infinity,
-      a = [this.rpose[0], this.rpose[1]]
+      a = [r.rpose[0], r.rpose[1]]
     for (let k = 0; k < Math.min(60, n); k++) {
-      const j = (this.kWp + k) % n,
+      const j = (r.kWp + k) % n,
         b = W[j]
       const d = hyp(...(([x, y]) => [x - pos[0], y - pos[1]])(nearestOnPolyline(pos, [a, b])))
       if (d < bd - 1e-9) {
@@ -479,47 +619,152 @@ export class HRSim {
     return best
   }
 
-  _detectBox(h) {
+  _detectBox(h, r) {
     // ObjectDetector: dentro del alcance y del campo de visión del cuerpo
     const w = this.W[h],
-      r = this.rpose,
+      rp = r.rpose,
       p = this.p
     if (!(w.nBoxes > 0 && w.prodBox > 0 && w.box)) return false
-    const dx = w.box[0] - r[0],
-      dy = w.box[1] - r[1],
+    const dx = w.box[0] - rp[0],
+      dy = w.box[1] - rp[1],
       d = Math.hypot(dx, dy)
     if (d > p.detectorRange) return false
-    let ang = Math.atan2(dy, dx) - r[2]
+    let ang = Math.atan2(dy, dx) - rp[2]
     ang = Math.atan2(Math.sin(ang), Math.cos(ang))
     return Math.abs(ang) <= p.detectorFov / 2
   }
 
-  _stepRobot() {
+  // ---- flota (H8): calles, reserva y cercanía entre robots ----
+
+  /**
+   * ¿Está el punto dentro de una calle, entre las copas? Devuelve su eje o null (cabecera, o robot que no cabe en las
+   * calles). Al girar en la cabecera el robot puede acercarse a las copas sin entrar: cuenta su centro.
+   */
+  _calleDe(q) {
+    const c = this.huerto.calles,
+      H = this.huerto.limites.h
+    if (!c.robotCabe) return null
+    return q[1] > c.cabecera && q[1] < H - c.cabecera ? ejeCercano(c, q[0]) : null
+  }
+
+  /** Calle que recorre el tramo de `a` hacia `g`: la de `g` si está dentro de una, o la que une las dos cabeceras. */
+  _calleHacia(a, g) {
+    const dentro = this._calleDe(g)
+    if (dentro != null || !this.huerto.calles.robotCabe) return dentro
+    const H = this.huerto.limites.h
+    return a[1] < H / 2 !== g[1] < H / 2 ? ejeCercano(this.huerto.calles, g[0]) : null
+  }
+
+  /**
+   * Reserva de calle (regla 1): un robot entra a una calle solo si ningún otro la tiene. La pide al acercarse a menos de
+   * `reserva` m de su boca; si otro la tiene, espera en la cabecera. Dentro de una calle la conserva hasta salir.
+   * Devuelve true si debe esperar.
+   */
+  _reservarCalle(r, g) {
+    const pos = [r.rpose[0], r.rpose[1]]
+    const dentro = this._calleDe(pos)
+    if (dentro != null) {
+      // dentro de una calle conserva la que reservó al entrar (en un tramo largo el robot puede desviarse hacia la vecina)
+      r.carril ??= dentro
+      return false
+    }
+    // calle del tramo actual o, si el waypoint actual está en la cabecera, la del siguiente
+    let L = this._calleHacia(pos, g)
+    if (L == null) {
+      const sig = r.waypoints[(r.kWp + 1) % r.waypoints.length]
+      L = this._calleHacia(g, sig)
+    }
+    const c = this.huerto.calles,
+      H = this.huerto.limites.h
+    // la boca de una calle: donde empiezan las copas, del lado de la cabecera en que está el robot
+    const bocaDe = (e) => [e, pos[1] < H / 2 ? c.cabecera : H - c.cabecera]
+    // recién salido de su calle (p. ej., tras cargar una caja en la boca), la conserva hasta alejarse 1,5 m: al girar
+    // puede volver a asomarse entre las copas
+    if (r.carril != null && L !== r.carril) {
+      const b = bocaDe(r.carril)
+      if (hyp(pos[0] - b[0], pos[1] - b[1]) < 1.5) return false
+    }
+    if (L == null) {
+      r.carril = null
+      return false
+    }
+    if (r.carril === L) return false
+    const boca = bocaDe(L)
+    if (hyp(pos[0] - boca[0], pos[1] - boca[1]) >= this.flota.reserva) {
+      r.carril = null
+      return false
+    }
+    if (this.R.some((o) => o !== r && o.carril === L)) return true
+    r.carril = L
+    return false
+  }
+
+  /** Una descarga a la vez (regla 3): ¿otro robot está descargando o en la cola del acopiador? */
+  _acopioOcupado(r) {
+    return this.R.some((o) => o !== r && (o.acopioWait || (o.holdSteps > 0 && o.rstatus === 2)))
+  }
+
+  // ---- un robot, un tick: decide (_planRobot) y se mueve (_moveRobot) ----
+  _stepRobot(r = this.R[0]) {
+    this._planRobot(r)
+    this._moveRobot(r)
+  }
+
+  _planRobot(r) {
     const p = this.p,
       dt = this.dt,
       NH = this.NH,
-      W = this.W
+      W = this.W,
+      fl = this.flota
     const unit = p.maxProd // una caja = una bolsa llena (en MATLAB ROBOT_BOX_UNITS = capacidad de la bolsa = 15)
-    const rpos = [this.rpose[0], this.rpose[1]]
+    const rpos = [r.rpose[0], r.rpose[1]]
+    // desfase (H8): espera en el acopio hasta su salida
+    if (fl && r.salida > 0) {
+      if (this.R[0].odo < r.salida) {
+        r.cmd = [0, 0, 0]
+        r.rstatus = 6
+        r.ticksParado++
+        return
+      }
+      r.salida = 0
+      r.wpTimeoutTarget = null
+    }
+    // sin zona (zonas, más robots que grupos de calles): estacionado junto al acopio; cada 5 s mira si el reparto ya
+    // le da calles y, si es así, se suma desde ahí
+    if (fl && r.rutaEjes && !r.rutaEjes.length && r.prodRobot === 0) {
+      const pk = estacionamiento(this.huerto, r.id)
+      if (hyp(rpos[0] - pk[0], rpos[1] - pk[1]) < 1) {
+        if (this.idx % 20 === 0) this._sumarseAlReparto(r)
+        if (!r.rutaEjes.length) {
+          r.cmd = [0, 0, 0]
+          r.rstatus = 6
+          r.carril = null
+          r.ticksParado++
+          return
+        }
+      }
+    }
     // detección de cajas
     const det = []
     for (let h = 0; h < NH; h++) {
-      const d = this._detectBox(h)
+      const d = this._detectBox(h, r)
       det.push(d)
-      this.bBox[h] = d ? this.bBox[h] + 1 : 0
+      r.bBox[h] = d ? r.bBox[h] + 1 : 0
     }
     // inserción de waypoints de caja (distance_sorted)
     const pend = []
-    const robotFull = this.prodRobot + unit > p.capacityBoxes * unit + 1e-9
+    const robotFull = r.prodRobot + unit > p.capacityBoxes * unit + 1e-9
     for (let h = 0; h < NH; h++) {
       const w = W[h]
       const exists = w.nBoxes >= 1 && w.prodBox > 0 && w.box
-      if (exists && det[h] && this.bBox[h] === 1 && !this.boxInserted[h] && !robotFull) {
+      // con flota, una caja que ya atiende otro robot se ignora (regla 4)
+      if (fl && this.boxOwner[h] !== -1 && this.boxOwner[h] !== r.id) continue
+      if (exists && det[h] && r.bBox[h] === 1 && !r.boxInserted[h] && !robotFull) {
         pend.push({ h, pos: [w.box[0], w.box[1]], dist: hyp(rpos[0] - w.box[0], rpos[1] - w.box[1]) })
       }
     }
-    const nAllowed = p.maxBoxStopsPerLap - this.lapBoxStops
-    const atWp = (pos) => this.waypoints.some((q) => hyp(q[0] - pos[0], q[1] - pos[1]) < 0.05)
+    const nAllowed = p.maxBoxStopsPerLap - r.lapBoxStops
+    const atWp = (pos) => r.waypoints.some((q) => hyp(q[0] - pos[0], q[1] - pos[1]) < 0.05)
     let list = pend
     if (p.placement === 'tree_point') {
       const newStop = list.map((e, i) => !(atWp(e.pos) || (i > 0 && list.slice(0, i).some((q) => hyp(q.pos[0] - e.pos[0], q.pos[1] - e.pos[1]) < 0.05))))
@@ -539,46 +784,48 @@ export class HRSim {
         ns = keep.map((i) => newStop[i])
         list = keep.map((i) => list[i])
       }
-      this.lapBoxStops += ns.filter(Boolean).length
+      r.lapBoxStops += ns.filter(Boolean).length
     } else {
       if (list.length && list.length > nAllowed) list = [...list].sort((a, b) => a.dist - b.dist).slice(0, Math.max(0, nAllowed))
-      this.lapBoxStops += list.length
+      r.lapBoxStops += list.length
     }
     if (list.length) {
       list = [...list].sort((a, b) => b.dist - a.dist)
       for (const e of list) {
         const { h, pos } = e
-        const exists = this.waypoints.some((q) => hyp(q[0] - pos[0], q[1] - pos[1]) < 0.05)
+        const exists = r.waypoints.some((q) => hyp(q[0] - pos[0], q[1] - pos[1]) < 0.05)
         if (!exists) {
-          let kk = Math.min(Math.max(this.kWp, 0), this.waypoints.length - 1)
+          let kk = Math.min(Math.max(r.kWp, 0), r.waypoints.length - 1)
           // huertos generados: la caja se inserta en el tramo de la ruta que pasa por ella (no siempre antes del waypoint
           // actual: con waypoints densos en la calle, eso haría volver al robot a un punto que ya quedó atrás)
-          if (this.cosecha) kk = this._insertAt(pos)
+          if (this.cosecha) kk = this._insertAt(pos, r)
           const wp = [pos[0], pos[1]]
           wp.caja = true // H7 fase C: se conserva si la ruta se recalcula
-          this.waypoints.splice(kk, 0, wp)
-          if (kk < this.kWp) this.kWp += 1 // la inserción quedó antes del waypoint actual (vuelta siguiente)
+          r.waypoints.splice(kk, 0, wp)
+          if (kk < r.kWp) r.kWp += 1 // la inserción quedó antes del waypoint actual (vuelta siguiente)
           this.log(
-            `Robot detected BOX from h${h + 1} and inserted waypoint | box=[${pos[0].toFixed(2)} ${pos[1].toFixed(2)}] | dist=${e.dist.toFixed(2)} | inserted before k=${kk + 1} | total waypoints=${this.waypoints.length}`,
+            `Robot detected BOX from h${h + 1} and inserted waypoint | box=[${pos[0].toFixed(2)} ${pos[1].toFixed(2)}] | dist=${e.dist.toFixed(2)} | inserted before k=${kk + 1} | total waypoints=${r.waypoints.length}`,
+            r,
           )
-        } else this.log(`Robot detected BOX from h${h + 1} | box already existed as waypoint at [${pos[0].toFixed(2)} ${pos[1].toFixed(2)}]`)
-        this.ev.boxes.push({ idx: this.idx, h: h + 1, x: pos[0], y: pos[1], picked: Infinity, served: false })
-        this.boxInserted[h] = true
-        this.boxWpPos[h] = [pos[0], pos[1]]
+        } else this.log(`Robot detected BOX from h${h + 1} | box already existed as waypoint at [${pos[0].toFixed(2)} ${pos[1].toFixed(2)}]`, r)
+        this.ev.boxes.push({ idx: this.idx, h: h + 1, x: pos[0], y: pos[1], picked: Infinity, served: false, ...(fl ? { r: r.id } : {}) })
+        r.boxInserted[h] = true
+        r.boxWpPos[h] = [pos[0], pos[1]]
+        if (fl) this.boxOwner[h] = r.id
       }
     }
     // recogida (protocolo worker_loads: el dueño carga la caja)
-    this.waiting = false
+    r.waiting = false
     for (let h = 0; h < NH; h++) {
       const w = W[h]
-      if (!(w.nBoxes >= 1 && w.prodBox > 0 && w.box && this.boxInserted[h])) continue
+      if (!(w.nBoxes >= 1 && w.prodBox > 0 && w.box && r.boxInserted[h])) continue
       // con carro, el cosechero carga la caja en el carro: cuenta el más cercano de los dos
       let dist = hyp(rpos[0] - w.box[0], rpos[1] - w.box[1])
-      if (this.carro) dist = Math.min(dist, hyp(this.carro[0] - w.box[0], this.carro[1] - w.box[1]))
-      const hasRoom = this.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
+      if (r.carro) dist = Math.min(dist, hyp(r.carro[0] - w.box[0], r.carro[1] - w.box[1]))
+      const hasRoom = r.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
       if (dist < PICKUP_RADIUS && !hasRoom) {
-        this.capacityBlocked++
-        this.needUnload = true
+        r.capacityBlocked++
+        r.needUnload = true
         // MATLAB deja call=true aunque el robot ya no tenga espacio: el trabajador vuelve a girar y cargar
         // indefinidamente sin cosechar. Con fixRecallLoop se cancela la llamada (difiere de MATLAB).
         if (p.fixRecallLoop) w.call = false
@@ -586,19 +833,21 @@ export class HRSim {
       let ready = true
       if (dist < PICKUP_RADIUS && hasRoom && !w.done) {
         w.call = true
-        this.waiting = true
+        r.waiting = true
         ready = false
       }
       if (dist < PICKUP_RADIUS && hasRoom && ready) {
         const picked = w.prodBox
         w.call = false
         w.done = false
-        this.handoffCount++
+        r.handoffCount++
+        r.cajas++
         this.log(
-          `Robot picked BOX from h${h + 1} | box_product=${picked.toFixed(2)} | Prod_ROBOT before=${this.prodRobot.toFixed(2)} | robot=[${rpos[0].toFixed(2)} ${rpos[1].toFixed(2)}]`,
+          `Robot picked BOX from h${h + 1} | box_product=${picked.toFixed(2)} | Prod_ROBOT before=${r.prodRobot.toFixed(2)} | robot=[${rpos[0].toFixed(2)} ${rpos[1].toFixed(2)}]`,
+          r,
         )
-        this.prodRobot += picked
-        this.ev.picks.push({ idx: this.idx, h: h + 1, amount: picked })
+        r.prodRobot += picked
+        this.ev.picks.push({ idx: this.idx, h: h + 1, amount: picked, ...(fl ? { r: r.id } : {}) })
         for (const c of this.ev.crates) if (c.h === h + 1 && c.picked === Infinity) c.picked = this.idx
         {
           const b = this.ev.boxes.find((q) => q.h === h + 1 && !q.served)
@@ -607,49 +856,50 @@ export class HRSim {
             b.served = true
           }
         }
-        if (this.boxWpPos[h]) {
+        if (r.boxWpPos[h]) {
           let imin = -1,
             dmin = Infinity
-          this.waypoints.forEach((q, i) => {
-            const d = hyp(q[0] - this.boxWpPos[h][0], q[1] - this.boxWpPos[h][1])
+          r.waypoints.forEach((q, i) => {
+            const d = hyp(q[0] - r.boxWpPos[h][0], q[1] - r.boxWpPos[h][1])
             if (d < dmin) {
               dmin = d
               imin = i
             }
           })
-          if (dmin < 0.1 && this.waypoints.length > 1) {
-            this.waypoints.splice(imin, 1)
-            if (imin < this.kWp) this.kWp -= 1
-            if (this.kWp > this.waypoints.length - 1) this.kWp = 0
-            if (this.kWp < 0) this.kWp = 0
-            this.log(`Box waypoint removed for h${h + 1} | next k=${this.kWp + 1}/${this.waypoints.length}`)
+          if (dmin < 0.1 && r.waypoints.length > 1) {
+            r.waypoints.splice(imin, 1)
+            if (imin < r.kWp) r.kWp -= 1
+            if (r.kWp > r.waypoints.length - 1) r.kWp = 0
+            if (r.kWp < 0) r.kWp = 0
+            this.log(`Box waypoint removed for h${h + 1} | next k=${r.kWp + 1}/${r.waypoints.length}`, r)
           }
         }
         w.prodBox = 0
         w.nBoxes = 0
         w.box = null
-        this.boxInserted[h] = false
-        this.boxWpPos[h] = null
-        this.bBox[h] = 0
+        r.boxInserted[h] = false
+        r.boxWpPos[h] = null
+        r.bBox[h] = 0
+        if (fl) this.boxOwner[h] = -1
       }
     }
     // huertos generados: con el robot lleno, va a descargar al acopio por las calles y vuelve a donde estaba
     // (en el mapa del estudio la vuelta base ya pasa por la zona de carga a cada rato; en 1 ha, no)
-    if (this.cosecha && !this.goingToUnload && (this.needUnload || this.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
+    if (this.cosecha && !r.goingToUnload && (r.needUnload || r.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
       // dentro de una calle no puede dar la vuelta (no cabe): sigue hasta el próximo waypoint en una cabecera y
       // desde ahí va al acopio por el carril; si está en la cabecera de arriba, baja por la calle vecina (dos giros de
       // 90°, sin giro en U entre copas). Después vuelve a ese punto y retoma la vuelta.
       const c = this.huerto.calles,
         H = this.huerto.limites.h,
-        W = this.waypoints,
+        W = r.waypoints,
         acop = this.cargoZone
       // «en la cabecera» = sobre el carril del robot (los waypoints densos de la calle llegan hasta el borde de las copas)
       const enCab = (q) => q[1] <= c.yb + 0.5 || q[1] >= c.yt - 0.5
-      let j = this.kWp
+      let j = r.kWp
       for (let k = 0; k < W.length && !enCab(W[j]); k++) j = (j + 1) % W.length
       const here = enCab([rpos[0], rpos[1]])
       const from = here ? [rpos[0], rpos[1] < H / 2 ? c.yb : c.yt] : [W[j][0], W[j][1]]
-      const at = here ? this.kWp : j + 1
+      const at = here ? r.kWp : j + 1
       let ida, vuelta
       if (from[1] < H / 2) {
         ida = [[acop[0], acop[1]]]
@@ -665,65 +915,70 @@ export class HRSim {
         vuelta = [...[...baja].reverse(), [from[0], from[1]]]
       }
       const detour = [...ida, ...vuelta]
-      this.waypoints.splice(at, 0, ...detour)
-      if (at < this.kWp) this.kWp += detour.length
-      this.goingToUnload = true
-      this.log(`Robot FULL | going to CARGO ZONE | ${detour.length} waypoints inserted`)
+      r.waypoints.splice(at, 0, ...detour)
+      if (at < r.kWp) r.kWp += detour.length
+      r.goingToUnload = true
+      this.log(`Robot FULL | going to CARGO ZONE | ${detour.length} waypoints inserted`, r)
     }
+    // flota (H8): con otro robot descargando, el que trae carga espera a unos metros del acopio (regla 3)
+    const dAcop = hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1])
+    r.esperaAcopio = !!fl && r.prodRobot > 0 && dAcop < fl.esperaAcopio && r.contaT === 0 && !r.acopioWait && this._acopioOcupado(r)
     // descarga en la zona de carga
-    if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0 && this.acopio && !this.acopioWait) {
+    if (r.esperaAcopio) {
+      // sin descargar todavía
+    } else if (dAcop < CARGO_RADIUS && r.contaT === 0 && this.acopio && !r.acopioWait) {
       // H7: el acopiador recibe la carga cuando está libre; mientras tanto el robot espera en la cola
-      this.goingToUnload = false
-      this.needUnload = false
-      this.lapBoxStops = 0
-      const kg = this.prodRobot
-      this.contaT = 1
-      this.timeT1 = 0
+      r.goingToUnload = false
+      r.needUnload = false
+      r.lapBoxStops = 0
+      const kg = r.prodRobot
+      r.contaT = 1
+      r.timeT1 = 0
       if (kg > 0) {
-        this.log(`Robot reached CARGO ZONE | waiting for the loader | ${kg.toFixed(2)} crops on board`)
-        this.acopioWait = true
+        this.log(`Robot reached CARGO ZONE | waiting for the loader | ${kg.toFixed(2)} crops on board`, r)
+        r.acopioWait = true
         this.acopio.pedir({
           kg,
           dur: p.unloadTimePerBox * (kg / unit),
-          onStart: () => (this.acopioRecibe = true),
+          onStart: () => (r.acopioRecibe = true),
           onDone: () => {
-            this.ev.unloads.push({ idx: this.idx, amount: kg })
-            this.prodRobotTotal += kg
-            this.prodRobot -= kg
-            this.acopioWait = false
-            this.acopioRecibe = false
-            this.contaT = 1
-            this.timeT1 = 0
+            this.ev.unloads.push({ idx: this.idx, amount: kg, ...(fl ? { r: r.id } : {}) })
+            r.prodRobotTotal += kg
+            r.prodRobot -= kg
+            r.acopioWait = false
+            r.acopioRecibe = false
+            r.contaT = 1
+            r.timeT1 = 0
           },
         })
       }
-    } else if (hyp(rpos[0] - this.initPose[0], rpos[1] - this.initPose[1]) < CARGO_RADIUS && this.contaT === 0 && !this.acopio) {
-      this.goingToUnload = false
-      this.needUnload = false
-      this.lapBoxStops = 0
-      this.log(`Robot reached CARGO ZONE | unloading ${this.prodRobot.toFixed(2)} crops | Prod_ROBOT_total before=${this.prodRobotTotal.toFixed(2)}`)
+    } else if (dAcop < CARGO_RADIUS && r.contaT === 0 && !this.acopio) {
+      r.goingToUnload = false
+      r.needUnload = false
+      r.lapBoxStops = 0
+      this.log(`Robot reached CARGO ZONE | unloading ${r.prodRobot.toFixed(2)} crops | Prod_ROBOT_total before=${r.prodRobotTotal.toFixed(2)}`, r)
       // MATLAB suma UNLOAD_TIME_S (0 en el estudio) + tiempo por caja
-      if (this.prodRobot > 0) this.holdSteps += Math.round((p.unloadTimePerBox * (this.prodRobot / unit)) / dt)
-      this.ev.unloads.push({ idx: this.idx, amount: this.prodRobot })
-      this.prodRobotTotal += this.prodRobot
-      this.prodRobot = 0
-      this.contaT = 1
-      this.timeT1 = 0
+      if (r.prodRobot > 0) r.holdSteps += Math.round((p.unloadTimePerBox * (r.prodRobot / unit)) / dt)
+      this.ev.unloads.push({ idx: this.idx, amount: r.prodRobot, ...(fl ? { r: r.id } : {}) })
+      r.prodRobotTotal += r.prodRobot
+      r.prodRobot = 0
+      r.contaT = 1
+      r.timeT1 = 0
     }
-    if (this.contaT === 1 && !this.acopioWait) this.timeT1 += 1
-    if (this.timeT1 === UNLOAD_COOLDOWN_TICKS) this.contaT = 0
+    if (r.contaT === 1 && !r.acopioWait) r.timeT1 += 1
+    if (r.timeT1 === UNLOAD_COOLDOWN_TICKS) r.contaT = 0
     // control hacia el waypoint actual
     const cur = [
-      Math.max(Math.min(this.rpose[0], this.huerto.limites.w - 0.05), 0.05),
-      Math.max(Math.min(this.rpose[1], this.huerto.limites.h - 0.05), 0.05),
-      this.rpose[2],
+      Math.max(Math.min(r.rpose[0], this.huerto.limites.w - 0.05), 0.05),
+      Math.max(Math.min(r.rpose[1], this.huerto.limites.h - 0.05), 0.05),
+      r.rpose[2],
     ]
-    if (this.kWp > this.waypoints.length - 1) this.kWp = this.waypoints.length - 1
+    if (r.kWp > r.waypoints.length - 1) r.kWp = r.waypoints.length - 1
     const c = Math.cos(cur[2]),
       s = Math.sin(cur[2])
     let g, xl, yl, goalD, targetDir
     const aim = () => {
-      g = this.waypoints[this.kWp]
+      g = r.waypoints[r.kWp]
       const gx = g[0] - cur[0],
         gy = g[1] - cur[1]
       xl = c * gx + s * gy
@@ -734,121 +989,181 @@ export class HRSim {
     aim()
     // timeout de waypoint
     let timedOut = false
-    const sameTarget = this.wpTimeoutTarget && this.wpTimeoutTarget[0] === g[0] && this.wpTimeoutTarget[1] === g[1]
+    const sameTarget = r.wpTimeoutTarget && r.wpTimeoutTarget[0] === g[0] && r.wpTimeoutTarget[1] === g[1]
     const nowIdx = this.idx + 1
     // ir lento por seguridad no cuenta como «atascado» en el waypoint; una parada de seguridad sí: si se prolonga
-    // más que waypointTimeout, el robot salta al siguiente waypoint (la misma recuperación que ya tiene el MATLAB)
-    if (!sameTarget || this.holdSteps > 0 || this.waiting || this.acopioWait || this.rstatus === 4) {
-      this.wpTimeoutTarget = [g[0], g[1]]
-      this.wpTimeoutStart = nowIdx
-    } else if ((nowIdx - this.wpTimeoutStart) * dt > p.waypointTimeout) {
+    // más que waypointTimeout, el robot salta al siguiente waypoint (la misma recuperación que ya tiene el MATLAB).
+    // Con flota, esperar una calle o el acopio tampoco cuenta; ceder el paso sí, como una parada de seguridad (si no, un
+    // robot que orbita su waypoint cerca de otro nunca saldría del ciclo).
+    if (!sameTarget || r.holdSteps > 0 || r.waiting || r.acopioWait || r.rstatus === 4 || r.esperaAcopio || r.esperaCalle) {
+      r.wpTimeoutTarget = [g[0], g[1]]
+      r.wpTimeoutStart = nowIdx
+    } else if ((nowIdx - r.wpTimeoutStart) * dt > p.waypointTimeout) {
       timedOut = true
-      this.skips++
+      r.skips++
     }
     if (goalD < WAYPOINT_RADIUS || timedOut) {
-      this.log(`Robot reached ROUTE waypoint | k=${this.kWp + 1}/${this.waypoints.length} | pos=[${this.rpose[0].toFixed(2)} ${this.rpose[1].toFixed(2)}]`)
+      this.log(`Robot reached ROUTE waypoint | k=${r.kWp + 1}/${r.waypoints.length} | pos=[${r.rpose[0].toFixed(2)} ${r.rpose[1].toFixed(2)}]`, r)
       // H7 fase C: al terminar la vuelta, en el acopio. (Recalcular también al salir de cada calle se probó: el robot
       // vuelve una y otra vez a las calles cercanas y entrega menos.)
-      if (this.cosecha && !this.goingToUnload && this.waypoints[this.kWp]?.fin) this._replanificarRuta()
-      this.kWp += 1
-      if (this.kWp > this.waypoints.length - 1) this.kWp = 0
-      const n = this.waypoints[this.kWp]
-      this.log(`Next waypoint selected | k=${this.kWp + 1}/${this.waypoints.length} | target=[${n[0].toFixed(2)} ${n[1].toFixed(2)}]`)
+      if (this.cosecha && !r.goingToUnload && r.waypoints[r.kWp]?.fin) this._replanificarRuta(r)
+      r.kWp += 1
+      if (r.kWp > r.waypoints.length - 1) r.kWp = 0
+      const n = r.waypoints[r.kWp]
+      this.log(`Next waypoint selected | k=${r.kWp + 1}/${r.waypoints.length} | target=[${n[0].toFixed(2)} ${n[1].toFixed(2)}]`, r)
       // huertos generados: el control de este tick ya apunta al waypoint nuevo (y salta los que también están
       // alcanzados). El MATLAB, en cambio, usa el waypoint recién alcanzado en ese tick; con waypoints densos en calles
       // angostas eso hace girar al robot hacia un punto que quedó atrás.
       if (this.cosecha) {
         aim()
         for (let k = 0; k < 4 && goalD < WAYPOINT_RADIUS; k++) {
-          this.kWp = (this.kWp + 1) % this.waypoints.length
+          r.kWp = (r.kWp + 1) % r.waypoints.length
           aim()
         }
       }
     }
+    // flota (H8): reserva de la calle a la que va (regla 1)
+    r.esperaCalle = fl ? this._reservarCalle(r, g) : false
     const [wRef, vRef] = evalFis(this.fis, [goalD, targetDir])
     // FourWheelSteering, dirección frontal: v_x = vRef, v_y = 0.5 w L, giro w
     const L = p.frontLen + p.rearLen
     const vx = vRef,
       vy = vx > 1e-12 ? 0.5 * wRef * L : 0,
       om = vx > 1e-12 ? wRef : 0
-    const th = this.rpose[2]
+    const th = r.rpose[2]
     let wxv = vx * Math.cos(th) - vy * Math.sin(th),
       wyv = vx * Math.sin(th) + vy * Math.cos(th),
       wth = om
-    this.rstatus = 0
-    if (this.holdSteps > 0) {
+    r.rstatus = 0
+    if (r.holdSteps > 0) {
       wxv = wyv = wth = 0
-      this.holdSteps -= 1
-      this.rstatus = 2
-    } else if (this.waiting) {
+      r.holdSteps -= 1
+      r.rstatus = 2
+    } else if (r.waiting) {
       wxv = wyv = wth = 0
-      this.rstatus = 1
-    } else if (this.acopioWait) {
+      r.rstatus = 1
+    } else if (r.acopioWait) {
       // H7: en la cola del acopio (6) o recibiendo el acopiador su carga (2, descarga)
       wxv = wyv = wth = 0
-      this.rstatus = this.acopioRecibe ? 2 : 6
+      r.rstatus = r.acopioRecibe ? 2 : 6
+    } else if (r.esperaAcopio) {
+      // H8: otro robot descarga
+      wxv = wyv = wth = 0
+      r.rstatus = 6
+      r.ticksAcopio++
+    } else if (r.esperaCalle) {
+      // H8: la calle a la que va la tiene otro robot
+      wxv = wyv = wth = 0
+      r.rstatus = 7
+      r.ticksCalle++
     } else if (p.ssm?.enabled) {
-      const k = this._ssmScale(wxv, wyv)
+      const k = this._ssmScale(wxv, wyv, r)
       if (k === 0) {
         wxv = wyv = wth = 0
-        this.rstatus = 3
+        r.rstatus = 3
       } else if (k < 1) {
         wxv *= k
         wyv *= k
         wth *= k
-        this.rstatus = 4
+        r.rstatus = 4
       }
     }
     // huertos generados: límites físicos del robot elegido (velocidad máxima, frenada en bajada, tracción)
     if (this.robotSpec && (wxv || wyv)) {
-      const k = this._limitesFisicos(wxv, wyv)
+      const k = this._limitesFisicos(wxv, wyv, r)
       if (k === 0) {
         wxv = wyv = wth = 0
-        this.rstatus = 5 // tracción insuficiente
+        r.rstatus = 5 // tracción insuficiente
       } else if (k < 1) {
         wxv *= k
         wyv *= k
         wth *= k
       }
     }
+    r.cmd = [wxv, wyv, wth]
+  }
+
+  /**
+   * Cesión de paso entre robots (regla 2): fuera de las calles, si dos robots que se mueven quedan a menos de `ceder` m,
+   * el de número mayor se detiene mientras su movimiento lo acerque al otro. Un robot detenido no obliga a ceder a los
+   * otros (la cabecera tiene espacio para pasarlo); como el de número menor nunca cede ante uno mayor, no hay esperas
+   * circulares.
+   */
+  _cederPaso() {
+    const fl = this.flota
+    for (const r of this.R) {
+      r.cede = false
+      if (!(r.cmd[0] || r.cmd[1]) || this._calleDe(r.rpose) != null) continue
+      for (const o of this.R) {
+        if (o.id >= r.id) break
+        if (!(o.cmd[0] || o.cmd[1]) || this._calleDe(o.rpose) != null) continue
+        const dx = o.rpose[0] - r.rpose[0],
+          dy = o.rpose[1] - r.rpose[1]
+        // cede solo si su movimiento lo acerca al otro (alejarse o pasar de lado no estorba)
+        if (hyp(dx, dy) < fl.ceder && r.cmd[0] * dx + r.cmd[1] * dy > 0) {
+          r.cede = true
+          r.cmd = [0, 0, 0]
+          r.rstatus = 8
+          r.ticksCede++
+          break
+        }
+      }
+    }
+  }
+
+  _moveRobot(r) {
+    const dt = this.dt
+    const [wxv, wyv, wth] = r.cmd
     // la integración usa pose(:,idx-1) sin recorte, igual que el MATLAB
-    const old = this.rpose
-    const nx = this.rpose[0] + wxv * dt,
-      ny = this.rpose[1] + wyv * dt,
-      nth = this.rpose[2] + wth * dt
-    this.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
-    if (this.robotSpec) this._energiaYCarro(old, this.rpose)
+    const old = r.rpose
+    const nx = r.rpose[0] + wxv * dt,
+      ny = r.rpose[1] + wyv * dt,
+      nth = r.rpose[2] + wth * dt
+    r.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
+    if (this.robotSpec) this._energiaYCarro(old, r.rpose, r)
+    if (this.flota) r.odo += hyp(r.rpose[0] - old[0], r.rpose[1] - old[1])
+  }
+
+  /** Distancia mínima entre robots: en todo el huerto y con alguno dentro de una calle. */
+  _medirFlota() {
+    const R = this.R
+    for (let i = 0; i < R.length; i++)
+      for (let j = i + 1; j < R.length; j++) {
+        const d = hyp(R[i].rpose[0] - R[j].rpose[0], R[i].rpose[1] - R[j].rpose[1])
+        if (d < this.minDistRobots) this.minDistRobots = d
+        if ((this._calleDe(R[i].rpose) != null || this._calleDe(R[j].rpose) != null) && d < this.minDistCalle) this.minDistCalle = d
+      }
   }
 
   /** Masas del conjunto: total que se mueve, la del robot (tracción) y la que está sobre ruedas que frenan. */
-  _masas() {
-    const r = this.robotSpec,
-      cr = r.carro
-    const fruta = this.prodRobot // 1 unidad = 1 kg en los huertos generados
-    const mTot = r.masa + (cr ? cr.masa : 0) + fruta
-    return { mTot, mRobot: r.masa, mFrena: cr ? r.masa : mTot }
+  _masas(r = this.R[0]) {
+    const s = this.robotSpec,
+      cr = s.carro
+    const fruta = r.prodRobot // 1 unidad = 1 kg en los huertos generados
+    const mTot = s.masa + (cr ? cr.masa : 0) + fruta
+    return { mTot, mRobot: s.masa, mFrena: cr ? s.masa : mTot }
   }
 
-  /** Pendiente (rad) del terreno en la dirección (ux, uy) desde la pose del robot; 0 en plano. */
-  _theta(ux, uy, at = this.rpose) {
+  /** Pendiente (rad) del terreno en la dirección (ux, uy) desde `at`; 0 en plano. */
+  _theta(ux, uy, at = this.R[0].rpose) {
     const h = this.huerto
     if (!h.terreno?.pendiente || !h.z) return 0
     return Math.atan(h.z(at[0] + ux, at[1] + uy) - h.z(at[0], at[1]))
   }
 
   /** Factor de escala por velocidad máxima, frenada efectiva en bajada y tracción (0 = no puede avanzar). */
-  _limitesFisicos(vx, vy) {
-    const r = this.robotSpec,
+  _limitesFisicos(vx, vy, r = this.R[0]) {
+    const s = this.robotSpec,
       v = Math.hypot(vx, vy)
-    let k = v > r.vMax ? r.vMax / v : 1
-    const th = this._theta(vx / v, vy / v)
-    const { mTot, mRobot, mFrena } = this._masas()
+    let k = v > s.vMax ? s.vMax / v : 1
+    const th = this._theta(vx / v, vy / v, r.rpose)
+    const { mTot, mRobot, mFrena } = this._masas(r)
     // tracción: solo empujan las ruedas del robot
     const F = fuerzaAvance(mTot, th, this.p.energia),
       lim = limiteTraccion(mRobot, th)
-    if (F > this.maxPull) this.maxPull = F
+    if (F > r.maxPull) r.maxPull = F
     if (F > lim) {
-      this.tractionTicks++
+      r.tractionTicks++
       return 0
     }
     // frenada: si el suelo no deja detenerse a tiempo (carro sin freno cuesta abajo), baja a velocidad lenta
@@ -858,29 +1173,29 @@ export class HRSim {
   }
 
   /** Energía del tick (sin regeneración) y movimiento del carro (remolque con enganche en el eje). */
-  _energiaYCarro(a, b) {
+  _energiaYCarro(a, b, r = this.R[0]) {
     const dt = this.dt,
       dx = b[0] - a[0],
       dy = b[1] - a[1],
       d = Math.hypot(dx, dy),
       v = d / dt
     const th = d > 1e-9 ? this._theta(dx / d, dy / d, a) : 0
-    const acc = (v - this.vPrev) / dt
-    this.vPrev = v
-    this.energyJ += potencia(this._masas().mTot, v, acc, th, this.p.energia) * dt
-    if (this.carro) {
+    const acc = (v - r.vPrev) / dt
+    r.vPrev = v
+    r.energyJ += potencia(this._masas(r).mTot, v, acc, th, this.p.energia) * dt
+    if (r.carro) {
       const cr = this.robotSpec.carro,
         hb = this.robotSpec.largo / 2
       const vf = dx * Math.cos(b[2]) + dy * Math.sin(b[2]) // avance en la dirección del cuerpo
-      const tc = this.carro[2] + (vf / dt / cr.L) * Math.sin(b[2] - this.carro[2]) * dt
+      const tc = r.carro[2] + (vf / dt / cr.L) * Math.sin(b[2] - r.carro[2]) * dt
       const hx = b[0] - hb * Math.cos(b[2]),
         hy = b[1] - hb * Math.sin(b[2])
-      this.carro = [hx - cr.L * Math.cos(tc), hy - cr.L * Math.sin(tc), tc]
+      r.carro = [hx - cr.L * Math.cos(tc), hy - cr.L * Math.sin(tc), tc]
     }
   }
 
-  _carroInicial(cr) {
-    const [x, y, th] = this.rpose,
+  _carroInicial(cr, r = this.R[0]) {
+    const [x, y, th] = r.rpose,
       hb = this.robotSpec.largo / 2
     return [x - (hb + cr.L) * Math.cos(th), y - (hb + cr.L) * Math.sin(th), th]
   }
@@ -892,18 +1207,18 @@ export class HRSim {
    * ≥ 0): alejarse o pasar de lado no agranda la distancia exigida. Un trabajador a distancia d es seguro si
    * d ≥ S_p(v_c) + v_c·dt (el término v_c·dt cubre lo que el robot se acerca dentro del tick).
    */
-  _ssmScale(vx, vy) {
+  _ssmScale(vx, vy, r = this.R[0]) {
     let s = this.p.ssm
     // huertos generados: frenada efectiva = mínimo entre lo que decide el control (a) y lo que permite el suelo
     // (adherencia de las ruedas que frenan; cuesta abajo resta g·senθ). Piso 0,3 m/s²: por debajo, el robot ya va
     // a velocidad lenta (_limitesFisicos)
     if (this.robotSpec && Math.hypot(vx, vy) > 1e-9) {
       const v = Math.hypot(vx, vy)
-      const { mTot, mFrena } = this._masas()
-      s = { ...s, a: Math.max(0.3, frenadaEfectiva(s.a, this._theta(vx / v, vy / v), mFrena, mTot)) }
+      const { mTot, mFrena } = this._masas(r)
+      s = { ...s, a: Math.max(0.3, frenadaEfectiva(s.a, this._theta(vx / v, vy / v, r.rpose), mFrena, mTot)) }
     }
     const dt = this.dt,
-      [rx, ry] = this.rpose
+      [rx, ry] = r.rpose
     const vCmd = Math.hypot(vx, vy)
     const kSlow = vCmd > s.vSlow ? s.vSlow / vCmd : 1
     const near = this.W.map((w) => {
@@ -916,18 +1231,18 @@ export class HRSim {
     })
     const safe = (k) => near.every((q) => q.attending || q.d >= protectionDistance(k * q.vc, s) + k * q.vc * dt)
     // reanudación: el campo de protección (a velocidad lenta) debe estar libre durante tResume
-    if (this.ssmStopped) {
-      this.ssmClear = safe(kSlow) ? this.ssmClear + dt : 0
-      if (this.ssmClear + 1e-9 < s.tResume) return 0
-      this.ssmStopped = false
+    if (r.ssmStopped) {
+      r.ssmClear = safe(kSlow) ? r.ssmClear + dt : 0
+      if (r.ssmClear + 1e-9 < s.tResume) return 0
+      r.ssmStopped = false
     }
     // campo de advertencia: cualquiera (también quien viene a cargar) dentro de S_p(v_c) + margen → velocidad lenta
     const k = near.some((q) => q.d < protectionDistance(q.vc, s) + s.warn) ? kSlow : 1
     // campo de protección: parada
     if (!safe(k)) {
-      this.ssmStopped = true
-      this.ssmClear = 0
-      this.ssmStops++
+      r.ssmStopped = true
+      r.ssmClear = 0
+      r.ssmStops++
       return 0
     }
     return k
@@ -938,7 +1253,15 @@ export class HRSim {
     this.idx += 1
     if (this.cosecha) this.cosecha.t = this.idx * this.dt
     for (const w of this.W) this._stepWorker(w)
-    if (this.p.robot) this._stepRobot()
+    if (this.p.robot) {
+      if (!this.flota) this._stepRobot(this.R[0])
+      else {
+        for (const r of this.R) this._planRobot(r)
+        this._cederPaso()
+        for (const r of this.R) this._moveRobot(r)
+        this._medirFlota()
+      }
+    }
     if (this.acopio) this.acopio.step(this.idx * this.dt)
     this._record()
     return true
@@ -953,7 +1276,9 @@ export class HRSim {
   summary() {
     const NH = this.NH,
       rec = this.rec,
-      N = rec.t.length
+      N = rec.t.length,
+      R = this.R,
+      sum = (f) => R.reduce((a, r) => a + f(r), 0)
     const boxesDropped = rec.prod.map((s) => {
       let c = 0
       for (let i = 0; i < N - 1; i++) if (s[i] - s[i + 1] === this.p.maxProd) c++
@@ -964,8 +1289,9 @@ export class HRSim {
     const V4 = this.prodRobotTotal
     const V5 = finalProd.reduce((a, b) => a + b, 0)
     const V5a1 = this.W.reduce((a, w) => a + w.nBoxes * this.p.maxProd, 0)
-    const V6 = this.prodRobot
+    const V6 = sum((r) => r.prodRobot)
     const meanWork = rec.workH.map((s) => s.slice(0, N - 1).reduce((a, b) => a + b, 0) / (N - 1))
+    const energyJ = sum((r) => r.energyJ)
     return {
       Humans: NH,
       TimeWeightedAverageMetabolicRate_kcal: meanWork.reduce((a, b) => a + b, 0) / NH,
@@ -976,23 +1302,60 @@ export class HRSim {
       RemainingCropsBoxes_crop_units: V5a1,
       RemainingCropsRobot_crop_units: V6,
       TotalRecollectedCrops_crop_units: V4 + V5 + V5a1 + V6,
-      handoffs: this.handoffCount,
-      waypointSkips: this.skips,
-      capacityBlocked: this.capacityBlocked,
-      ...(this.p.ssm?.enabled ? { safetyStops: this.ssmStops } : {}),
+      handoffs: sum((r) => r.handoffCount),
+      waypointSkips: sum((r) => r.skips),
+      capacityBlocked: sum((r) => r.capacityBlocked),
+      ...(this.p.ssm?.enabled ? { safetyStops: sum((r) => r.ssmStops) } : {}),
       ...(this.cosecha?.carga ? resumenCarga(this.cosecha, this.W, this.rec.wst, this.dt) : {}),
       ...(this.acopio ? resumenAcopio(this.acopio, this.rec.rst ? this.rec.rst.filter((v) => v === 6).length * this.dt : 0, this.rec.t.length) : {}),
       ...(this.robotSpec
         ? {
             robot: this.p.robotTipo,
-            energyWh: this.energyJ / 3600,
-            batteryPct: 100 * Math.max(0, 1 - this.energyJ / 3600 / this.p.energia.bateriaWh),
+            energyWh: energyJ / 3600,
+            // con flota: la batería del robot que más gastó
+            batteryPct: 100 * Math.max(0, 1 - Math.max(...R.map((r) => r.energyJ)) / 3600 / this.p.energia.bateriaWh),
             unloads: this.ev.unloads.filter((u) => u.amount > 0).length,
-            tractionLimited_s: this.tractionTicks * this.dt,
-            maxPull_N: this.maxPull,
+            tractionLimited_s: sum((r) => r.tractionTicks) * this.dt,
+            maxPull_N: Math.max(...R.map((r) => r.maxPull)),
             tractionLimit_N: limiteTraccion(this.robotSpec.masa, 0),
           }
         : {}),
+      ...(this.flota ? { flota: this._resumenFlota() } : {}),
     }
   }
+
+  /** Resumen de la flota (H8): por robot y en conjunto. */
+  _resumenFlota() {
+    const dt = this.dt
+    const robots = this.R.map((r) => ({
+      cajas: r.cajas,
+      entregado: r.prodRobotTotal,
+      energyWh: r.energyJ / 3600,
+      descargas: this.ev.unloads.filter((u) => u.r === r.id && u.amount > 0).length,
+      esperaCalle_s: r.ticksCalle * dt,
+      cede_s: r.ticksCede * dt,
+      esperaAcopio_s: r.ticksAcopio * dt,
+      // esperando su salida (desfase) o estacionado sin zona (zonas)
+      estacionado_s: r.ticksParado * dt,
+      recorrido_m: r.odo,
+    }))
+    return {
+      n: this.flota.n,
+      estrategia: this.flota.estrategia,
+      robots,
+      jainCajas: jain(robots.map((q) => q.cajas)),
+      esperaCalle_s: robots.reduce((a, q) => a + q.esperaCalle_s, 0),
+      cede_s: robots.reduce((a, q) => a + q.cede_s, 0),
+      // Infinity si nunca coincidieron (p. ej., un robot sin zona en todo el turno): se informa como null
+      distMin_m: Number.isFinite(this.minDistRobots) ? this.minDistRobots : null,
+      distMinCalle_m: Number.isFinite(this.minDistCalle) ? this.minDistCalle : null,
+    }
+  }
+}
+
+/** Largo de una polilínea [m]. */
+function largo(pts) {
+  let s = 0
+  for (let i = 1; i < pts.length; i++) s += hyp(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+  return s
 }

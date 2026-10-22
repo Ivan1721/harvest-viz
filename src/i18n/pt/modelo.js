@@ -170,8 +170,6 @@ export default {
   'Con acopiador: llega al acopio y el acopiador está ocupado; hace cola con su caja.':
     'Com recolhedor: chega ao ponto de recolha e o recolhedor está ocupado; faz fila com a caixa.',
   'El acopiador lo atiende.': 'O recolhedor o atende.',
-  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.':
-    'Com recolhedor: chegou para descarregar e o recolhedor está ocupado, ou o ponto de recolha atingiu o máximo de bins.',
   'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.':
     'Em cada tick, nesta ordem: (1) cada colhedor, de H1 a Hn, avança sua máquina de estados; (2) o robô detecta caixas, decide seu próximo waypoint, aplica a regra de segurança e seus limites físicos, move-se e recolhe ou descarrega; (3) se houver recolhedor, ele atende o ponto de recolha e o caminhão; (4) registram-se posições, estados, produção e gasto.',
   'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).':
@@ -190,4 +188,22 @@ export default {
     'Rota do robô: ao final de cada volta é recalculada com as ruas que têm colhedores ou caixas esperando.',
   'Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).':
     'Avanço do talhão: {avance} % dos lados de fileira já colhidos, das ruas do ponto de recolha para fora (suposto).',
+  'Espera calle libre': 'Espera rua livre',
+  'Cede el paso': 'Dá passagem',
+  'Con flota: la calle a la que va la tiene otro robot; espera en la cabecera, a menos de {reserva} m de la boca.':
+    'Com frota: outro robô ocupa a rua para onde vai; espera na cabeceira, a menos de {reserva} m da entrada.',
+  'Con flota: un robot de número menor se mueve a menos de {ceder} m y este se le acercaría; se detiene hasta que se aleje.':
+    'Com frota: um robô de número menor se move a menos de {ceder} m e este se aproximaria dele; para até que o outro se afaste.',
+  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) cada robot, de RB-01 a RB-0{n}, detecta cajas, recoge o descarga, decide su próximo waypoint, reserva su calle y aplica la regla de seguridad y sus límites físicos; (3) los robots ceden el paso entre ellos y se mueven todos a la vez; (4) si hay acopiador, atiende el acopio y el camión; (5) se registran posiciones, estados, producción y gasto.':
+    'Em cada tick, nesta ordem: (1) cada colhedor, de H1 a Hn, avança sua máquina de estados; (2) cada robô, de RB-01 a RB-0{n}, detecta caixas, recolhe ou descarrega, decide seu próximo waypoint, reserva sua rua e aplica a regra de segurança e seus limites físicos; (3) os robôs dão passagem entre si e se movem todos ao mesmo tempo; (4) se houver recolhedor, ele atende o ponto de recolha e o caminhão; (5) registram-se posições, estados, produção e gasto.',
+  'Flota: {nr} robots del mismo tipo en zonas; al terminar cada vuelta, las calles con cosecheros o cajas se reparten en grupos contiguos de peso parecido, uno por robot. Un robot sin calles espera estacionado junto al acopio y se suma cuando el reparto le da alguna.':
+    'Frota: {nr} robôs do mesmo tipo em zonas; ao final de cada volta, as ruas com colhedores ou caixas se dividem em grupos contíguos de peso parecido, um por robô. Um robô sem ruas espera estacionado junto ao ponto de recolha e se junta quando a divisão lhe dá alguma.',
+  'Flota: {nr} robots del mismo tipo en direcciones opuestas; todos recorren las calles ocupadas, los de número par en un sentido y los impares al revés.':
+    'Frota: {nr} robôs do mesmo tipo em direções opostas; todos percorrem as ruas ocupadas, os de número par num sentido e os ímpares no outro.',
+  'Flota: {nr} robots del mismo tipo con desfase; todos recorren las calles ocupadas en el mismo sentido y el robot i sale del acopio cuando el primero lleva i/{nr} de su vuelta.':
+    'Frota: {nr} robôs do mesmo tipo com defasagem; todos percorrem as ruas ocupadas no mesmo sentido e o robô i sai do ponto de recolha quando o primeiro completou i/{nr} de sua volta.',
+  'Convivencia (supuesto): un robot por calle (se reserva al acercarse a la boca); fuera de las calles, el de número mayor cede el paso; una descarga a la vez en el acopio; cada caja la atiende el primer robot que la detecta.':
+    'Convivência (suposto): um robô por rua (reservada ao se aproximar da entrada); fora das ruas, o de número maior dá passagem; uma descarga por vez no ponto de recolha; cada caixa é atendida pelo primeiro robô que a detecta.',
+  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins. Con flota: otro robot está descargando, espera su salida (desfase) o está estacionado sin zona.':
+    'Com recolhedor: chegou para descarregar e o recolhedor está ocupado, ou o ponto de recolha atingiu o máximo de bins. Com frota: outro robô está descarregando, espera sua saída (defasagem) ou está estacionado sem zona.',
 }

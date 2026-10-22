@@ -17,11 +17,12 @@ export function checkInvariants(sim, { robot }) {
   nondecreasing(rec.delivered, 'lo entregado')
   nondecreasing(rec.work, 'la carga del equipo')
   for (let h = 0; h < NH; h++) nondecreasing(rec.workH[h], `la carga de H${h + 1}`)
-  // la carga del equipo es la suma de las cargas individuales
+  // la carga del equipo es la suma de las cargas individuales (con acopiador, más la suya: H7, fase A)
   for (let i = 0; i < n; i += 97) {
     let s = 0
     for (let h = 0; h < NH; h++) s += rec.workH[h][i]
-    assert.ok(Math.abs(s - rec.work[i]) < 1e-6 * Math.max(1, s), 'suma de cargas')
+    if (sim.acopio) assert.ok(rec.work[i] >= s - 1e-6 * Math.max(1, s), 'suma de cargas (con acopiador)')
+    else assert.ok(Math.abs(s - rec.work[i]) < 1e-6 * Math.max(1, s), 'suma de cargas')
   }
   for (let h = 0; h < NH; h++)
     for (let i = 0; i < n; i++) {
@@ -35,12 +36,28 @@ export function checkInvariants(sim, { robot }) {
       if (!(x >= 0 && x <= sim.huerto.limites.w && y >= 0 && y <= sim.huerto.limites.h)) assert.fail(`H${h + 1} fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
     }
   if (robot) {
-    const cap = p.capacityBoxes * p.maxProd
+    const cap = p.capacityBoxes * p.maxProd,
+      nR = p.flota?.n ?? 1
     const [om, vel] = sim.fis.outputs.map((o) => Math.max(...o.range.map(Math.abs)))
     const vBound = Math.hypot(vel, 0.5 * om * (p.frontLen + p.rearLen))
+    // flota (H8): cada robot dentro del mapa, con su carga bajo su capacidad, a velocidad acotada y quieto si está detenido
+    if (rec.fx)
+      for (let j = 0; j < nR; j++)
+        for (let i = 0; i < n; i++) {
+          const x = rec.fx[j][i],
+            y = rec.fy[j][i],
+            o = rec.fon[j][i]
+          if (!(o >= 0 && o <= cap + EPS)) assert.fail(`RB-0${j + 1}: carga a bordo fuera de [0, ${cap}]: ${o}`)
+          if (!(x >= 0 && x <= sim.huerto.limites.w && y >= 0 && y <= sim.huerto.limites.h)) assert.fail(`RB-0${j + 1} fuera del mapa en t=${rec.t[i]}`)
+          if (i === 0) continue
+          const v = Math.hypot(x - rec.fx[j][i - 1], y - rec.fy[j][i - 1]) / p.dt
+          if (v > vBound + 1e-9) assert.fail(`RB-0${j + 1} a ${v.toFixed(3)} m/s en t=${rec.t[i]}`)
+          if (rec.fst[j][i] !== 0 && rec.fst[j][i] !== 4 && v > EPS)
+            assert.fail(`RB-0${j + 1} detenido (estado ${rec.fst[j][i]}) pero se mueve en t=${rec.t[i]}`)
+        }
     for (let i = 0; i < n; i++) {
       const o = rec.onboard[i]
-      if (!(o >= 0 && o <= cap + EPS)) assert.fail(`carga a bordo fuera de [0, ${cap}]: ${o}`)
+      if (!(o >= 0 && o <= nR * cap + EPS)) assert.fail(`carga a bordo fuera de [0, ${nR * cap}]: ${o}`)
       const x = rec.rx[i],
         y = rec.ry[i]
       if (!(x >= 0 && x <= sim.huerto.limites.w && y >= 0 && y <= sim.huerto.limites.h)) assert.fail(`robot fuera del mapa en t=${rec.t[i]}: (${x}, ${y})`)
@@ -51,9 +68,10 @@ export function checkInvariants(sim, { robot }) {
       if (dOn < -EPS && dDel <= EPS) assert.fail(`la carga a bordo baja sin entrega en t=${rec.t[i]}: ${rec.onboard[i - 1]} → ${o}`)
       if (o + rec.delivered[i] < rec.onboard[i - 1] + rec.delivered[i - 1] - EPS) assert.fail(`a bordo + entregado disminuye en t=${rec.t[i]}`)
       // velocidad acotada por las salidas del FIS (v ≤ vMax, deriva lateral ≤ ½·ωMax·L) y nula si está detenido
+      // (todos los estados salvo 0, en ruta, y 4, velocidad reducida)
       const v = Math.hypot(x - rec.rx[i - 1], y - rec.ry[i - 1]) / p.dt
       if (v > vBound + 1e-9) assert.fail(`robot a ${v.toFixed(3)} m/s en t=${rec.t[i]} (máx. ${vBound.toFixed(3)})`)
-      if (rec.rst[i] !== 0 && v > EPS) assert.fail(`robot detenido (estado ${rec.rst[i]}) pero se mueve en t=${rec.t[i]}`)
+      if (rec.rst[i] !== 0 && rec.rst[i] !== 4 && v > EPS) assert.fail(`robot detenido (estado ${rec.rst[i]}) pero se mueve en t=${rec.t[i]}`)
     }
   } else assert.equal(rec.onboard, undefined, 'sin robot no hay serie a bordo')
   // conservación: todo lo cosechado está en bolsas, cajas, robot o zona de carga
@@ -66,5 +84,6 @@ export function checkInvariants(sim, { robot }) {
     'conservación (cosechado por trabajadores = recolectado)',
   )
   assert.ok(Math.abs(s.TotalProductionCargoZone_crop_units - rec.delivered[n - 1]) < 1e-9, 'entregado final = serie')
-  for (const [k, v] of Object.entries(s)) assert.ok(Number.isFinite(v), `${k} no es finito`)
+  // valores numéricos del resumen (en huertos generados también hay textos y objetos: robot, flota, acopio…)
+  for (const [k, v] of Object.entries(s)) if (typeof v === 'number') assert.ok(Number.isFinite(v), `${k} no es finito`)
 }
