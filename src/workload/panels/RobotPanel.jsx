@@ -13,6 +13,7 @@ const FILAS = [
   ['Robot en movimiento', '%', (r) => (r.hri ? 100 * r.hri.fluency.robotTime.move : null)],
   ['Robot esperando al trabajador', '%', (r) => (r.hri?.fluency.robotTime.wait != null ? 100 * r.hri.fluency.robotTime.wait : null)],
   ['Espera media de las cajas', 's', (r) => r.hri?.fluency.boxWait.mean],
+  ['Calles recorridas', '', (r) => r.robot?.calles],
   ['Esperando en el acopio', '%', (r) => (r.hri?.fluency.robotTime.acopio != null ? 100 * r.hri.fluency.robotTime.acopio : null), 1],
   ['Tiempo dentro de S_p(v)', 's', (r) => r.hri?.fluency.protection.s],
 ]

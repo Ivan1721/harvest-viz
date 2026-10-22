@@ -91,4 +91,22 @@ export default {
   'Supuesto: 2': 'Assumed: 2',
   'Fruta dejada en los árboles': 'Fruit left on the trees',
   'Ritmo real cosechando (toda la corrida)': 'Actual harvesting rate (whole run)',
+  'Avance del bloque': 'Block progress',
+  'Parte del huerto ya cosechada en días anteriores, desde las calles del acopio hacia afuera; la cuadrilla parte en las que siguen.':
+    'Share of the orchard already harvested on previous days, from the lanes near the collection point outwards; the crew starts on the next ones.',
+  'Reparto de la cuadrilla': 'Crew layout',
+  'Cerca del acopio': 'Near the collection point',
+  Frente: 'Front',
+  Repartida: 'Spread out',
+  'Árboles por tramo': 'Trees per section',
+  'Uno por calle a la misma altura, sobre el doble de calles, con tramos cortos; el frente avanza hacia el fondo.':
+    'One per lane at the same height, over twice as many lanes, with short sections; the front moves towards the far end.',
+  'Parejas en calles espaciadas a todo el ancho del huerto; cada uno avanza por su hilera.':
+    'Pairs in lanes spaced across the whole orchard width; each moves along their row.',
+  'Bajo cada planta: gris = cosechada, ámbar = en curso; sin marca = pendiente': 'Under each plant: grey = harvested, amber = in progress; no mark = pending',
+  'Estado de las plantas': 'Plant status',
+  'Caminata media por cosechero': 'Mean walking per harvester',
+  'Calles recorridas por el robot': 'Lanes travelled by the robot',
+  'Calles recorridas': 'Lanes travelled',
+  'Caminado hasta ahora': 'Walked so far',
 }

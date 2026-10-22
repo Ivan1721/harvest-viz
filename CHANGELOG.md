@@ -4,12 +4,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-**Motor 0.6.0** (solo cambian las corridas con acopio o carga variable activados; la réplica de MATLAB no cambia).
+**Motor 0.7.0**. La réplica de MATLAB no cambia. Cambian las corridas con las opciones nuevas y, por la corrección de la ruta del robot, las corridas con robot en huertos generados donde la cuadrilla cambia de calles (alta densidad y ladera desde la primera hora).
 
 ### Agregado
 
 - **Acopio con acopiador y camión** (H7, fase A), opcional en el paso Escenario: cola por orden de llegada, bins de 380 kg con tope, camión que sale lleno o cada 60 min; estados «Espera en el acopio» del cosechero (16) y del robot (6), «Despachado en camión» en el Resumen, bins y camión en la escena.
 - **Carga variable por árbol y ritmo que cae** (H7, fase B), opcional en huertos generados: carga lognormal por árbol (misma carga total), periodo que crece al vaciarse el lado (Roka y Hyman 2008) y regla para dejar el árbol a 2 × T₀; «Fruta dejada en los árboles» en el Resumen y ritmo real por cosechero en Personas. La calibración de H2–H5 se mantiene.
+- **Reparto de la cuadrilla** (H7, fase C): «cerca del acopio» (de siempre), «frente» (uno por calle, tramos cortos, el frente avanza) y «repartida» (calles espaciadas a todo el ancho).
+- **Avance del bloque** (H7, fase C): parte del huerto ya cosechada en días anteriores; la cuadrilla parte más lejos del acopio.
+- **Estado de las plantas** en la escena (cosechada, en curso, pendiente), caminata por cosechero y calles recorridas por el robot.
+
+### Corregido
+
+- La ruta del robot se fijaba al inicio con las calles ocupadas; cuando la cuadrilla se cambiaba de calles, el robot seguía recorriendo las vacías. Ahora se recalcula al terminar cada vuelta.
 
 ## [0.7.0] — 2026-10-20
 

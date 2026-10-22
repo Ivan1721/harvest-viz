@@ -161,6 +161,33 @@ Opcional (`carga`, apagada por defecto y solo en huertos generados). Con ella:
 Personas muestra el ritmo real de cada cosechero mientras cosecha (kg/h de toda la corrida). Con CV 0 y k = 0 el
 resultado es idéntico al de siempre; sin `carga` los parámetros resueltos no la incluyen y los hashes no cambian.
 
+## Reparto de la cuadrilla, avance del bloque y ruta que sigue a la cuadrilla (H7, fase C)
+
+Revisión previa: documento «Escenarios: cómo se desarrolla cada corrida y por qué hay árboles sin trabajar». En 45 min
+una cuadrilla de 12 toca entre el 1 % y el 16 % de las plantas de una hectárea; las opciones de esta fase cambian dónde
+trabaja.
+
+- **Reparto** (`reparto`, paso Agentes; solo huertos generados). Por defecto (sin la clave) «cerca del acopio»: parejas
+  en las calles centrales, un lado de hilera entero cada uno. `{ modo: 'frente', tramo: 4 }`: uno por calle a la misma
+  altura, sobre el doble de calles, con tramos de `tramo` árboles; la reserva sigue por altura, así que el frente avanza
+  hacia el fondo. `{ modo: 'repartida' }`: parejas en calles espaciadas a todo el ancho. En los tres, al terminar: el
+  árbol siguiente del tramo y luego el tramo libre más cercano. Ninguna de las formas nuevas tiene fuente.
+- **Avance del bloque** (`avance`, 0–0,9, paso Escenario). Esa fracción de los lados de hilera ya se cosechó en días
+  anteriores, desde las calles del acopio hacia afuera (supuesto); la cuadrilla parte en los que siguen y la caminata al
+  acopio crece. Los lados exteriores de las hileras de los bordes no dan a ninguna calle y no se cosechan nunca.
+- **Ruta del robot** (siempre, en huertos generados). Al terminar cada vuelta, en el acopio, se recalcula con las calles
+  que tienen cosecheros o cajas esperando; las cajas ya marcadas se conservan. Antes la vuelta se fijaba al inicio, y en
+  alta densidad y ladera, desde la primera hora, el robot recorría calles vacías. Recalcular también al salir de cada
+  calle se probó y entrega menos (el robot vuelve una y otra vez a las calles cercanas).
+- **Estado de las plantas** en la escena: gris si sus dos lados ya se cosecharon, ámbar si está en curso; las
+  pendientes no llevan marca («Capas y estilo»).
+- **Medidas**: caminata media por cosechero (Resumen) y caminado por persona (Personas); calles recorridas por el robot
+  entre las copas (Resumen y Robot).
+
+Cambio de resultados: con la ruta que sigue a la cuadrilla, en palta alta densidad (12 cosecheros, 4 h, con robot) lo
+entregado pasa de 4.845 a 5.790 kg. Donde la cuadrilla no cambia de calles (palta tradicional, uva, cerezo y arándano en
+4 h; todos en 45 min) los resultados no cambian. La réplica de MATLAB no cambia.
+
 ## Experimentos en lote (H6)
 
 `npm run experimentos -- experimentos/h6.json` corre todas las celdas de un diseño en paralelo (un hilo por núcleo) y

@@ -58,10 +58,13 @@ export function simToRun(sim, { robot }) {
       track[i * 4 + 3] = th[i]
     }
     const rate = metabolicRate(work, dt, all)
+    // H7 fase C: distancia caminada acumulada (m) — trayectorias exactas del simulador
+    const dist = new Float32Array(n)
+    for (let i = 1; i < n; i++) dist[i] = dist[i - 1] + Math.hypot(rec.wx[k][i] - rec.wx[k][i - 1], rec.wy[k][i] - rec.wy[k][i - 1])
     // posición de la caja de este trabajador: la del primer evento de su caja
     const b0 = robot ? sim.ev.boxes.find((b) => b.h === h) : null
     const acopio = huerto?.acopio || CARGO.wp
-    return { h, act, base, box: b0 ? [b0.x, b0.y] : [acopio[0], acopio[1]], prod, work, flag, state, rate, track }
+    return { h, act, base, box: b0 ? [b0.x, b0.y] : [acopio[0], acopio[1]], prod, work, flag, state, rate, track, dist }
   })
   const rateMax = rateScale(all)
   let rob = null
@@ -91,6 +94,9 @@ export function simToRun(sim, { robot }) {
       picks: sim.ev.picks.map((e) => ({ ...e })),
       boxes: sim.ev.boxes.map((e) => ({ ...e, picked: Number.isFinite(e.picked) ? e.picked : n + 1, served: Number.isFinite(e.picked) })),
       unloads: sim.ev.unloads.map((e) => ({ ...e })),
+      // H7 fase C: la ruta que sigue a la cuadrilla (cada vez que se recalculó)
+      rutas: sim.ev.rutas ? sim.ev.rutas.map((r) => ({ idx: r.idx, puntos: r.puntos.map((q) => [...q]) })) : null,
+      calles: huerto?.calles ? callesRecorridas(huerto, rec) : null,
       crates: (sim.ev.crates || []).map((e) => ({ ...e })),
       onboard,
       // huertos generados: energía acumulada (Wh) y pose del carro del robot de arrastre
@@ -120,6 +126,8 @@ export function simToRun(sim, { robot }) {
           cfg: { ...p.acopio },
         }
       : null,
+    // H7 fase C: estado de cada planta (primer toque y fin, en s) para pintarlas en la escena
+    plantas: sim.plantas ?? (sim.cosecha ? sim.cosecha.estadoPlantas() : null),
     // H7 fase B: fruta dejada en los árboles (por tick) y ritmo real de cada cosechero mientras cosecha
     carga: rec.dej
       ? (() => {
@@ -132,4 +140,18 @@ export function simToRun(sim, { robot }) {
     name: `SIM-${robot ? 'HR' : 'HO'}-${NH}-${p.row}-${p.act}-${p.rp}`,
     rowAt: (t) => Math.min(n - 1, Math.max(0, Math.floor(t / dt))),
   }
+}
+
+/** Calles por las que pasó el robot entre las copas (H7, fase C); en la cabecera no cuenta. */
+function callesRecorridas(huerto, rec) {
+  const c = huerto.calles,
+    H = huerto.limites.h,
+    set = new Set()
+  for (let i = 0; i < rec.rx.length; i++) {
+    const y = rec.ry[i]
+    if (y <= c.cabecera || y >= H - c.cabecera) continue
+    const x = rec.rx[i]
+    for (const e of c.ejes) if (Math.abs(x - e) < c.calle / 4) set.add(e)
+  }
+  return set.size
 }

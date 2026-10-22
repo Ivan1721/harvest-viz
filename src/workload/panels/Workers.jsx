@@ -188,6 +188,12 @@ export function Detail({ ho, hr, t, sel, labels }) {
         <span>{tr('Parte de la carga del equipo')}</span>
         <b>{f1((w.work[i] / total) * 100)} %</b>
       </div>
+      {w.dist && (
+        <div className="row" data-testid="caminata">
+          <span>{tr('Caminado hasta ahora')}</span>
+          <b>{f0(w.dist[i])} m</b>
+        </div>
+      )}
       {run.carga && (
         <div className="row" data-testid="ritmo-real">
           <span>{tr('Ritmo real cosechando (toda la corrida)')}</span>

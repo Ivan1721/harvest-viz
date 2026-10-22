@@ -62,6 +62,12 @@ export class HRSim {
     this.initPose = [...huerto.inicioRobot]
     // --- robot ---
     this.waypoints = this.baseRoute.map((w) => [w[0], w[1]])
+    // huertos generados (H7, fase C): cada vuelta termina en el acopio (marca `fin`); ahí la ruta se recalcula con las
+    // calles que tienen gente o cajas esperando, así el robot sigue a la cuadrilla cuando cambia de calle
+    if (this.cosecha) {
+      for (let i = 0; i < p.lapRepeats; i++) this.waypoints[(i + 1) * lap.length - 1].fin = true
+      this.rutaEjes = this._ejesOcupados(W)
+    }
     this.kWp = 1 // índice 0-based (MATLAB k=2)
     this.rpose = [...huerto.inicioRobot]
     this.prodRobot = 0
@@ -80,7 +86,7 @@ export class HRSim {
     this.handoffCount = 0
     this.capacityBlocked = 0
     this.events = []
-    this.ev = { picks: [], boxes: [], unloads: [], crates: [] }
+    this.ev = { picks: [], boxes: [], unloads: [], crates: [], ...(this.cosecha ? { rutas: [{ idx: 0, puntos: lap.map((q) => [q[0], q[1]]) }] } : {}) }
     this.rstatus = 0
     // seguridad SSM (fase 3, perfil hri)
     this.ssmStopped = false
@@ -416,6 +422,43 @@ export class HRSim {
     }
   }
 
+  /** Calles (ejes x) con cosecheros trabajando o con cajas esperando al robot (H7, fase C). */
+  _ejesOcupados(W = this.W) {
+    const c = this.huerto.calles,
+      set = new Set()
+    for (const w of W) {
+      if (w.tramo && w.state !== 15) set.add(w.tramo.eje)
+      if (w.nBoxes > 0 && w.box) set.add(ejeCercano(c, w.box[0]))
+    }
+    return [...set].sort((a, b) => a - b)
+  }
+
+  /** Al terminar una vuelta (en el acopio): si la cuadrilla cambió de calles, las vueltas que quedan se recalculan. */
+  _replanificarRuta() {
+    const ejes = this._ejesOcupados()
+    if (!ejes.length || ejes.join() === this.rutaEjes.join()) return
+    const W = this.waypoints,
+      k = this.kWp
+    const resto = W.slice(k + 1)
+    const vueltas = resto.filter((q) => q.fin).length
+    const cajas = resto.filter((q) => q.caja)
+    const lap = this.huerto.vuelta(ejes)
+    const nuevo = []
+    const marcar = (pts) =>
+      pts.forEach((q, j) => {
+        const r = [q[0], q[1]]
+        if (j === pts.length - 1) r.fin = true
+        nuevo.push(r)
+      })
+    for (let i = 0; i < vueltas; i++) marcar(lap)
+    this.waypoints = [...W.slice(0, k + 1), ...nuevo]
+    this.baseRoute = lap.map((q) => [q[0], q[1]])
+    for (const q of cajas) this.waypoints.splice(this._insertAt(q), 0, q)
+    this.rutaEjes = ejes
+    this.ev.rutas.push({ idx: this.idx, puntos: lap.map((q) => [q[0], q[1]]) })
+    this.log(`Robot route re-planned | lanes=[${ejes.map((x) => x.toFixed(1)).join(' ')}] | ${vueltas} laps left`)
+  }
+
   /** Índice donde insertar un waypoint de caja: el del tramo de la ruta próxima más cercano a la caja. */
   _insertAt(pos) {
     const W = this.waypoints,
@@ -511,7 +554,9 @@ export class HRSim {
           // huertos generados: la caja se inserta en el tramo de la ruta que pasa por ella (no siempre antes del waypoint
           // actual: con waypoints densos en la calle, eso haría volver al robot a un punto que ya quedó atrás)
           if (this.cosecha) kk = this._insertAt(pos)
-          this.waypoints.splice(kk, 0, [pos[0], pos[1]])
+          const wp = [pos[0], pos[1]]
+          wp.caja = true // H7 fase C: se conserva si la ruta se recalcula
+          this.waypoints.splice(kk, 0, wp)
           if (kk < this.kWp) this.kWp += 1 // la inserción quedó antes del waypoint actual (vuelta siguiente)
           this.log(
             `Robot detected BOX from h${h + 1} and inserted waypoint | box=[${pos[0].toFixed(2)} ${pos[1].toFixed(2)}] | dist=${e.dist.toFixed(2)} | inserted before k=${kk + 1} | total waypoints=${this.waypoints.length}`,
@@ -702,6 +747,9 @@ export class HRSim {
     }
     if (goalD < WAYPOINT_RADIUS || timedOut) {
       this.log(`Robot reached ROUTE waypoint | k=${this.kWp + 1}/${this.waypoints.length} | pos=[${this.rpose[0].toFixed(2)} ${this.rpose[1].toFixed(2)}]`)
+      // H7 fase C: al terminar la vuelta, en el acopio. (Recalcular también al salir de cada calle se probó: el robot
+      // vuelve una y otra vez a las calles cercanas y entrega menos.)
+      if (this.cosecha && !this.goingToUnload && this.waypoints[this.kWp]?.fin) this._replanificarRuta()
       this.kWp += 1
       if (this.kWp > this.waypoints.length - 1) this.kWp = 0
       const n = this.waypoints[this.kWp]
@@ -888,6 +936,7 @@ export class HRSim {
   step() {
     if (this.idx >= this.N - 1) return false
     this.idx += 1
+    if (this.cosecha) this.cosecha.t = this.idx * this.dt
     for (const w of this.W) this._stepWorker(w)
     if (this.p.robot) this._stepRobot()
     if (this.acopio) this.acopio.step(this.idx * this.dt)

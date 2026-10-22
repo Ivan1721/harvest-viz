@@ -29,6 +29,16 @@ export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
     ['Energía por unidad entregada', 'kcal/u', (r, i) => (r.series.cargo[i] > 0 ? r.series.work[i] / r.series.cargo[i] : null), false, 2],
     ['Despachado en camión', 'u', (r, i) => (r.acopio ? r.acopio.desp[i] : null), true],
     ['Fruta dejada en los árboles', 'u', (r, i) => (r.carga ? r.carga.dej[i] : null), true],
+    // H7 fase C: solo con trayectorias exactas (simulador); las corridas de MATLAB las reconstruyen
+    [
+      'Caminata media por cosechero',
+      'm',
+      (r, i) => (r.workers[0]?.dist ? r.workers.reduce((a, w) => a + w.dist[i], 0) / r.workers.length : null),
+      false,
+      0,
+      true,
+    ],
+    ['Calles recorridas por el robot', '', (r, i) => (i === r.n - 1 && r.robot?.calles != null ? r.robot.calles : null), true],
     // del análisis de la corrida completa: solo en «Final»
     ['Energía del robot por kg entregado', 'Wh/kg', (r, i) => (i === r.n - 1 ? r.hri?.fluency.energia?.whPorKg : null), true, 2],
     ['Espera media de las cajas', 's', (r, i) => (i === r.n - 1 ? r.hri?.fluency.boxWait.mean : null), true],
@@ -63,10 +73,11 @@ export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
           </tr>
         </thead>
         <tbody>
-          {M.map(([name, unit, f, onlyHR, dg]) => {
+          {M.map(([name, unit, f, onlyHR, dg, opcional]) => {
             const a = at(ho, f),
               b = at(hr, f)
             if (onlyHR && b == null) return null
+            if (opcional && a == null && b == null) return null
             const fmt = (v) => (v == null ? '—' : dg ? fmtNum(v, { minimumFractionDigits: dg, maximumFractionDigits: dg }) : f0(v))
             const d = a != null && b != null && a > 0 ? ((b - a) / a) * 100 : null
             return (

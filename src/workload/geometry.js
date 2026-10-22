@@ -29,7 +29,7 @@ export function sceneGeometry(meta) {
       })
     return cache.get(key)
   }
-  const key = JSON.stringify([p.huerto, p.huertoParams, p.nw])
+  const key = JSON.stringify([p.huerto, p.huertoParams, p.nw, p.reparto ?? null, p.avance ?? 0, p.robotTipo ?? null])
   if (!cache.has(key)) {
     const h = buildHuerto(p)
     const R = h.arboles[0]?.radio ?? 2.5

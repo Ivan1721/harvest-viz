@@ -16,7 +16,18 @@ function pack(s, transfer) {
     }
     rec[k] = Array.isArray(v[0]) ? v.map(conv) : conv(v)
   }
-  return { p: s.p, rec, ev: s.ev, W: s.W.map((w) => ({ h: w.h })), type: Array.from(s.type), NH: s.NH, dt: s.dt, summary: s.summary(), events: s.events || [] }
+  return {
+    p: s.p,
+    rec,
+    ev: s.ev,
+    W: s.W.map((w) => ({ h: w.h })),
+    type: Array.from(s.type),
+    NH: s.NH,
+    dt: s.dt,
+    summary: s.summary(),
+    events: s.events || [],
+    plantas: s.cosecha ? s.cosecha.estadoPlantas() : null,
+  }
 }
 
 self.onmessage = (e) => {

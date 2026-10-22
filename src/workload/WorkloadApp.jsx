@@ -70,7 +70,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     play.canopy.v = v
     setCanopyState(v)
   }
-  const [ov, setOvState] = useState({ zones: false, intent: false })
+  const [ov, setOvState] = useState({ zones: false, intent: false, plantas: true })
   // ?perfil=hri abre el simulador con el modelo extendido; por defecto, la réplica de MATLAB
   const [params, setParams] = useState(() => fromUrl?.params ?? DEFAULTS_SIM)
   const [simBusy, setSimBusy] = useState(false)
@@ -258,7 +258,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   const select = (s) => setPlay({ selected: s })
   const seek = (t) => setPlay({ t: Math.max(0, Math.min(tmax, t)) })
   const setOv = (o) => {
-    setPlay({ zones: o.zones, intent: o.intent })
+    setPlay({ zones: o.zones, intent: o.intent, plantas: o.plantas })
     setOvState(o)
   }
   const setColorBy = (k) => setPlay({ colorBy: k })

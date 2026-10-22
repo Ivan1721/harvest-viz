@@ -105,7 +105,7 @@ export function validarRectangular(g) {
  * Genera el huerto. `nw` define cuántos tramos se asignan al inicio.
  * @returns {import('./index.js').Huerto}
  */
-export function generarRectangular(g, { nw, sistema, robotAncho = ROBOT_ANCHO }) {
+export function generarRectangular(g, { nw, sistema, robotAncho = ROBOT_ANCHO, reparto = null, avance = 0 }) {
   validarRectangular(g)
   const { calle, sobreHilera, hileras, arbolesPorHilera: nA, radioCopa: R, cabecera } = g
   const w = hileras * calle,
@@ -128,51 +128,93 @@ export function generarRectangular(g, { nw, sistema, robotAncho = ROBOT_ANCHO })
 
   // lados de hilera que dan a cada calle, de la calle más cercana al acopio hacia afuera (a igual distancia, la izquierda)
   const calles = ejes.map((x, s) => ({ s, x })).sort((a, b) => Math.abs(a.x - acopio[0]) - Math.abs(b.x - acopio[0]) || a.x - b.x)
-  // si hay más cosecheros que lados, cada lado se parte en m tramos contiguos (de abajo hacia arriba)
+  const lado = (s, k) => (k === 0 ? [s, +1] : [s + 1, -1]) // hilera a la izquierda de la calle (lado +x) o a la derecha (−x)
+  const tramoDe = (s, x, k, t0, t1) => {
+    const [r, l] = lado(s, k)
+    return { calle: s, eje: x, hilera: r, lado: l, arboles: Array.from({ length: t1 - t0 }, (_, i) => tree(r, t0 + i)) }
+  }
+  // H7 fase C: avance del bloque. Los lados de las calles más cercanas al acopio ya se cosecharon en días anteriores
+  // (supuesto: el bloque se cosecha desde el acopio hacia afuera); la cuadrilla parte en los que siguen.
   const nLados = 2 * ejes.length
-  const m = Math.max(1, Math.ceil(nw / nLados))
-  const tramos = []
-  for (const { s, x } of calles)
-    for (let k = 0; k < m; k++)
-      for (const [r, lado] of [
-        [s, +1], // hilera a la izquierda de la calle: su lado +x da a la calle
-        [s + 1, -1], // hilera a la derecha: su lado −x
-      ]) {
-        const t0 = Math.floor((k * nA) / m),
-          t1 = Math.floor(((k + 1) * nA) / m)
-        if (t1 <= t0) continue
-        tramos.push({ calle: s, eje: x, hilera: r, lado, arboles: Array.from({ length: t1 - t0 }, (_, i) => tree(r, t0 + i)) })
-      }
+  const nHechos = Math.min(nLados - 1, Math.floor(avance * nLados + 1e-9))
+  const hechos = [] // [árbol, lado] ya cosechados
+  const libres = [] // { s, x, k } lados por cosechar, en el orden de cercanía al acopio
+  let iLado = 0
+  calles.forEach(({ s, x }) =>
+    [0, 1].forEach((k) => {
+      if (iLado++ < nHechos) {
+        const [r, l] = lado(s, k)
+        for (let t = 0; t < nA; t++) hechos.push([tree(r, t), l])
+      } else libres.push({ s, x, k })
+    }),
+  )
+  // H7 fase C: reparto inicial de la cuadrilla
+  //   acopio (de siempre): parejas por calle desde las calles cercanas al acopio; cada uno un lado entero
+  //   frente: tramos cortos de `tramo` árboles; uno por calle a la misma altura, sobre el doble de calles, y el frente
+  //           avanza hacia el fondo (la reserva sigue por altura)
+  //   repartida: parejas en calles espaciadas a todo el ancho; cada uno un lado entero
+  const modo = reparto?.modo ?? 'acopio'
+  let tramos = []
+  if (modo === 'frente') {
+    const T = Math.max(1, Math.min(nA, Math.round(reparto.tramo ?? 4)))
+    const niveles = Math.ceil(nA / T)
+    for (let n = 0; n < niveles; n++) {
+      const t0 = n * T,
+        t1 = Math.min(nA, t0 + T)
+      // primero un lado de cada calle (alternando para que el frente no quede todo del mismo lado), después el otro
+      const porCalle = new Map()
+      libres.forEach((l) => porCalle.set(l.s, [...(porCalle.get(l.s) || []), l]))
+      const orden = [...porCalle.values()]
+      for (const pasada of [0, 1])
+        orden.forEach((ls, i) => {
+          const l = ls.length === 2 ? ls[(i + pasada) % 2] : pasada === 0 ? ls[0] : null
+          if (l) tramos.push(tramoDe(l.s, l.x, l.k, t0, t1))
+        })
+    }
+  } else {
+    let orden = libres
+    if (modo === 'repartida') {
+      // calles elegidas espaciadas a todo el ancho (entre las que quedan por cosechar), luego el resto por cercanía
+      const callesLibres = [...new Set(libres.map((l) => l.s))].sort((a, b) => a - b)
+      const nUsar = Math.min(callesLibres.length, Math.max(1, Math.ceil(nw / 2)))
+      const elegidas = new Set(Array.from({ length: nUsar }, (_, i) => callesLibres[Math.floor(((i + 0.5) * callesLibres.length) / nUsar)]))
+      orden = [...libres.filter((l) => elegidas.has(l.s)), ...libres.filter((l) => !elegidas.has(l.s))]
+    }
+    // si hay más cosecheros que lados, cada lado se parte en m tramos contiguos (de abajo hacia arriba)
+    const m = Math.max(1, Math.ceil(nw / Math.max(1, libres.length)))
+    if (modo === 'acopio' && !nHechos) {
+      // exactamente el orden de siempre (los hashes y resultados de H2–H6 no cambian)
+      for (const { s, x } of calles)
+        for (let k = 0; k < m; k++)
+          for (const kk of [0, 1]) {
+            const t0 = Math.floor((k * nA) / m),
+              t1 = Math.floor(((k + 1) * nA) / m)
+            if (t1 > t0) tramos.push(tramoDe(s, x, kk, t0, t1))
+          }
+    } else {
+      const porCalle = []
+      orden.forEach((l) => {
+        const g = porCalle.find((q) => q[0].s === l.s)
+        if (g) g.push(l)
+        else porCalle.push([l])
+      })
+      for (const ls of porCalle)
+        for (let k = 0; k < m; k++)
+          for (const l of ls) {
+            const t0 = Math.floor((k * nA) / m),
+              t1 = Math.floor(((k + 1) * nA) / m)
+            if (t1 > t0) tramos.push(tramoDe(l.s, l.x, l.k, t0, t1))
+          }
+    }
+  }
   // puesto de cosecha: al borde de la copa, del lado de la calle
   const puesto = (ti, lado) => [arboles[ti].x + lado * 0.9 * R, arboles[ti].y]
   const asignados = tramos.slice(0, nw)
   const puestos = asignados.map((tr) => ({ tree: [arboles[tr.arboles[0]].x, arboles[tr.arboles[0]].y], start: puesto(tr.arboles[0], tr.lado) }))
-  // vuelta base del robot
-  // carril de la cabecera a un tercio de su ancho: el robot (4WS) gira en U sin acercarse a las copas
   const yb = cabecera / 3,
     yt = h - cabecera / 3
-  const ocupadas = [...new Set(asignados.map((t) => t.eje))].sort((a, b) => a - b)
-  let vueltaRobot
-  if (!ocupadas.length) vueltaRobot = [acopio, acopio]
-  else if (robotCabe) {
-    // zigzag por las calles ocupadas: sube por una, baja por la siguiente
-    vueltaRobot = [[...acopio]]
-    // dentro de la calle, un waypoint cada PASO m: el controlador (que apunta al waypoint) corrige el desvío lateral
-    // tras el giro de entrada en pocos metros; con un solo waypoint al fondo de la calle rozaría las copas
-    const PASO = 3
-    ocupadas.forEach((x, i) => {
-      const [a, b] = i % 2 === 0 ? [yb, yt] : [yt, yb]
-      const n = Math.max(1, Math.round(Math.abs(b - a) / PASO))
-      for (let k = 0; k <= n; k++) vueltaRobot.push([x, a + ((b - a) * k) / n])
-    })
-    if (ocupadas.length % 2 === 1) vueltaRobot.push([ocupadas.at(-1), yb])
-    vueltaRobot.push([...acopio])
-  } else {
-    // por la cabecera inferior, pasando por la boca de cada calle ocupada, ida y vuelta
-    const xL = Math.max(0.5, ocupadas[0] - 1.5),
-      xR = Math.min(w - 0.5, ocupadas.at(-1) + 1.5)
-    vueltaRobot = [[...acopio], [xR, yb], [xL, yb], [...acopio]]
-  }
+  const callesG = { ejes, cabecera, yb, yt, robotCabe, anchoLibre, calle, w }
+  const vueltaRobot = vueltaPorCalles(callesG, acopio, [...new Set(asignados.map((t) => t.eje))])
   return {
     sistema,
     version: GENERADOR_VERSION,
@@ -182,14 +224,45 @@ export function generarRectangular(g, { nw, sistema, robotAncho = ROBOT_ANCHO })
     puestos,
     tramos: asignados,
     reserva: tramos.slice(nw), // tramos libres: los toma quien termina el suyo
+    cosechados: hechos, // H7 fase C: [árbol, lado] cosechados antes de la corrida (avance del bloque)
     puesto,
     acopio,
     inicioRobot: [acopio[0], acopio[1], 0],
     vueltaRobot,
     calles: { ejes, cabecera, yb, yt, robotCabe, anchoLibre, calle },
+    vuelta: (ocupadas) => vueltaPorCalles(callesG, acopio, ocupadas), // H7 fase C: la ruta que sigue a la cuadrilla
     terreno: { pendiente: g.pendiente, acopioEnCima: g.acopioEnCima },
     z,
   }
+}
+
+/**
+ * Vuelta del robot por las calles `ocupadas` (ejes x): zigzag por ellas si el robot cabe en las calles; si no, por la
+ * cabecera inferior pasando por la boca de cada una, ida y vuelta. Empieza y termina en el acopio.
+ */
+export function vueltaPorCalles(c, acopio, ocupadas) {
+  const { yb, yt, robotCabe, w } = c
+  const occ = [...new Set(ocupadas)].sort((a, b) => a - b)
+  if (!occ.length) return [acopio, acopio]
+  if (robotCabe) {
+    // zigzag por las calles ocupadas: sube por una, baja por la siguiente
+    const out = [[...acopio]]
+    // dentro de la calle, un waypoint cada PASO m: el controlador (que apunta al waypoint) corrige el desvío lateral
+    // tras el giro de entrada en pocos metros; con un solo waypoint al fondo de la calle rozaría las copas
+    const PASO = 3
+    occ.forEach((x, i) => {
+      const [a, b] = i % 2 === 0 ? [yb, yt] : [yt, yb]
+      const n = Math.max(1, Math.round(Math.abs(b - a) / PASO))
+      for (let k = 0; k <= n; k++) out.push([x, a + ((b - a) * k) / n])
+    })
+    if (occ.length % 2 === 1) out.push([occ.at(-1), yb])
+    out.push([...acopio])
+    return out
+  }
+  // por la cabecera inferior, pasando por la boca de cada calle ocupada, ida y vuelta
+  const xL = Math.max(0.5, occ[0] - 1.5),
+    xR = Math.min(w - 0.5, occ.at(-1) + 1.5)
+  return [[...acopio], [xR, yb], [xL, yb], [...acopio]]
 }
 
 /** ¿Está el punto en una cabecera (zona abierta, abajo o arriba)? */
@@ -261,8 +334,19 @@ export class Cosecha {
     huerto.arboles.forEach((a, i) => {
       this.fruta[2 * i] = this.fruta[2 * i + 1] = (a.carga * (carga ? carga.factores[i] : 1)) / 2
     })
+    // H7 fase C: lados cosechados antes de la corrida (avance del bloque)
+    for (const [i, l] of huerto.cosechados || []) this.fruta[2 * i + (l > 0 ? 1 : 0)] = 0
     this.ini = carga ? Float64Array.from(this.fruta) : null
     this.dejado = 0 // fruta que quedó en los lados que los cosecheros dejaron (fase B)
+    // estado de cada planta para la escena (H7, fase C): cuándo se tocó por primera vez y cuándo se terminó cada lado
+    // (−1 = antes de la corrida; Infinity = nunca)
+    this.t = 0
+    this.toque = new Float64Array(huerto.arboles.length).fill(Infinity)
+    this.ladoFin = new Float64Array(huerto.arboles.length * 2).fill(Infinity)
+    for (const [i, l] of huerto.cosechados || []) {
+      this.toque[i] = -1
+      this.ladoFin[2 * i + (l > 0 ? 1 : 0)] = -1
+    }
     this.inicial = this.fruta.reduce((s, v) => s + v, 0)
     this.reserva = huerto.reserva.map((t) => ({ ...t }))
     W.forEach((w, k) => {
@@ -281,8 +365,30 @@ export class Cosecha {
     const i = this._idx(w),
       got = Math.min(kg, this.fruta[i])
     this.fruta[i] -= got
+    if (got > 0 && this.toque[i >> 1] === Infinity) this.toque[i >> 1] = this.t
     w.cosechado = (w.cosechado || 0) + got
     return got
+  }
+
+  _terminar(i) {
+    if (this.ladoFin[i] === Infinity) this.ladoFin[i] = this.t
+  }
+
+  /** Por planta: [primer toque, fin] en s (fin = cuando sus dos lados quedaron terminados; Infinity = nunca). */
+  estadoPlantas() {
+    const n = this.toque.length,
+      ini = new Float32Array(n),
+      fin = new Float32Array(n)
+    // los lados exteriores de las hileras de los bordes no dan a ninguna calle: nadie los cosecha y no cuentan
+    const ultima = (this.h.params?.hileras ?? 0) - 1
+    for (let i = 0; i < n; i++) {
+      const hil = this.h.arboles[i].hilera
+      const a = hil === 0 ? -Infinity : this.ladoFin[2 * i],
+        b = hil === ultima ? -Infinity : this.ladoFin[2 * i + 1]
+      fin[i] = Math.max(a, b)
+      ini[i] = Math.min(this.toque[i], a === -Infinity ? Infinity : a, b === -Infinity ? Infinity : b)
+    }
+    return { ini, fin }
   }
 
   /** Multiplicador del periodo de cosecha según la fruta que queda en el lado (fase B; 1 sin carga variable). */
@@ -311,6 +417,7 @@ export class Cosecha {
   /** Avanza al siguiente árbol del tramo o toma el tramo libre más cercano; devuelve el puesto o null si no queda fruta. */
   next(w) {
     if (this.carga && w.tramo) this.dejado += this.fruta[this._idx(w)] // lo que queda en el lado que deja
+    if (w.tramo) this._terminar(this._idx(w))
     while (w.tramo) {
       if (w.ti < w.tramo.arboles.length - 1) w.ti++
       else {
@@ -330,6 +437,7 @@ export class Cosecha {
         if (!w.tramo) return null
       }
       if (!this.agotado(w)) break
+      this._terminar(this._idx(w)) // lado sin fruta (o que no conviene): se salta
     }
     if (!w.tramo) return null
     const ti = w.tramo.arboles[w.ti]
