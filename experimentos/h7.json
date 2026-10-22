@@ -1,0 +1,44 @@
+{
+  "nombre": "h7",
+  "descripcion": "H7: ¿qué hallazgos de H6 se mantienen con acopiador y camión, carga variable y ritmo que cae, reparto de la cuadrilla, avance del bloque y la ruta que sigue a la cuadrilla? Diseño e informe en el documento «H7: experimentos en lote».",
+  "bloques": [
+    {
+      "id": "A",
+      "descripcion": "Logística y carga (pregunta 1): acopiador y carga variable, cada uno sí o no; regla de seguridad activa. 5 repeticiones de ritmo en las de 45 min.",
+      "fijos": { "act": "mixed", "profile": "hri" },
+      "factores": {
+        "huerto": ["palta-tradicional", "palta-alta-densidad", "uva-parron", "arandano", "cerezo-ufo"],
+        "acopio": [null, {}],
+        "carga": [null, {}],
+        "nw": [12, 24],
+        "robot": ["ninguno", "warthog", "burro", "burro-carro"],
+        "duration": [2700, 14400]
+      },
+      "repeticiones": { "semillas": [1, 2, 3, 4, 5], "solo": { "duration": 2700 } }
+    },
+    {
+      "id": "B",
+      "descripcion": "Distancia y reparto (preguntas 2 y 3): avance del bloque y reparto, con acopiador y carga variable, 12 cosecheros, regla de seguridad activa. 5 repeticiones en las de 45 min.",
+      "fijos": { "act": "mixed", "profile": "hri", "nw": 12, "acopio": {}, "carga": {} },
+      "factores": {
+        "huerto": ["palta-tradicional", "palta-alta-densidad", "uva-parron", "arandano", "cerezo-ufo"],
+        "avance": [0, 0.5, 0.8],
+        "reparto": [null, { "modo": "frente" }, { "modo": "repartida" }],
+        "robot": ["ninguno", "warthog", "burro-carro"],
+        "duration": [2700, 14400]
+      },
+      "repeticiones": { "semillas": [1, 2, 3, 4, 5], "solo": { "duration": 2700 } }
+    },
+    {
+      "id": "C",
+      "descripcion": "Seguridad (pregunta 4): la base realista del bloque A (acopiador y carga variable) sin regla de seguridad.",
+      "fijos": { "act": "mixed", "profile": "matlab-2026", "acopio": {}, "carga": {} },
+      "factores": {
+        "huerto": ["palta-tradicional", "palta-alta-densidad", "uva-parron", "arandano", "cerezo-ufo"],
+        "nw": [12, 24],
+        "robot": ["ninguno", "warthog", "burro-carro"],
+        "duration": [2700, 14400]
+      }
+    }
+  ]
+}

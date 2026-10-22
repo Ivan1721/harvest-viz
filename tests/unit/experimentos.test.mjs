@@ -64,3 +64,46 @@ test('correr: una fila por corrida, con métricas de robot solo cuando hay robot
   assert.equal(+back[1].efecto_cosecha_pct, e1.efecto_cosecha_pct)
   assert.deepEqual(deCSV(''), [])
 })
+
+test('el diseño de H7: 2125 celdas, 2000 corridas distintas (las celdas repetidas entre bloques se corren una vez)', () => {
+  const d = JSON.parse(fs.readFileSync(new URL('../../experimentos/h7.json', import.meta.url), 'utf8'))
+  const [A, B, C] = d.bloques.map(celdas)
+  assert.equal(A.length, 320 + 160 * 5)
+  assert.equal(B.length, 270 + 135 * 5)
+  assert.equal(C.length, 60)
+  assert.equal(new Set([...A, ...B, ...C].map(clave)).size, 2000)
+  // opciones ausentes (null, avance 0) no cambian la clave: son la corrida de siempre
+  const c = { bloque: 'X', huerto: 'uva-parron', nw: 12, act: 'mixed', duration: 600, profile: 'hri', robot: 'warthog' }
+  assert.equal(clave({ ...c, acopio: null, carga: null, reparto: null, avance: 0 }), clave(c))
+})
+
+test('correr con las opciones de H7: acopio, carga, reparto y avance en la fila; efectos contra su propia corrida sin robot', () => {
+  const base = {
+    bloque: 'T',
+    huerto: 'palta-alta-densidad',
+    nw: 6,
+    act: 'mixed',
+    duration: 600,
+    profile: 'hri',
+    acopio: {},
+    carga: {},
+    avance: 0.5,
+    reparto: { modo: 'frente' },
+  }
+  const ho = correr({ ...base, robot: SIN_ROBOT }, FIS),
+    hr = correr({ ...base, robot: 'warthog' }, FIS)
+  assert.equal(hr.acopiador, 1)
+  assert.equal(hr.carga_variable, 1)
+  assert.equal(hr.reparto, 'frente')
+  assert.equal(hr.avance_pct, 50)
+  assert.ok(hr.caminata_media_m > 0 && ho.caminata_media_m > 0)
+  assert.ok(hr.calles_robot >= 1)
+  assert.ok(hr.acopiador_ocupado_pct >= 0 && hr.despachado_kg >= 0)
+  assert.equal(ho.calles_robot, '')
+  // la referencia sin robot de una corrida con avance es la del mismo avance (no la de avance 0)
+  const otro = correr({ ...base, avance: 0, robot: SIN_ROBOT }, FIS)
+  const [, e] = conEfectos([otro, ho, hr])
+  assert.equal(e.efecto_cosecha_pct, '', 'la fila sin robot no tiene efecto')
+  const conE = conEfectos([otro, ho, hr]).at(-1)
+  assert.equal(conE.efecto_cosecha_pct, +((100 * (hr.cosecha_kg - ho.cosecha_kg)) / ho.cosecha_kg).toFixed(2))
+})

@@ -76,6 +76,10 @@ export const COLS = [
   'pendiente_pct',
   'acopio_en_cima',
   'semilla',
+  'acopiador',
+  'carga_variable',
+  'reparto',
+  'avance_pct',
   'motor',
   'paramsHash',
   'cosecha_kg',
@@ -107,6 +111,13 @@ export const COLS = [
   'bateria_pct',
   'descargas',
   'traccion_s',
+  // H7: logística del acopio, carga variable, reparto y avance del bloque
+  'despachado_kg',
+  'acopiador_ocupado_pct',
+  'espera_robot_acopio_s',
+  'fruta_dejada_kg',
+  'caminata_media_m',
+  'calles_robot',
   'ms',
 ]
 // columnas de efecto contra la corrida sin robot del mismo escenario, cuadrilla, duración y semilla
@@ -120,7 +131,11 @@ export function correr(c, fis) {
   const s = hr ? new HRSim(o, fis).run() : new HOSim(o).run()
   const sm = s.summary()
   const p = s.p
-  const f = hr ? fluencyIndex(analyzeHRI(simToRun(s, { robot: true }))) : {}
+  const run = hr ? simToRun(s, { robot: true }) : null
+  const f = hr ? fluencyIndex(analyzeHRI(run)) : {}
+  let cam = 0
+  for (let k = 0; k < s.W.length; k++)
+    for (let i = 1; i < s.rec.wx[k].length; i++) cam += Math.hypot(s.rec.wx[k][i] - s.rec.wx[k][i - 1], s.rec.wy[k][i] - s.rec.wy[k][i - 1])
   const g = (k) => (k in f ? f[k] : '')
   const cosecha = sm.TotalRecollectedCrops_crop_units
   return {
@@ -134,6 +149,10 @@ export function correr(c, fis) {
     pendiente_pct: p.huertoParams?.pendiente ?? '',
     acopio_en_cima: p.huertoParams ? (p.huertoParams.acopioEnCima ? 1 : 0) : '',
     semilla: p.semilla ?? '',
+    acopiador: p.acopio ? 1 : 0,
+    carga_variable: p.carga ? 1 : 0,
+    reparto: p.huertoParams ? (p.reparto?.modo ?? 'acopio') : '',
+    avance_pct: p.huertoParams ? Math.round(100 * (p.avance ?? 0)) : '',
     motor: ENGINE_VERSION,
     paramsHash: paramsHash(p),
     cosecha_kg: r(cosecha),
@@ -165,12 +184,21 @@ export function correr(c, fis) {
     bateria_pct: g('HR_bateria_pct'),
     descargas: g('HR_descargas'),
     traccion_s: g('HR_traccion_s'),
+    despachado_kg: sm.acopio ? r(sm.acopio.despachado) : '',
+    acopiador_ocupado_pct: sm.acopio ? r(sm.acopio.ocupadoPct, 1) : '',
+    espera_robot_acopio_s: sm.acopio && hr ? r(sm.acopio.esperaRobot_s, 1) : '',
+    fruta_dejada_kg: sm.carga ? r(sm.carga.dejado, 1) : '',
+    caminata_media_m: r(cam / s.W.length, 0),
+    calles_robot: run?.robot?.calles ?? '',
     ms: Math.round(performance.now() - t0),
   }
 }
 
 /** Escenario de referencia de una fila (todo menos robot y perfil). */
-const escenario = (f) => [f.bloque, f.huerto, f.cosecheros, f.duracion_s, f.pendiente_pct, f.acopio_en_cima, f.semilla].join('|')
+const escenario = (f) =>
+  [f.bloque, f.huerto, f.cosecheros, f.duracion_s, f.pendiente_pct, f.acopio_en_cima, f.semilla, f.acopiador, f.carga_variable, f.reparto, f.avance_pct].join(
+    '|',
+  )
 const pct = (a, b) => (a === '' || b === '' || !(+b > 0) ? '' : +((100 * (+a - +b)) / +b).toFixed(2))
 
 /** Agrega a cada fila con robot el efecto contra su corrida sin robot (mismo escenario y semilla). */

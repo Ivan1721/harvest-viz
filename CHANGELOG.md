@@ -2,9 +2,9 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [0.8.0] — 2026-10-21
 
-**Motor 0.7.0**. La réplica de MATLAB no cambia. Cambian las corridas con las opciones nuevas y, por la corrección de la ruta del robot, las corridas con robot en huertos generados donde la cuadrilla cambia de calles (alta densidad y ladera desde la primera hora).
+H7: logística del acopio, carga de los árboles y reparto de la cuadrilla, con un lote de 2.000 corridas que revisa los hallazgos de H6. **Motor 0.7.0**. La réplica de MATLAB no cambia. Cambian las corridas con las opciones nuevas y, por la corrección de la ruta del robot, las corridas con robot en huertos generados donde la cuadrilla cambia de calles (alta densidad y ladera desde la primera hora).
 
 ### Agregado
 
@@ -13,6 +13,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 - **Reparto de la cuadrilla** (H7, fase C): «cerca del acopio» (de siempre), «frente» (uno por calle, tramos cortos, el frente avanza) y «repartida» (calles espaciadas a todo el ancho).
 - **Avance del bloque** (H7, fase C): parte del huerto ya cosechada en días anteriores; la cuadrilla parte más lejos del acopio.
 - **Estado de las plantas** en la escena (cosechada, en curso, pendiente), caminata por cosechero y calles recorridas por el robot.
+- **Lote de experimentos de H7** (`experimentos/h7.json`, resultados en `experimentos/h7/`): acopiador y carga variable, avance del bloque, reparto y costo de la regla de seguridad; columnas nuevas en el CSV.
 
 ### Corregido
 
