@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.7.0'
+export const ENGINE_VERSION = '0.8.0'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
@@ -33,6 +33,8 @@ export const ENGINE_VERSION = '0.7.0'
  * @property {'tree_point'} placement  dónde deja el trabajador la caja
  * @property {number} frontLen  @property {number} rearLen  geometría de dirección del robot [m]
  * @property {number} lapRepeats  vueltas de la ruta base del robot
+ * @property {{n:2|3, estrategia:'zonas'|'opuestas'|'desfase', ceder:number, reserva:number, esperaAcopio:number}} [flota]
+ *   flota de robots (H8; solo huertos generados, ausente por defecto). Ver flota.js
  *
  * Supuestos que difieren de MATLAB (documentados en docs/simulador.md):
  * - Sin lidar ni FIS de seguimiento: con la ruta del estudio el robot nunca pasa a < 1,5 m de un tronco.
@@ -118,6 +120,9 @@ export function resolveParams(opts = {}, extra = {}) {
   else delete p.reparto
   if (sis?.generador && opts.avance > 0) p.avance = opts.avance
   else delete p.avance
+  // flota de robots (H8, fase A): solo en huertos generados, con robot y con 2 o más (con 1, todo como siempre)
+  if (sis?.generador && p.robot && opts.flota?.n != null && opts.flota.n !== 1) p.flota = { ...FLOTA_DEFAULTS, ...opts.flota }
+  else delete p.flota
   // seguridad SSM: solo existe si el perfil o las opciones la piden (matlab-2026 no la tiene: su hash no cambia)
   const ssmIn = PROFILES[profile].params.ssm || opts.ssm ? { ...PROFILES[profile].params.ssm, ...(opts.ssm || {}) } : null
   if (ssmIn) p.ssm = { ...SSM_DEFAULTS, enabled: false, ...ssmIn }
@@ -145,6 +150,11 @@ export function resolveParams(opts = {}, extra = {}) {
   if (p.reparto) {
     if (!['frente', 'repartida'].includes(p.reparto.modo)) bad(`reparto.modo debe ser acopio, frente o repartida (es ${p.reparto.modo})`)
     if (!(Number.isInteger(p.reparto.tramo) && p.reparto.tramo >= 1)) bad(`reparto.tramo debe ser un entero ≥ 1 (es ${p.reparto.tramo})`)
+  }
+  if (p.flota) {
+    if (!(Number.isInteger(p.flota.n) && p.flota.n >= 2 && p.flota.n <= FLOTA_MAX)) bad(`flota.n debe ser un entero entre 1 y ${FLOTA_MAX} (es ${p.flota.n})`)
+    if (!FLOTA_ESTRATEGIAS.includes(p.flota.estrategia)) bad(`flota.estrategia debe ser ${FLOTA_ESTRATEGIAS.join(', ')} (es ${p.flota.estrategia})`)
+    for (const k of ['ceder', 'reserva', 'esperaAcopio']) if (!(Number.isFinite(p.flota[k]) && p.flota[k] > 0)) bad(`flota.${k} debe ser > 0`)
   }
   if (p.avance != null && !(Number.isFinite(p.avance) && p.avance > 0 && p.avance <= 0.9)) bad(`avance debe estar entre 0 y 0,9 (es ${p.avance})`)
   if (p.carga) {
@@ -265,6 +275,7 @@ import { validarRectangular } from './huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from './robots.js'
 import { ACOPIO_DEFAULTS } from './acopio.js'
 import { CARGA_DEFAULTS, cvDe } from './carga.js'
+import { FLOTA_DEFAULTS, FLOTA_ESTRATEGIAS, FLOTA_MAX } from './flota.js'
 
 export function hyp(a, b) {
   return Math.hypot(a, b)

@@ -188,6 +188,63 @@ Cambio de resultados: con la ruta que sigue a la cuadrilla, en palta alta densid
 entregado pasa de 4.845 a 5.790 kg. Donde la cuadrilla no cambia de calles (palta tradicional, uva, cerezo y arándano en
 4 h; todos en 45 min) los resultados no cambian. La réplica de MATLAB no cambia.
 
+## Flota de robots (H8, fase A)
+
+Revisión previa: documento «H8: diseño — dos o más robots transportadores» (aprobado con las cinco decisiones
+recomendadas y tres ajustes). H7 mostró que un robot no alcanza a transportar lo cosechado; esta fase agrega 2 o 3.
+
+- **Opción** `flota: { n, estrategia }` (`src/hrsim/flota.js`), solo en huertos generados y con robot; ausente por
+  defecto. Con `n: 1`, sin la clave o en el mapa de MATLAB, `resolveParams` la borra: los parámetros, el hash y los
+  resultados no cambian. Todos los robots son del tipo elegido. Todavía no está en la interfaz (fase B).
+- **Estrategias.** `zonas` (por defecto): al terminar cada vuelta, el robot toma su grupo de calles contiguas de un
+  reparto de las calles ocupadas (cosecheros trabajando + cajas esperando) en `n` grupos de peso parecido, de izquierda
+  a derecha. `opuestas`: todos recorren las calles ocupadas; los robots impares, al revés. `desfase`: todos en el mismo
+  sentido, y el robot i sale del acopio cuando el primero recorrió i/n de su vuelta.
+- **Reglas de convivencia** (supuestos del modelo, sin fuente; editables en `flota`):
+  1. _Reserva de calle_: un robot entra a una calle solo si ningún otro la tiene. La pide a menos de `reserva` (3 m) de
+     su boca (donde empiezan las copas); si otro la tiene, espera en la cabecera (estado 7, «Espera calle libre»).
+     Dentro de la calle la conserva, y al salir la suelta a 1,5 m de la boca (al girar puede volver a asomarse).
+  2. _Cesión de paso_: fuera de las calles, si dos robots en movimiento quedan a menos de `ceder` (2 m), el de número
+     mayor se detiene mientras su movimiento lo acerque al otro (estado 8, «Cede el paso»). Un robot detenido no obliga
+     a ceder; como el menor nunca cede ante el mayor, no hay esperas circulares. Ceder cuenta para el tiempo máximo en
+     un waypoint, como una parada de seguridad: si no, un robot que orbita su waypoint junto a otro no saldría del ciclo.
+  3. _Acopio_: una descarga a la vez. Con otro robot descargando, el que trae carga espera a `esperaAcopio` (3 m)
+     (estado 6); con acopiador, además, la cola de siempre.
+  4. _Cajas_: cada caja la atiende el primer robot que la detecta; los otros la ignoran.
+  5. _Seguridad_: cada robot aplica por su cuenta la regla de velocidad y separación a las personas.
+- **Sin zona** (ajuste A): con menos calles ocupadas que robots, los de número mayor descargan lo que traigan y esperan
+  estacionados a 3 m del acopio, hacia el borde (estado 6). Cada 5 s miran el reparto y se suman cuando les da calles.
+- **Palta tradicional** (ajuste B): el robot no cabe en las calles y recorre la cabecera; no hay reservas, y la
+  convivencia se resuelve solo con la cesión de paso y el acopio. Ahí está el costo: con 3 robots en zonas, en 4 h,
+  pasan cediendo el paso el 4 % de su tiempo (12 cosecheros); en arándano con Warthog, que tampoco cabe, el 8 %.
+- **Orden de un tick**: cosecheros; cada robot decide (detecta, recoge o descarga, elige waypoint, reserva su calle,
+  regla de seguridad, límites físicos); cesión de paso; se mueven todos a la vez; acopio; registro.
+- **Registro**: `rx…rst` y `energy` siguen siendo los del robot 1; `delivered` y `onboard` son de toda la flota; `fx`,
+  `fy`, `fth`, `fst`, `fon` y `fen` guardan pose, estado, carga a bordo y energía de cada robot. Los eventos llevan `r`
+  (número de robot, desde 0) y `ev.rutasFlota` guarda la ruta vigente de cada uno. El registro de texto sigue el formato
+  del MATLAB, con un solo robot: solo el robot 1.
+- **Medidas** (`summary().flota`): por robot, cajas, kg entregados, energía, descargas, espera de calle, cesión de paso,
+  espera en el acopio, tiempo estacionado y recorrido; en conjunto, equidad de cajas (Jain), distancia mínima entre
+  robots y distancia mínima con alguno dentro de una calle. La energía del Resumen es la de la flota; la batería, la
+  del robot que más gastó.
+
+Primeros resultados (palta alta densidad, 12 cosecheros, 4 h; llega al acopio, de lo cosechado): 1 robot 69 %; 2
+robots: zonas 94 %, opuestas 73 %, desfase 78 %; 3 robots: zonas 96 %, opuestas 92 %, desfase 95 %. En direcciones
+opuestas los robots esperan calle libre en cada vuelta (≈1.100 s en 4 h con 2 robots), como anticipaba el diseño. El lote
+de H8-exp los revisa en todos los huertos.
+
+Limitaciones:
+
+- Los robots son puntos: en la cabecera y en el acopio uno puede pasar «a través» de otro detenido (la cabecera, de
+  6 m, da espacio para esquivarlo, pero el modelo no dibuja la maniobra). La distancia mínima entre robots llega a ~0 m
+  ahí; con alguno dentro de una calle no baja de 2,6 m en alta densidad.
+- **Tramo de regreso** (defecto del generador, de antes de H8): con un número impar de calles, la vuelta vuelve de la
+  cabecera de arriba al acopio por la última calle en un solo tramo de ~100 m. Con un único waypoint al fondo, el
+  controlador se abre al girar y baja en diagonal, invadiendo la hilera vecina. Con flota eso rompía la reserva, así que
+  las vueltas de la flota llevan un waypoint cada 3 m también ahí (`densificar`). Con un robot la vuelta sigue igual
+  para no cambiar H2–H7; corregirla también ahí bajaría lo entregado hasta 2,6 % (palta alta densidad y ladera, 12
+  cosecheros, 4 h; uva y cerezo sin cambio). Decisión pendiente.
+
 ## Experimentos en lote (H6)
 
 `npm run experimentos -- experimentos/h6.json` corre todas las celdas de un diseño en paralelo (un hilo por núcleo) y

@@ -190,4 +190,8 @@ export default {
   'Uva de mesa en parrón (3,5 × 3,5 m)': 'Uva de mesa em latada (3,5 × 3,5 m)',
   'Arándano (3 × 1 m)': 'Mirtilo (3 × 1 m)',
   'Cerezo peatonal UFO (3,2 × 1,8 m)': 'Cereja pedestre UFO (3,2 × 1,8 m)',
+  'Distancia para ceder el paso entre robots (m)': 'Distância para os robôs darem passagem (m)',
+  'Distancia a la boca para reservar una calle (m)': 'Distância até a entrada para reservar uma rua (m)',
+  'Distancia de espera al acopio si otro robot descarga (m)': 'Distância de espera do ponto de recolha enquanto outro robô descarrega (m)',
+  'Supuesto: 3': 'Suposto: 3',
 }

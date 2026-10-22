@@ -170,8 +170,6 @@ export default {
   'Con acopiador: llega al acopio y el acopiador está ocupado; hace cola con su caja.':
     'With a collection-point worker: reaches the collection point while the worker is busy; queues with the box.',
   'El acopiador lo atiende.': 'The collection-point worker serves them.',
-  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins.':
-    'With a collection-point worker: arrived to unload while the worker is busy, or the collection point reached its bin limit.',
   'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) el robot detecta cajas, decide su próximo waypoint, aplica la regla de seguridad y sus límites físicos, se mueve y recoge o descarga; (3) si hay acopiador, atiende el acopio y el camión; (4) se registran posiciones, estados, producción y gasto.':
     'At each tick, in this order: (1) each harvester, H1 to Hn, advances its state machine; (2) the robot detects boxes, chooses its next waypoint, applies the safety rule and its physical limits, moves and picks up or unloads; (3) if there is a collection-point worker, they serve the collection point and the truck; (4) positions, states, production and expenditure are recorded.',
   'Acopio: lo que llega al acopio se da por entregado (sin acopiador ni camión).':
@@ -190,4 +188,22 @@ export default {
     'Robot route: at the end of each lap it is recomputed with the lanes that have harvesters or waiting boxes.',
   'Avance del bloque: {avance} % de los lados de hilera ya cosechados, desde las calles del acopio hacia afuera (supuesto).':
     'Block progress: {avance} % of the row sides already harvested, from the lanes near the collection point outwards (assumed).',
+  'Espera calle libre': 'Waits for a free lane',
+  'Cede el paso': 'Gives way',
+  'Con flota: la calle a la que va la tiene otro robot; espera en la cabecera, a menos de {reserva} m de la boca.':
+    'With a fleet: another robot holds the lane it is heading to; it waits on the headland, within {reserva} m of the lane entrance.',
+  'Con flota: un robot de número menor se mueve a menos de {ceder} m y este se le acercaría; se detiene hasta que se aleje.':
+    'With a fleet: a lower-numbered robot is moving within {ceder} m and this one would get closer to it; it stops until the other moves away.',
+  'En cada tick, en este orden: (1) cada cosechero, de H1 a Hn, avanza su máquina de estados; (2) cada robot, de RB-01 a RB-0{n}, detecta cajas, recoge o descarga, decide su próximo waypoint, reserva su calle y aplica la regla de seguridad y sus límites físicos; (3) los robots ceden el paso entre ellos y se mueven todos a la vez; (4) si hay acopiador, atiende el acopio y el camión; (5) se registran posiciones, estados, producción y gasto.':
+    'On each tick, in this order: (1) each harvester, from H1 to Hn, advances its state machine; (2) each robot, from RB-01 to RB-0{n}, detects boxes, picks up or unloads, chooses its next waypoint, reserves its lane and applies the safety rule and its physical limits; (3) the robots give way to each other and all move at once; (4) if there is a collection-point worker, they serve the collection point and the truck; (5) positions, states, production and expenditure are recorded.',
+  'Flota: {nr} robots del mismo tipo en zonas; al terminar cada vuelta, las calles con cosecheros o cajas se reparten en grupos contiguos de peso parecido, uno por robot. Un robot sin calles espera estacionado junto al acopio y se suma cuando el reparto le da alguna.':
+    'Fleet: {nr} robots of the same type in zones; at the end of each lap, the lanes with harvesters or boxes are split into contiguous groups of similar weight, one per robot. A robot with no lanes waits parked next to the collection point and joins when the split gives it some.',
+  'Flota: {nr} robots del mismo tipo en direcciones opuestas; todos recorren las calles ocupadas, los de número par en un sentido y los impares al revés.':
+    'Fleet: {nr} robots of the same type in opposite directions; all of them cover the occupied lanes, even-numbered robots one way and odd-numbered ones the other.',
+  'Flota: {nr} robots del mismo tipo con desfase; todos recorren las calles ocupadas en el mismo sentido y el robot i sale del acopio cuando el primero lleva i/{nr} de su vuelta.':
+    'Fleet: {nr} robots of the same type with an offset; all of them cover the occupied lanes in the same direction, and robot i leaves the collection point when the first one has done i/{nr} of its lap.',
+  'Convivencia (supuesto): un robot por calle (se reserva al acercarse a la boca); fuera de las calles, el de número mayor cede el paso; una descarga a la vez en el acopio; cada caja la atiende el primer robot que la detecta.':
+    'Coexistence (assumed): one robot per lane (reserved when approaching the entrance); outside the lanes, the higher-numbered robot gives way; one unload at a time at the collection point; each box is served by the first robot that detects it.',
+  'Con acopiador: llegó a descargar y el acopiador está ocupado, o el acopio llegó a su tope de bins. Con flota: otro robot está descargando, espera su salida (desfase) o está estacionado sin zona.':
+    'With a collection-point worker: arrived to unload while the worker is busy, or the collection point reached its bin limit. With a fleet: another robot is unloading, it waits for its departure (offset), or it is parked with no zone.',
 }

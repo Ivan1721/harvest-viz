@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+H8, fase A: flota de 2 o 3 robots transportadores en el motor. **Motor 0.8.0**. Sin la opción nueva nada cambia: la réplica de MATLAB y las corridas de H2–H7 dan exactamente lo mismo (las huellas de 10 configuraciones representativas coinciden al bit).
+
+### Agregado
+
+- **Flota de robots** (`flota: { n, estrategia }`, solo huertos generados; todavía sin interfaz): estrategias zonas (por defecto), direcciones opuestas y desfase; reglas de convivencia (reserva de calle, cesión de paso, una descarga a la vez y cada caja con un solo robot), robots sin zona estacionados junto al acopio; estados del robot 7 «Espera calle libre» y 8 «Cede el paso»; medidas por robot y de la flota (`summary().flota`). En palta alta densidad (12 cosecheros, 4 h) llega al acopio el 94 % de lo cosechado con 2 robots en zonas, frente al 69 % con uno.
+
+### Corregido
+
+- Pruebas: la invariante «robot detenido no se mueve» trataba «velocidad reducida» (4) como detenido, la de «suma de cargas» no contaba al acopiador y la de «resumen finito» fallaba con los textos del resumen de los huertos generados. Ninguna corría en esos casos.
+
 ## [0.8.0] — 2026-10-21
 
 H7: logística del acopio, carga de los árboles y reparto de la cuadrilla, con un lote de 2.000 corridas que revisa los hallazgos de H6. **Motor 0.7.0**. La réplica de MATLAB no cambia. Cambian las corridas con las opciones nuevas y, por la corrección de la ruta del robot, las corridas con robot en huertos generados donde la cuadrilla cambia de calles (alta densidad y ladera desde la primera hora).

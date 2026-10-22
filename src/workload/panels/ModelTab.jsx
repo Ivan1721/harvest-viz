@@ -188,7 +188,7 @@ export function ModelTab({ ho, hr, t: tNow, sel, select }) {
         <>
           <h4 style={{ marginTop: 14 }}>{t('Robot')}</h4>
           <div className="sm-robot" data-testid="sm-robot">
-            {ESTADOS_ROBOT.map((e) => (
+            {ESTADOS_ROBOT.filter((e) => !e.flota || p.flota).map((e) => (
               <div key={e.id} className={`sm-chip${e.id === rActual ? ' now' : ''}`} title={t(e.regla, vals)}>
                 <span>
                   {e.id} · {t(e.label)}

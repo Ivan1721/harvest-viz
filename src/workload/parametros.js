@@ -65,6 +65,12 @@ export const ACOPIO = [
   ['intervaloS', 'El camión sale como máximo cada (s)', 60, 'Supuesto: 3600 (60 min)', 60, 14400],
   ['cargaBinS', 'Cargar un bin al camión (s)', 5, 'Supuesto: 90', 1, 3600],
 ]
+// flota de robots (H8, fase A): reglas de convivencia, sin fuente. [clave, etiqueta, paso, fuente, mínimo, máximo]
+export const FLOTA = [
+  ['ceder', 'Distancia para ceder el paso entre robots (m)', 0.5, 'Supuesto: 2', 0.5, 20],
+  ['reserva', 'Distancia a la boca para reservar una calle (m)', 0.5, 'Supuesto: 3', 0.5, 20],
+  ['esperaAcopio', 'Distancia de espera al acopio si otro robot descarga (m)', 0.5, 'Supuesto: 3', 0.5, 20],
+]
 // carga variable por árbol y ritmo que cae (H7, fase B): [clave, etiqueta, paso, fuente, mínimo, máximo]
 export const CARGA = [
   ['cv', 'Variabilidad de la carga entre árboles (CV)', 0.05, 'Supuesto: 0,5 en palta, 0,3 en otros (Olalla y Rodríguez 1991: 0,74)', 0, 3],

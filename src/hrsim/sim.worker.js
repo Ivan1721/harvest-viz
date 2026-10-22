@@ -4,7 +4,7 @@ import fisText from './goal_seeking.fis?raw'
 import { HRSim } from './engine.js'
 import { HOSim } from './humanonly.js'
 
-const U8 = new Set(['flag', 'wst', 'rst'])
+const U8 = new Set(['flag', 'wst', 'rst', 'fst'])
 function pack(s, transfer) {
   const rec = {}
   for (const [k, v] of Object.entries(s.rec)) {
