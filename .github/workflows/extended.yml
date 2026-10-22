@@ -12,7 +12,9 @@ concurrency:
 jobs:
   model:
     name: Regresión completa, property-based y fuzzing intensivos
-    runs-on: ubuntu-latest
+    # runner fijo: con ubuntu-latest, que migra a Ubuntu 26 desde el 19-10-2026, instalar las dependencias de
+    # Chromium pasó de 13 s a 12 min y el job de interfaz superó su límite
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -41,7 +43,7 @@ jobs:
 
   browsers:
     name: Interfaz en Chromium, Firefox y WebKit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -62,7 +64,7 @@ jobs:
 
   visual:
     name: Regresión visual
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     # las referencias se generaron en otro Linux: diferencias de fuentes pueden dar falsos positivos
     continue-on-error: true
@@ -85,7 +87,7 @@ jobs:
 
   mutation:
     name: Pruebas de mutación (Stryker)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
