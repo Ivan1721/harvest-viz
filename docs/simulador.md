@@ -205,6 +205,20 @@ las celdas a las que se aplican (`solo`). Sin robot el perfil no aplica: esas ce
 en el documento «H6: resultados de los experimentos en lote». Código: `scripts/experimentos.mjs` y
 `scripts/experimentos/lib.mjs`.
 
+## Experimentos en lote (H7)
+
+`npm run experimentos -- experimentos/h7.json` repite las preguntas de H6 con el modelo de H7 (motor 0.7.0): bloque A,
+acopiador y carga variable (sí/no cada uno) × 12 y 24 cosecheros × robot × 45 min y 4 h; bloque B, avance del bloque
+(0, 50 y 80 %) × reparto × robot, con acopiador y carga variable; bloque C, la base realista sin regla de seguridad.
+Factores con objetos (`acopio`, `carga`, `reparto`) aceptan `null` = sin la opción, y `avance` 0 = sin avance: esas
+celdas tienen la misma clave que la corrida de siempre. 2125 celdas, 2000 corridas distintas (unos 12 min en 2 hilos);
+resultados en `experimentos/h7/`. Columnas nuevas: `acopiador`, `carga_variable`, `reparto`, `avance_pct`,
+`despachado_kg`, `acopiador_ocupado_pct`, `espera_robot_acopio_s`, `fruta_dejada_kg`, `caminata_media_m` y
+`calles_robot`; el efecto de cada robot se mide contra la corrida sin robot con las mismas opciones. Hallazgos en el
+documento «H7: experimentos en lote»: el robot ayuda en proporción a la caminata que le ahorra al cosechero, así que su
+aporte crece con la distancia al acopio (avance del bloque) y con la cuadrilla repartida; el acopiador no se satura, el
+límite de transporte de un solo robot se mantiene y la regla de seguridad cuesta a lo más 3,9 puntos.
+
 ## Validación (métricas agregadas)
 
 Las referencias son los CSV resumen de MATLAB: 732 filas (principal, extended y scaling), que se reducen a **720 configuraciones únicas** (360 Solo humano + 360 Humano-robot) en `public/data/matlab_summary.json`.

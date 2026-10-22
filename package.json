@@ -1,7 +1,7 @@
 {
   "name": "harvest-viz",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "description": "Visor 3D y simulador de cosecha colaborativa humano-robot (réplica JS de HumanRobot_Sim/HumanOnly_Sim)",
   "repository": {
