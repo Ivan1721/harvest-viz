@@ -6,7 +6,25 @@ import { t, useLang } from '../../i18n/index.js'
  * Barra sobre la escena: qué se ve y cómo. No cambia la simulación, por eso no está en los pasos de la izquierda.
  * Lo frecuente (qué corrida, cámara) queda a la vista; estilo, follaje, color y capas, en «Capas y estilo».
  */
-export function ViewBar({ view, setView, hasHO, hasHR, labels, preset, setPreset, look, setLook, canopy, setCanopy, colorBy, setColorBy, ov, setOv }) {
+export function ViewBar({
+  view,
+  setView,
+  hasHO,
+  hasHR,
+  labels,
+  preset,
+  setPreset,
+  look,
+  setLook,
+  calidad,
+  setCalidad,
+  canopy,
+  setCanopy,
+  colorBy,
+  setColorBy,
+  ov,
+  setOv,
+}) {
   useLang()
   const pop = useRef()
   // el menú se cierra al hacer clic fuera o con Escape
@@ -59,6 +77,21 @@ export function ViewBar({ view, setView, hasHO, hasHR, labels, preset, setPreset
               ]}
             />
           </Field>
+          {look === 'real' && setCalidad && (
+            <Field label={t('Calidad')}>
+              <Seg
+                value={calidad}
+                onChange={setCalidad}
+                options={[
+                  ['alta', t('Alta')],
+                  ['basica', t('Básica')],
+                ]}
+              />
+              <div className="note" style={{ marginTop: 4 }}>
+                {t('Alta: luz de cielo, niebla, sombras suaves, suelo con texturas y sombreado de contacto. Básica: más liviana, para equipos sin GPU.')}
+              </div>
+            </Field>
+          )}
           {look === 'real' && (
             <Field label={`${t('Opacidad del follaje')} · ${Math.round(canopy * 100)} %`}>
               <input

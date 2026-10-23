@@ -58,6 +58,11 @@ export default {
   'Estilo visual': 'Visual style',
   Realista: 'Realistic',
   Esquemático: 'Schematic',
+  Calidad: 'Quality',
+  Alta: 'High',
+  Básica: 'Basic',
+  'Alta: luz de cielo, niebla, sombras suaves, suelo con texturas y sombreado de contacto. Básica: más liviana, para equipos sin GPU.':
+    'High: sky light, haze, soft shadows, textured ground and contact shading. Basic: lighter, for computers without a GPU.',
   'Opacidad del follaje': 'Foliage opacity',
   Cámara: 'Camera',
   Isométrica: 'Isometric',

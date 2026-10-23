@@ -1,6 +1,6 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react'
+import React, { Suspense, lazy, useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrthographicCamera, OrbitControls, Line } from '@react-three/drei'
+import { OrthographicCamera, OrbitControls, Line, Environment, Sky } from '@react-three/drei'
 import { TagLayer } from '../shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { MAP, toW, setMap } from './spec.js'
@@ -10,7 +10,7 @@ import { FLAG, onboard } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
 import { protectionDistance } from '../hrsim/ssm.js'
 import { Person, Crate, CrateReal, CrateSet, Ladder } from '../shared/models.jsx'
-import { RealGround, SkyBackground } from '../shared/realistic.jsx'
+import { RealGround, RealGroundAlta, SkyBackground } from '../shared/realistic.jsx'
 import { Orchard } from '../shared/orchard.jsx'
 
 import { play, anim, advance } from './playback.js'
@@ -637,7 +637,7 @@ function EstadoPlantas({ run, trees, R }) {
   )
 }
 
-function Ground({ run, real, geom }) {
+function Ground({ run, real, alta, geom }) {
   // árboles en coordenadas de mundo (dependen del mapa activo)
   const trees = useMemo(
     () =>
@@ -658,7 +658,11 @@ function Ground({ run, real, geom }) {
   const big = Math.max(MAP.w, MAP.h) * 2 + 20
   return (
     <group>
-      {real ? (
+      {real && alta ? (
+        <Suspense fallback={<RealGround geom={geom} />}>
+          <RealGroundAlta geom={geom} />
+        </Suspense>
+      ) : real ? (
         <RealGround geom={geom} />
       ) : (
         <>
@@ -684,22 +688,24 @@ function Ground({ run, real, geom }) {
   )
 }
 
-function World({ run, selected, onSelect, version, look, geom }) {
+function World({ run, selected, onSelect, version, look, geom, calidad }) {
   const real = look === 'real'
+  const alta = real && calidad === 'alta'
   // la sombra cubre todo el huerto (el del estudio mide ~30 m; uno generado, ~100 m)
   const sh = Math.max(22, Math.max(MAP.w, MAP.h) / 2 + 6)
   return (
     <>
       {real ? <SkyBackground /> : <color attach="background" args={['#e9eefb']} />}
+      {alta && <LuzDeCielo extent={Math.max(MAP.w, MAP.h)} />}
       {real ? (
         <>
-          <hemisphereLight args={['#e4f0ff', '#8a7650', 1.5]} />
+          <hemisphereLight args={['#e4f0ff', '#8a7650', alta ? 1.25 : 1.5]} />
           <directionalLight
             position={[-14, 24, 10]}
             intensity={2.0}
             color="#fff1d6"
             castShadow
-            shadow-mapSize={[2048, 2048]}
+            shadow-mapSize={alta ? [4096, 4096] : [2048, 2048]}
             shadow-bias={-0.0004}
             shadow-normalBias={0.04}
             shadow-camera-left={-sh}
@@ -728,7 +734,7 @@ function World({ run, selected, onSelect, version, look, geom }) {
       <Clock run={run} />
       {/* en ladera todo (suelo, árboles, personas, robot) se inclina con el terreno; en plano tilt = 0 */}
       <group rotation={[geom.tilt || 0, 0, 0]}>
-        <Ground run={run} real={real} geom={geom} />
+        <Ground run={run} real={real} alta={alta} geom={geom} />
         {run.acopio ? <AcopioBins run={run} geom={geom} /> : <CargoPile run={run} real={real} geom={geom} />}
         {run.robot && <Intent run={run} />}
         <Boxes run={run} real={real} />
@@ -741,6 +747,42 @@ function World({ run, selected, onSelect, version, look, geom }) {
     </>
   )
 }
+
+// ---- calidad alta (R1): cielo como luz ambiente y niebla de distancia; la oclusión ambiental va en WorkloadScene
+const SOL = [-14, 24, 10]
+const NIEBLA = '#dde8ec' // cerca del horizonte del degradado del cielo (SkyBackground)
+
+/**
+ * Luz de cielo: un cielo atmosférico procedural (Sky de drei) renderizado una vez a un mapa de entorno, que ilumina los
+ * materiales con luz del cielo y del suelo en vez de un tono plano. Sin descargas. Más una niebla de distancia que sigue
+ * a la cámara: empieza un poco más allá del huerto y vela solo lo lejano (con cámara ortográfica la distancia a la
+ * cámara cambia con la vista, así que se recalcula en cada cuadro).
+ */
+function LuzDeCielo({ extent }) {
+  const { scene, camera, controls } = useThree()
+  const fog = useMemo(() => new THREE.Fog(NIEBLA, 1, 1000), [])
+  React.useEffect(() => {
+    const prev = scene.fog
+    scene.fog = fog
+    return () => {
+      scene.fog = prev
+    }
+  }, [scene, fog])
+  useFrame(() => {
+    const target = controls?.target || ORIGEN
+    const d = camera.position.distanceTo(target)
+    fog.near = d + 0.35 * extent
+    fog.far = d + 3 * extent
+  })
+  return (
+    <Environment frames={1} resolution={128} environmentIntensity={0.22}>
+      <Sky sunPosition={SOL} turbidity={6} rayleigh={1.2} mieCoefficient={0.005} mieDirectionalG={0.8} />
+    </Environment>
+  )
+}
+const ORIGEN = new THREE.Vector3()
+// sombreado de contacto: solo se descarga con la calidad alta
+const Contacto = lazy(() => import('./Contacto.jsx'))
 
 const PRESETS = {
   iso: { pos: [10, 24, 22], zoom: 27 },
@@ -784,16 +826,29 @@ function CamRig({ preset, extent = 30 }) {
   return null
 }
 
-export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real' }) {
+export default function WorkloadScene({ run, selected, onSelect, version, preset = 'iso', look = 'real', calidad = 'basica' }) {
   const geom = sceneGeometry(run.meta)
   setMap(geom.limites) // antes de dibujar: toW() usa el mapa activo
   const extent = Math.max(geom.limites.w, geom.limites.h)
+  const alta = look === 'real' && calidad === 'alta'
+  // el tipo de sombra se fija al crear el renderizador: cambiar de calidad vuelve a montar el lienzo
   return (
-    <Canvas shadows="percentage" dpr={[1, 1.5]} gl={{ antialias: true, powerPreference: 'high-performance' }} onPointerMissed={() => onSelect(null)}>
+    <Canvas
+      key={alta ? 'alta' : 'basica'}
+      shadows={alta ? 'soft' : 'percentage'}
+      dpr={[1, 1.5]}
+      gl={{ antialias: !alta, powerPreference: 'high-performance' }}
+      onPointerMissed={() => onSelect(null)}
+    >
       <OrthographicCamera makeDefault position={PRESETS.iso.pos} zoom={PRESETS.iso.zoom} near={-80 - extent} far={150 + 2 * extent} />
       <OrbitControls makeDefault target={[0, 0, 0]} enablePan minZoom={(10 * 30) / Math.max(30, extent)} maxZoom={110} minPolarAngle={0} maxPolarAngle={1.45} />
       <CamRig preset={preset} extent={extent} />
-      <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} geom={geom} />
+      <World run={run} selected={selected} onSelect={onSelect} version={version} look={look} geom={geom} calidad={calidad} />
+      {alta && (
+        <Suspense fallback={null}>
+          <Contacto />
+        </Suspense>
+      )}
       {perfEnabled() && <PerfProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />}
       <RecorderProbe name={run.robot ? 'Humano-robot' : 'Solo humano'} />
       <TagLayer />

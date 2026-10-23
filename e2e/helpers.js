@@ -2,13 +2,14 @@
 // En máquinas sin GPU (CI, contenedores) WebGL corre por software y la escena 3D satura la CPU:
 // las pruebas pausan la reproducción y usan el estilo Esquemático, que es más liviano.
 
-/** Abre un modo de la cabecera ('replica' por defecto: corridas de MATLAB incluidas, sin simular). */
-export async function openWorkload(page, { light = true, mode = 'replica' } = {}) {
+/** Abre un modo de la cabecera ('replica' por defecto: corridas de MATLAB incluidas, sin simular). `query`: parámetros extra. */
+export async function openWorkload(page, { light = true, mode = 'replica', query = '' } = {}) {
   await page.addInitScript((m) => localStorage.setItem('hv-mode', m), mode)
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   page.on('console', (m) => m.type() === 'error' && !/404|favicon/.test(m.text()) && errors.push(m.text()))
-  await page.goto(light ? '/?look=schem' : '/')
+  const qs = [light ? 'look=schem' : '', query].filter(Boolean).join('&')
+  await page.goto(qs ? `/?${qs}` : '/')
   await page.getByRole('heading', { name: /Escenario/ }).waitFor()
   if (mode === 'sim') await waitSim(page, 0)
   await page.locator('canvas').first().waitFor()

@@ -19,6 +19,7 @@ import { Summary } from './panels/Summary.jsx'
 import { Validation } from './panels/Validation.jsx'
 import { Detail, WorkerList } from './panels/Workers.jsx'
 import { play, setPlay, usePlayback } from './playback.js'
+import { calidadInicial, guardarCalidad, opacidadInicial, rendererWebGL } from './calidad.js'
 import WorkloadScene from './WorkloadScene.jsx'
 import { PerfOverlay, perfEnabled } from './perf.jsx'
 import { VideoPanel } from './panels/VideoPanel.jsx'
@@ -65,10 +66,33 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   const [preset, setPreset] = useState('iso')
   // ?look=schem abre en estilo Esquemático (más liviano: útil para figuras y equipos sin GPU)
   const [look, setLook] = useState(() => (qs.get('look') === 'schem' ? 'schem' : 'real'))
-  const [canopy, setCanopyState] = useState(0.42)
+  // calidad de la escena (R1): ?calidad=alta|basica, la elegida antes o la que permite el equipo (básica sin GPU)
+  const [calidad, setCalidadState] = useState(() => calidadInicial(qs, () => window.localStorage, rendererWebGL()))
+  // el follaje parte más opaco en alta; si el usuario movió la opacidad, cambiar de calidad no la toca
+  const canopyMovida = useRef(false)
+  const [canopy, setCanopyState] = useState(() => (play.canopy.v = opacidadInicial(calidad)))
   const setCanopy = (v) => {
     play.canopy.v = v
     setCanopyState(v)
+  }
+  const setCanopyUsuario = (v) => {
+    canopyMovida.current = true
+    setCanopy(v)
+  }
+  const setCalidad = (c) => {
+    setCalidadState(c)
+    guardarCalidad(() => window.localStorage, c)
+    if (!canopyMovida.current) setCanopy(opacidadInicial(c))
+    // la elegida a mano manda sobre un ?calidad= del enlace (que si no volvería al recargar)
+    try {
+      const sp = new URLSearchParams(window.location.search)
+      if (sp.has('calidad')) {
+        sp.delete('calidad')
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}?${sp}${window.location.hash}`)
+      }
+    } catch {
+      /* sin historial */
+    }
   }
   const [ov, setOvState] = useState({ zones: false, intent: false, plantas: true })
   // ?perfil=hri abre el simulador con el modelo extendido; por defecto, la réplica de MATLAB
@@ -406,7 +430,9 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           look={look}
           setLook={setLook}
           canopy={canopy}
-          setCanopy={setCanopy}
+          setCanopy={setCanopyUsuario}
+          calidad={calidad}
+          setCalidad={setCalidad}
           colorBy={snap.colorBy}
           setColorBy={setColorBy}
           ov={ov}
@@ -451,7 +477,7 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
               vis[k] && (
                 <div key={k} className="wb-view">
                   <ErrorBoundary label={t('la vista {v}', { v: labels[k] })} resetKey={vis[k].entryId}>
-                    <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} />
+                    <WorkloadScene run={vis[k]} selected={snap.sel} onSelect={select} version={vis[k].entryId} preset={preset} look={look} calidad={calidad} />
                   </ErrorBoundary>
                   <div className="wb-chip" data-testid={showPreview ? 'preview-chip' : undefined}>
                     <i style={{ background: SC[k].color }} />
