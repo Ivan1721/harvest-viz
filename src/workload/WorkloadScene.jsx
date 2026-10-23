@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrthographicCamera, OrbitControls, Line, Environment, Sky } from '@react-three/drei'
+import { OrthographicCamera, OrbitControls, Line, Environment, Sky, useGLTF } from '@react-three/drei'
 import { TagLayer } from '../shared/TagLayer.jsx'
 import * as THREE from 'three'
 import { MAP, toW, setMap } from './spec.js'
@@ -171,12 +171,41 @@ function Worker({ w, run, onSelect, selected, real }) {
 const ROBOT = { L: 1.52, W: 1.38, H: 0.83, r: 0.305, clear: 0.254, tireW: 0.25, capacity: 68 * 15 }
 const WX = ROBOT.L / 2 - ROBOT.r // centro de rueda a lo largo (±0,455 m)
 const WZ = ROBOT.W / 2 - ROBOT.tireW / 2 // centro de rueda a lo ancho (±0,565 m)
-function RobotCarrier({ run, onSelect, selected }) {
+// R2: el Warthog real (mallas oficiales de Clearpath, BSD-3; public/modelos/LEEME.md), generado por
+// scripts/warthog-glb.mjs con el origen en el suelo y las cuatro ruedas como nodos `rueda_*` que giran en z
+const WARTHOG_GLB = 'modelos/warthog.glb'
+const CUBIERTA_REAL = 0.64 // m: tope del chasis entre los guardabarros, donde va la carga
+
+function WarthogReal({ ruedas, onListo }) {
+  const { scene } = useGLTF(import.meta.env.BASE_URL + WARTHOG_GLB)
+  const obj = useMemo(() => {
+    const c = scene.clone(true)
+    c.traverse((o) => {
+      if (o.isMesh) o.castShadow = o.receiveShadow = true
+    })
+    return c
+  }, [scene])
+  // ruedas del lado derecho (+z local, como en el modelo simple) giran con la rodadura derecha
+  useLayoutEffect(() => {
+    const rs = []
+    obj.traverse((o) => o.name.startsWith('rueda_') && rs.push({ m: o, der: o.position.z > 0 }))
+    ruedas.current = rs
+    onListo(true)
+    return () => {
+      ruedas.current = []
+      onListo(false)
+    }
+  }, [obj, ruedas, onListo])
+  return <primitive object={obj} />
+}
+
+function RobotCarrier({ run, onSelect, selected, alta }) {
   const root = useRef(),
     load = useRef(),
     lab = useRef('RB-01'),
     zr = useRef([])
-  const wheels = useRef([])
+  const wheels = useRef([]),
+    ruedasReal = useRef([])
   const st = useRef({ x: null, y: 0, h: 0, angL: 0, angR: 0 })
   const shown = useRef({ v: 0, t: 0 }),
     rtmp = useRef([0, 0, 0])
@@ -188,6 +217,11 @@ function RobotCarrier({ run, onSelect, selected }) {
   const unit = run.meta?.params?.maxProd ?? 15 // kg (o unidades) por caja del cultivo
   const cap = (run.meta?.params?.capacityBoxes ?? 68) * unit
   const body = spec ? [spec.largo / ROBOT.L, spec.alto / ROBOT.H, spec.ancho / ROBOT.W] : [1, 1, 1]
+  // calidad alta: el Warthog real (el mapa de MATLAB y el robot Warthog); los otros robots siguen con el modelo simple
+  const real = alta && (!spec || run.meta?.params?.robotTipo === 'warthog')
+  // mientras baja el modelo real se sigue viendo el simple
+  const [listo, setListo] = React.useState(false)
+  const usarReal = real && listo
   useFrame(() => {
     const smp = sampleAt(run.n, run.dt, play.t),
       i = smp.i
@@ -210,6 +244,7 @@ function RobotCarrier({ run, onSelect, selected }) {
     s.y = pz
     s.h = h
     wheels.current.forEach((m, k) => m && (m.rotation.y = -(k % 2 === 0 ? s.angR : s.angL)))
+    ruedasReal.current.forEach((w) => (w.m.rotation.z = -(w.der ? s.angR : s.angL)))
     zr.current.forEach((m) => m && (m.visible = play.zones))
     // campos de seguridad (fase 3, perfil hri): radio según la velocidad del tick, color según el estado
     if (ssm && run.hri) {
@@ -276,7 +311,20 @@ function RobotCarrier({ run, onSelect, selected }) {
         <circleGeometry args={[1.5, 24, -Math.PI / 2, Math.PI]} />
         <meshBasicMaterial color="#2f6bff" transparent opacity={0.1} depthWrite={false} />
       </mesh>
-      <group scale={body}>
+      {real && (
+        <Suspense fallback={null}>
+          <WarthogReal ruedas={ruedasReal} onListo={setListo} />
+        </Suspense>
+      )}
+      {usarReal && (
+        <group ref={load} position={[0, CUBIERTA_REAL, 0]} scale={[1, 0.001, 1]}>
+          <mesh position={[0, 0.25, 0]} castShadow>
+            <boxGeometry args={[0.9, 0.5, 0.75]} />
+            <meshStandardMaterial color="#c8a36a" />
+          </mesh>
+        </group>
+      )}
+      <group scale={body} visible={!usarReal}>
         {/* chasis entre las ruedas: de la holgura (0,254 m) a la altura total (0,83 m) */}
         <mesh position={[0, (ROBOT.clear + ROBOT.H) / 2, 0]} castShadow>
           <boxGeometry args={[ROBOT.L - 0.2, ROBOT.H - ROBOT.clear, ROBOT.W - 2 * ROBOT.tireW - 0.04]} />
@@ -311,7 +359,7 @@ function RobotCarrier({ run, onSelect, selected }) {
           </group>
         ))}
         {/* carga a bordo: crece sobre la cubierta hasta la capacidad (68 cajas = 1020 u) */}
-        <group ref={load} position={[0, ROBOT.H + 0.04, 0]} scale={[1, 0.001, 1]}>
+        <group ref={usarReal ? undefined : load} position={[0, ROBOT.H + 0.04, 0]} scale={[1, 0.001, 1]}>
           <mesh position={[0, 0.25, 0]}>
             <boxGeometry args={[0.9, 0.5, 0.75]} />
             <meshStandardMaterial color="#c8a36a" />
@@ -741,7 +789,7 @@ function World({ run, selected, onSelect, version, look, geom, calidad }) {
         {run.workers.map((w) => (
           <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />
         ))}
-        {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} />}
+        {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} alta={alta} />}
         {run.robot?.trailer && <Trailer run={run} />}
       </group>
     </>

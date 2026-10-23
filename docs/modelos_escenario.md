@@ -23,6 +23,8 @@ Estado del modelado 3D del modo Workload. Cada medida lleva su fuente; **estimad
 | LIDAR del robot      | Alcance 1,5 m, ±90°                                 | `HumanRobot_Sim.m`                                                                    | Fuente                                 |
 | Zonas de cortesía    | 0,45 / 1,2 / 3,6                                    | Proxemia (Hall), criterio del análisis                                                | Criterio, no medición                  |
 
+**Modelo 3D del robot** (R2). En calidad Alta, el Warthog de la escena se arma con las mallas oficiales de Clearpath (BSD-3, `public/modelos/LEEME.md`) ubicadas según su URDF: guardabarros amarillos, chasis negro, faros y antenas, y las cuatro ruedas girando con la rodadura diferencial. Las medidas del modelo coinciden con la tabla (1,52 × 1,39 m, neumático de 0,61 m). En Básica, y para el Burro y el Burro con carro (sin mallas públicas), sigue el modelo simple de cajas y cilindros escalado a las medidas de cada robot.
+
 Diferencia conocida con el simulador: el MATLAB dibuja un vehículo de 3,2 m con ruedas de 1 m y dirección 4WS. El visor usa el Warthog real (dirección diferencial) porque el modelo se está reformulando.
 
 ## 2. Animaciones por acción
