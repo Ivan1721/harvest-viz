@@ -364,7 +364,7 @@ test('reparto «frente» y avance del bloque: se simulan, se ven las plantas cos
   expect(errors).toEqual([])
 })
 
-test('calidad de la escena: alta en estilo Realista sin errores, y se cambia a básica (R1)', async ({ page }) => {
+test('calidad de la escena: alta en estilo Realista (luz, suelo y Warthog real) sin errores, y se cambia a básica (R1, R2)', async ({ page }) => {
   // en CI no hay GPU: por defecto sería básica, así que se pide alta por la URL (luz de cielo, texturas y N8AO)
   const errors = await openWorkload(page, { light: false, mode: 'sim', query: 'calidad=alta&view=hr' })
   await page.getByText('Capas y estilo').click()
@@ -374,6 +374,10 @@ test('calidad de la escena: alta en estilo Realista sin errores, y se cambia a b
   // las texturas del suelo se descargan (CC0, public/texturas)
   const tex = await page.evaluate(() => performance.getEntriesByType('resource').filter((r) => /texturas\/.+\.jpg$/.test(r.name)).length)
   expect(tex).toBe(3)
+  // R2: el Warthog real (mallas oficiales de Clearpath) se descarga en alta
+  await expect
+    .poll(() => page.evaluate(() => performance.getEntriesByType('resource').filter((r) => /modelos\/warthog\.glb$/.test(r.name)).length), { timeout: 60_000 })
+    .toBe(1)
   await grupo.getByRole('button', { name: 'Básica' }).click()
   await expect(grupo.getByRole('button', { name: 'Básica' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Opacidad del follaje · 42 %')).toBeVisible()
