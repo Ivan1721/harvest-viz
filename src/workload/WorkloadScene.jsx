@@ -685,6 +685,12 @@ function EstadoPlantas({ run, trees, R }) {
   )
 }
 
+/** ¿Es un huerto de paltos? (el mapa del estudio y los sistemas palta-*): solo ahí van los paltos con hojas (R3). */
+const esPalto = (run) => {
+  const h = run.meta?.params?.huerto
+  return !h || h === 'matlab-2026' || h.startsWith('palta')
+}
+
 function Ground({ run, real, alta, geom }) {
   // árboles en coordenadas de mundo (dependen del mapa activo)
   const trees = useMemo(
@@ -724,7 +730,11 @@ function Ground({ run, real, alta, geom }) {
           </mesh>
         </>
       )}
-      {geom.forma === 'parron' ? <Parron trees={trees} techo={geom.techo} /> : <Orchard trees={trees} R={geom.R} H={geom.H} real={real} canopy={play.canopy} />}
+      {geom.forma === 'parron' ? (
+        <Parron trees={trees} techo={geom.techo} />
+      ) : (
+        <Orchard trees={trees} R={geom.R} H={geom.H} real={real} hojas={alta && esPalto(run)} canopy={play.canopy} />
+      )}
       {run.plantas && run.plantas.ini.length === trees.length && <EstadoPlantas run={run} trees={trees} R={geom.R} />}
       {run.robot &&
         (run.robot.rutas ? (

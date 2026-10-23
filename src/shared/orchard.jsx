@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { avocadoParts, GREENS } from './realistic.jsx'
 import { bigTreeBlobs } from './models.jsx'
+import { PaltoHojas } from './paltoHojas.jsx'
 
 const m4 = new THREE.Matrix4(),
   q = new THREE.Quaternion(),
@@ -41,7 +42,9 @@ const R0 = 3.25,
 const MANY = 400
 
 /** trees: [{ x, z, seed }] en coordenadas de mundo. */
-export function Orchard({ trees, R = R0, H, real = true, canopy, opacity = 0.36 }) {
+/** `hojas`: paltos con racimos de hojas (R3, calidad Alta, solo huertos de palto); si no, el palto de esferas. */
+export function Orchard({ trees, R = R0, H, real = true, hojas = false, canopy, opacity = 0.36 }) {
+  if (real && hojas) return <PaltoHojas trees={trees} R={R} H={H} canopy={canopy} />
   return real ? <RealOrchard trees={trees} R={R} H={H} canopy={canopy} /> : <SchematicOrchard trees={trees} R={R} H={H} opacity={opacity} />
 }
 
