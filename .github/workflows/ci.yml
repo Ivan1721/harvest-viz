@@ -38,7 +38,13 @@ jobs:
   e2e:
     name: Interfaz (Playwright, Chromium) + accesibilidad
     runs-on: ubuntu-24.04
-    # Playwright con WebGL por software: ~14 min de pruebas, más instalar las dependencias de Chromium
+    # imagen oficial de Playwright con Chromium y sus dependencias ya instaladas: sin apt, que en la migración de los
+    # runners a Ubuntu 26 llegó a tardar 10–12 min. La etiqueta debe coincidir con @playwright/test (lo revisa
+    # tests/unit/ci.test.mjs); el digest fija la imagen como el SHA fija las acciones.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+      options: --user 1001
+    # Playwright con WebGL por software: ~14 min de pruebas
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -47,17 +53,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --include=dev
-      - id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - id: pw-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.pw.outputs.version }}
-      - if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-      - if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
       - run: npm run build
       - run: npm run test:e2e
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
