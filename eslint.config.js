@@ -33,6 +33,8 @@ export default [
     },
   },
   { files: ['src/hrsim/sim.worker.js'], languageOptions: { globals: { ...globals.worker } } },
+  // prototipos (páginas sueltas para comparar opciones de diseño, servidas por `vite`)
+  { files: ['prototipos/**/*.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.browser } } },
   { files: ['scripts/bench-visual.mjs', 'scripts/export-video.mjs'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
   // pruebas de interfaz: corren en Node y evalúan funciones dentro del navegador
   { files: ['e2e/**/*.js'], languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node, ...globals.browser } } },
