@@ -210,7 +210,9 @@ test('vista previa: al cambiar el escenario se ve el huerto nuevo sin simular (I
 
 test('enlace reproducible: la URL describe la corrida y al abrirla se repite (I2)', async ({ page }) => {
   await openWorkload(page, { mode: 'sim' })
-  await page.getByRole('button', { name: 'Alta densidad', exact: true }).click()
+  // palta tradicional y no alta densidad: con WebGL por software, dibujar 1.125 árboles en dos escenas hacía que en CI
+  // esta prueba superara a veces los 60 s de espera (la simulación toma < 1 s; lo lento es la escena)
+  await page.getByRole('button', { name: 'Tradicional', exact: true }).click()
   await page.getByRole('button', { name: '8', exact: true }).click()
   await page.getByRole('button', { name: 'Burro', exact: true }).click()
   await page.getByTestId('robot-params').click()
@@ -218,7 +220,7 @@ test('enlace reproducible: la URL describe la corrida y al abrirla se repite (I2
   await page.getByLabel('Duración (s)').fill('600')
   await simulate(page)
   const url = new URL(page.url())
-  expect(url.searchParams.get('huerto')).toBe('palta-alta-densidad')
+  expect(url.searchParams.get('huerto')).toBe('palta-tradicional')
   expect(url.searchParams.get('robot')).toBe('burro')
   expect(url.searchParams.get('dur')).toBe('600')
   expect(url.searchParams.get('ajustes')).toBeTruthy()
