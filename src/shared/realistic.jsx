@@ -2,6 +2,7 @@
 // Todo procedural (sin assets externos). Las alturas del árbol son estimadas; ver docs/modelos_escenario.md.
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
+import { useTexture } from '@react-three/drei'
 
 const mulberry = (a) => () => {
   a |= 0
@@ -46,8 +47,22 @@ export function avocadoParts(R = 3.25, seed = 1) {
 
 // ---- Suelo: textura procedural (pasto en calles, suelo bajo hileras, huellas del robot, grava en la zona de carga)
 // `geom` es la geometría de la escena (src/workload/geometry.js): mapa del estudio o huerto generado.
+// Con `fotos` (calidad alta, R1) el pasto, el mantillo y la grava son texturas CC0 de Poly Haven en mosaico a su escala
+// real (public/texturas/LEEME.md); sin ellas, colores planos como siempre.
 const MARGIN = 8
-export function useGroundTexture(geom) {
+/** Lado real de cada textura en metros (Poly Haven): define cuántas veces se repite. */
+export const LADO_FOTO = { pasto: 2, suelo: 2.1, grava: 3 }
+export const FOTOS = { pasto: 'texturas/leafy_grass.jpg', suelo: 'texturas/forest_ground_06.jpg', grava: 'texturas/gravel_ground_01.jpg' }
+
+/** Patrón de canvas con una foto en mosaico, escalada a `lado` metros por repetición a `ppm` px por metro. */
+function patron(g, img, lado, ppm) {
+  const p = g.createPattern(img, 'repeat')
+  const k = (lado * ppm) / img.width
+  p.setTransform(new DOMMatrix([k, 0, 0, k, 0, 0]))
+  return p
+}
+
+export function useGroundTexture(geom, fotos = null) {
   const tex = useMemo(() => {
     const { limites: L, strips, trees, R, route, cargo } = geom
     // ~36 px/m en el mapa del estudio; en huertos grandes se baja para no pasar de ~2400 px por lado
@@ -61,13 +76,22 @@ export function useGroundTexture(geom) {
       rnd = mulberry(4242)
     const X = (x) => (x + MARGIN) * PPM,
       Y = (y) => (L.h + MARGIN - y) * PPM
-    g.fillStyle = '#7f9a56'
+    g.fillStyle = fotos ? patron(g, fotos.pasto, LADO_FOTO.pasto, PPM) : '#7f9a56'
     g.fillRect(0, 0, W, H)
+    if (fotos) {
+      // la foto trae mucha hojarasca: se entona hacia el verde de una entrehilera con pasto cortado
+      g.globalCompositeOperation = 'multiply'
+      g.fillStyle = '#d2eda6'
+      g.fillRect(0, 0, W, H)
+      g.globalCompositeOperation = 'source-over'
+    }
     // franjas de corte de pasto en las calles
     for (let k = 0; k < 28; k++) {
       g.fillStyle = k % 2 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.03)'
       g.fillRect(0, k * (H / 28), W, H / 28)
     }
+    // con fotos, el mantillo bajo cada hilera: la foto del suelo con los bordes difuminados (una capa aparte por franja)
+    const capa = fotos ? document.createElement('canvas') : null
     // suelo bajo las hileras con mantillo y línea de riego por goteo
     for (const st of strips) {
       const horiz = st.x1 - st.x0 > st.y1 - st.y0
@@ -76,8 +100,32 @@ export function useGroundTexture(geom) {
       grad.addColorStop(0.22, 'rgba(142,112,74,0.7)')
       grad.addColorStop(0.78, 'rgba(142,112,74,0.7)')
       grad.addColorStop(1, 'rgba(120,92,58,0)')
-      g.fillStyle = grad
-      g.fillRect(X(st.x0), Y(st.y1), (st.x1 - st.x0) * PPM, (st.y1 - st.y0) * PPM)
+      if (capa) {
+        const x = X(st.x0),
+          y = Y(st.y1),
+          w = Math.max(1, Math.round((st.x1 - st.x0) * PPM)),
+          h = Math.max(1, Math.round((st.y1 - st.y0) * PPM))
+        capa.width = w
+        capa.height = h
+        const c2 = capa.getContext('2d')
+        // el patrón se ancla al mundo (no a la franja): las juntas del mosaico no se ven entre franjas
+        c2.translate(-x, -y)
+        c2.fillStyle = patron(c2, fotos.suelo, LADO_FOTO.suelo, PPM)
+        c2.fillRect(x, y, w, h)
+        c2.setTransform(1, 0, 0, 1, 0, 0)
+        c2.globalCompositeOperation = 'destination-in'
+        const m = horiz ? c2.createLinearGradient(0, 0, 0, h) : c2.createLinearGradient(0, 0, w, 0)
+        m.addColorStop(0, 'rgba(0,0,0,0)')
+        m.addColorStop(0.22, 'rgba(0,0,0,0.95)')
+        m.addColorStop(0.78, 'rgba(0,0,0,0.95)')
+        m.addColorStop(1, 'rgba(0,0,0,0)')
+        c2.fillStyle = m
+        c2.fillRect(0, 0, w, h)
+        g.drawImage(capa, x, y)
+      } else {
+        g.fillStyle = grad
+        g.fillRect(X(st.x0), Y(st.y1), (st.x1 - st.x0) * PPM, (st.y1 - st.y0) * PPM)
+      }
       g.strokeStyle = 'rgba(20,20,20,0.55)'
       g.lineWidth = 2
       g.beginPath()
@@ -119,10 +167,10 @@ export function useGroundTexture(geom) {
     route.forEach(([x, y], i) => (i ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y))))
     g.stroke()
     // zona de carga: grava
-    g.fillStyle = '#a79d88'
+    g.fillStyle = fotos ? patron(g, fotos.grava, LADO_FOTO.grava, PPM) : '#a79d88'
     g.fillRect(X(cargo.x[0] - 0.6), Y(cargo.y[1] + 1.6), (cargo.x[1] - cargo.x[0] + 1.2) * PPM, (cargo.y[1] - cargo.y[0] + 2.2) * PPM)
-    // ruido de grano
-    for (let i = 0; i < 90000; i++) {
+    // ruido de grano (las fotos ya lo traen)
+    for (let i = 0; i < (fotos ? 0 : 90000); i++) {
       g.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.06)'
       g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 1 + rnd() * 2)
     }
@@ -130,20 +178,20 @@ export function useGroundTexture(geom) {
     t.colorSpace = THREE.SRGBColorSpace
     t.anisotropy = 8
     return t
-  }, [geom])
+  }, [geom, fotos])
   // la textura pesa varios MB en la GPU: liberarla al cambiar de huerto o desmontar
   useEffect(() => () => tex.dispose(), [tex])
   return tex
 }
 
-export function RealGround({ geom }) {
-  const tex = useGroundTexture(geom)
+export function RealGround({ geom, fotos = null, pastoLejos = null }) {
+  const tex = useGroundTexture(geom, fotos)
   const L = geom.limites
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <planeGeometry args={[400, 400]} />
-        <meshStandardMaterial color="#7f9a56" roughness={1} />
+        {pastoLejos ? <meshStandardMaterial map={pastoLejos} color="#d2eda6" roughness={1} /> : <meshStandardMaterial color="#7f9a56" roughness={1} />}
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[L.w + 2 * MARGIN, L.h + 2 * MARGIN]} />
@@ -151,6 +199,24 @@ export function RealGround({ geom }) {
       </mesh>
     </group>
   )
+}
+
+/** Suelo de calidad alta: carga las fotos (suspende mientras bajan) y repite el pasto también fuera del huerto. */
+export function RealGroundAlta({ geom }) {
+  const base = import.meta.env.BASE_URL
+  const [pasto, suelo, grava] = useTexture([base + FOTOS.pasto, base + FOTOS.suelo, base + FOTOS.grava])
+  const fotos = useMemo(() => ({ pasto: pasto.image, suelo: suelo.image, grava: grava.image }), [pasto, suelo, grava])
+  const lejos = useMemo(() => {
+    const t = pasto.clone()
+    t.wrapS = t.wrapT = THREE.RepeatWrapping
+    t.repeat.set(400 / LADO_FOTO.pasto, 400 / LADO_FOTO.pasto)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    t.needsUpdate = true
+    return t
+  }, [pasto])
+  useEffect(() => () => lejos.dispose(), [lejos])
+  return <RealGround geom={geom} fotos={fotos} pastoLejos={lejos} />
 }
 
 // Fondo de cielo (degradado) para cualquier cámara

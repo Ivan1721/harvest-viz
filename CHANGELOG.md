@@ -4,10 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-H8, fase A: flota de 2 o 3 robots transportadores en el motor. **Motor 0.8.0**. Sin la opción nueva nada cambia: la réplica de MATLAB y las corridas de H2–H7 dan exactamente lo mismo (las huellas de 10 configuraciones representativas coinciden al bit).
+H8, fase A: flota de 2 o 3 robots transportadores en el motor. Escena 3D más realista, fase R1: luz, suelo y selector de calidad (solo visual). **Motor 0.8.0**. Sin la opción nueva nada cambia: la réplica de MATLAB y las corridas de H2–H7 dan exactamente lo mismo (las huellas de 10 configuraciones representativas coinciden al bit).
 
 ### Agregado
 
+- **Calidad de la escena** (R1 del diseño «escena 3D más realista»), en «Capas y estilo»: **Alta** agrega luz de cielo, niebla de distancia, sombras suaves, suelo con fotos CC0 de Poly Haven y sombreado de contacto (N8AO), con el follaje más opaco (80 %); **Básica** es la escena de siempre y es la de partida cuando el navegador dibuja WebGL por software. `?calidad=` la fija desde el enlace. El posprocesado y las fotos solo se descargan en Alta. No cambia ningún resultado.
 - **Flota de robots** (`flota: { n, estrategia }`, solo huertos generados; todavía sin interfaz): estrategias zonas (por defecto), direcciones opuestas y desfase; reglas de convivencia (reserva de calle, cesión de paso, una descarga a la vez y cada caja con un solo robot), robots sin zona estacionados junto al acopio; estados del robot 7 «Espera calle libre» y 8 «Cede el paso»; medidas por robot y de la flota (`summary().flota`). En palta alta densidad (12 cosecheros, 4 h) llega al acopio el 94 % de lo cosechado con 2 robots en zonas, frente al 69 % con uno.
 
 ### Corregido

@@ -17,7 +17,8 @@ export default defineConfig(({ command, isPreview }) => ({
         codeSplitting: {
           groups: [
             { name: 'three', test: /node_modules[\\/]three[\\/]/, priority: 2 },
-            { name: 'r3f', test: /node_modules[\\/]@react-three[\\/]/, priority: 1 },
+            // el posprocesado de la calidad alta (@react-three/postprocessing) queda fuera: se descarga solo al usarlo
+            { name: 'r3f', test: /node_modules[\\/]@react-three[\\/](fiber|drei)[\\/]/, priority: 1 },
           ],
         },
       },

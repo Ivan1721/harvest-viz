@@ -2,3 +2,7 @@ dist
 node_modules
 public/data
 package-lock.json
+# Impeccable (skill de diseño instalada en el proyecto): archivos del paquete y de su estado
+.claude/skills
+.claude/agents
+.impeccable

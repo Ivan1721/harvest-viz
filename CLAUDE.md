@@ -76,7 +76,7 @@ The Spanish string in code **is the key**: `t('Simular', { var })`; dictionaries
 
 - If a change alters simulator results, bump `ENGINE_VERSION` in `src/hrsim/common.js` and record why in `CHANGELOG.md` (Keep a Changelog, Spanish). The MATLAB regression (`tests/model/regression.test.mjs`, reference `public/data/matlab_summary.json`) must keep passing; known deviations are capped per metric in `tests/helpers.mjs` (`KNOWN_HR_DEVIATIONS`). Regenerate the reference with `node scripts/build_matlab_summary.mjs <NuevaVersion folder>`.
 - `npm run dev` writes each simulation to `simulaciones/motor-<version>/<perfil>/…` plus `simulaciones/indice.csv` (gitignored). `HV_SAVE_SIMS=0` disables it, `HV_SIM_DIR` relocates it; preview, tests and CI never save.
-- E2E runs WebGL in software (swiftshader): tests open the viewer with `?look=schem` and pause playback; timeouts are deliberately long.
+- E2E runs WebGL in software (swiftshader): tests open the viewer with `?look=schem` and pause playback; timeouts are deliberately long. Scene quality (`src/workload/calidad.js`) defaults to «Básica» on software WebGL; `?calidad=alta` forces the heavy path (sky light, textures, N8AO), only one e2e test uses it.
 - Coverage counts all `src/**/*.js` (c8 `--all`); `.jsx` is covered by Vitest component tests. Don't lower thresholds in `.c8rc.json`.
 - Parameters without a source are marked `'Supuesto: …'` in the parameter tables (`src/workload/parametros.js`) and in the ODD description (`src/workload/modelo.js`).
 - Don't add a LICENSE file.

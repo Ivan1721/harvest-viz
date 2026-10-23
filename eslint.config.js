@@ -6,7 +6,8 @@ import reactHooks from 'eslint-plugin-react-hooks'
 const jsx = { ecmaVersion: 2023, sourceType: 'module', parserOptions: { ecmaFeatures: { jsx: true } } }
 
 export default [
-  { ignores: ['dist', 'node_modules', 'reports', 'coverage', '.stryker-tmp'] },
+  // .claude/skills, .claude/agents y .impeccable: archivos de Impeccable (skill de diseño), no son código del proyecto
+  { ignores: ['dist', 'node_modules', 'reports', 'coverage', '.stryker-tmp', '.claude/skills', '.claude/agents', '.impeccable'] },
   js.configs.recommended,
   {
     files: ['src/**/*.{js,jsx}'],
