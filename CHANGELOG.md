@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [0.9.0] — 2026-10-23
 
 H8, fase A: flota de 2 o 3 robots transportadores en el motor. Escena 3D más realista, fases R1 (luz, suelo y selector de calidad), R2 (robot real) y R3 (paltos con hojas); solo visual. **Motor 0.8.0**. Sin la opción nueva nada cambia: la réplica de MATLAB y las corridas de H2–H7 dan exactamente lo mismo (las huellas de 10 configuraciones representativas coinciden al bit).
 
@@ -16,6 +16,13 @@ H8, fase A: flota de 2 o 3 robots transportadores en el motor. Escena 3D más re
 ### Corregido
 
 - Pruebas: la invariante «robot detenido no se mueve» trataba «velocidad reducida» (4) como detenido, la de «suma de cargas» no contaba al acopiador y la de «resumen finito» fallaba con los textos del resumen de los huertos generados. Ninguna corría en esos casos.
+- CI: el job de interfaz superaba su límite de 25 min desde la migración de los runners a Ubuntu 26 (instalar las dependencias de Chromium pasó de 13 s a 12 min) y el sitio dejó de desplegarse. Ahora corre en la imagen oficial de Playwright (fijada por digest; `tests/unit/ci.test.mjs` revisa que siga la versión de `@playwright/test`), con runner `ubuntu-24.04` y 35 min de límite.
+- La prueba de interfaz del enlace reproducible fallaba en el primer intento en CI: dibujar dos escenas de palta alta densidad sin GPU tomaba más de 60 s. Ahora usa palta tradicional.
+
+### Cambiado
+
+- Acciones de GitHub en Node 24 (checkout 7, setup-node 7, upload-artifact 7, cache 6, upload-pages-artifact 5, deploy-pages 5), con SHA verificados.
+- `CLAUDE.md`: guía para Claude Code (comandos, arquitectura, flujo de trabajo y reglas del proyecto).
 
 ## [0.8.0] — 2026-10-21
 
