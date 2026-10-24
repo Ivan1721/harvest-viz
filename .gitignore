@@ -17,3 +17,11 @@ coverage/
 
 # simulaciones guardadas por `npm run dev` (scripts/vite-save-sims.js)
 simulaciones/
+
+# Impeccable (skill de diseño): el motor se baja solo para cada sistema la primera vez que se usa
+.claude/skills/impeccable/scripts/bin/
+# y su estado temporal (capturas, cachés, modo en vivo, configuración local)
+.impeccable/screenshots/
+.impeccable/cache/
+.impeccable/live/state*
+.impeccable/config.local.json
