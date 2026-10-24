@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "harvest-viz-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "preview", "--port", "4176", "--strictPort"],
+      "port": 4176
+    },
+    {
+      "name": "harvest-viz-prototipo",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "4177", "--strictPort"],
+      "env": { "HV_SAVE_SIMS": "0" },
+      "port": 4177
+    }
+  ]
+}

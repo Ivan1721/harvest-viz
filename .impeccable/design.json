@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T12:00:00Z",
+  "title": "Design System: HarvestView",
+  "extensions": {
+    "colorMeta": {
+      "azul-tinta": { "role": "primary", "displayName": "Azul tinta", "canonical": "#1f56e8" },
+      "azul-profundo": { "role": "primary", "displayName": "Azul profundo", "canonical": "#1f3a8a" },
+      "naranja-cosecha": { "role": "secondary", "displayName": "Naranja cosecha", "canonical": "#ff8a1f" },
+      "verde-entrega": { "role": "tertiary", "displayName": "Verde entrega", "canonical": "#16a34a" },
+      "ambar-aviso": { "role": "tertiary", "displayName": "Ámbar aviso", "canonical": "#b45309" },
+      "tinta": { "role": "neutral", "displayName": "Tinta", "canonical": "#1c2540" },
+      "tinta-suave": { "role": "neutral", "displayName": "Tinta suave", "canonical": "#5b6680" },
+      "papel-mesa": { "role": "neutral", "displayName": "Papel de mesa", "canonical": "#f4f6fb" },
+      "linea": { "role": "neutral", "displayName": "Línea", "canonical": "#d9dfec" }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Título", "purpose": "Título de la corrida y encabezados de tabla." },
+      "body": { "displayName": "Texto", "purpose": "Texto base del workbench." },
+      "label": { "displayName": "Etiqueta", "purpose": "Encabezados de panel en versalitas y etiquetas de campo." },
+      "axis": { "displayName": "Eje", "purpose": "Marcas de ejes en gráficos SVG." }
+    },
+    "shadows": [
+      { "name": "menu", "value": "0 6px 20px rgba(20, 30, 60, 0.15)", "purpose": "Menús desplegables sobre la escena." },
+      { "name": "seg-on", "value": "0 1px 4px rgba(35, 55, 110, 0.15)", "purpose": "Opción activa de un control segmentado." }
+    ],
+    "motion": [{ "name": "bar", "value": "width 0.3s", "purpose": "Barras de progreso." }],
+    "breakpoints": [{ "name": "compact", "value": "1200px" }]
+  },
+  "components": [
+    {
+      "name": "Botón",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Botón de panel, ancho completo.",
+      "html": "<button class=\"ds-btn\">Exportar corridas</button>",
+      "css": ".ds-btn{width:100%;border:1px solid #d9dfec;background:#f1f4fb;color:#1c2540;padding:7px 10px;border-radius:7px;font:600 12px Inter,system-ui,sans-serif;cursor:pointer}.ds-btn:hover{background:#e6ecf8}.ds-btn:focus-visible{outline:2px solid #1f56e8;outline-offset:2px}"
+    },
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Solo «Simular».",
+      "html": "<button class=\"ds-btn-primary\">Simular</button>",
+      "css": ".ds-btn-primary{width:100%;border:1px solid #1f3a8a;background:#1f3a8a;color:#fff;padding:7px 10px;border-radius:7px;font:600 12px Inter,system-ui,sans-serif;cursor:pointer}.ds-btn-primary:hover{background:#1b327a}.ds-btn-primary:focus-visible{outline:2px solid #1f56e8;outline-offset:2px}"
+    },
+    {
+      "name": "Control segmentado",
+      "kind": "chip",
+      "refersTo": "segmented",
+      "description": "Elección entre pocas opciones (huerto, cuadrilla, vista).",
+      "html": "<div class=\"ds-seg\"><button class=\"on\">Humano-robot</button><button>Solo humano</button><button>Comparar</button></div>",
+      "css": ".ds-seg{display:flex;gap:4px;background:#f1f4fb;padding:3px;border-radius:10px}.ds-seg button{flex:1;border:0;background:transparent;padding:6px 4px;border-radius:8px;font:600 11px Inter,system-ui,sans-serif;color:#5b6680;cursor:pointer}.ds-seg button.on{background:#fff;color:#1f56e8;box-shadow:0 1px 4px rgba(35,55,110,.15)}.ds-seg button:focus-visible{outline:2px solid #1f56e8}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Contenedor de cada paso y de cada bloque de resultados.",
+      "html": "<section class=\"ds-panel\"><h4>Escenario</h4><p>Palta alta densidad · 12 cosecheros</p></section>",
+      "css": ".ds-panel{border:1px solid #d9dfec;border-radius:8px;padding:10px;background:#fff;font:13px Inter,system-ui,sans-serif;color:#1c2540}.ds-panel h4{margin:0 0 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5b6680}"
+    },
+    {
+      "name": "Aviso de resultados desactualizados",
+      "kind": "custom",
+      "refersTo": "stale-banner",
+      "description": "Tras un cambio, hasta pulsar Simular.",
+      "html": "<div class=\"ds-stale\">Resultados de la configuración anterior <button>Simular</button></div>",
+      "css": ".ds-stale{display:flex;align-items:center;gap:10px;padding:6px 10px;background:#fff7e6;border-bottom:1px solid #f3d19c;color:#8a4b08;font:12px Inter,system-ui,sans-serif}.ds-stale button{border:1px solid #d9dfec;background:#f1f4fb;border-radius:7px;padding:4px 12px;font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El cuaderno de campo",
+    "overview": "El Simulador es un cuaderno de laboratorio abierto sobre la mesa: una escena 3D al centro, flanqueada por dos columnas de notas y mediciones, y una línea de tiempo al pie. Sobrio y preciso; todo debe poder ir tal cual a una figura de la tesis.",
+    "keyCharacteristics": [
+      "Tres columnas fijas: configuración, escena y resultados, con la línea de tiempo al pie.",
+      "Una sola tinta de acento (azul) para estado activo; el naranja solo identifica la corrida «Solo humano».",
+      "Números tabulares en todo dato comparable.",
+      "Textos en español como fuente; inglés y portugués traducidos."
+    ],
+    "rules": [
+      { "name": "The One Ink Rule", "body": "El azul tinta marca lo que está activo o seleccionado y nada más; si todo es azul, nada lo es.", "section": "colors" },
+      { "name": "The Run Identity Rule", "body": "Azul = con robot, naranja = sin robot, en la escena, los gráficos y las tablas por igual.", "section": "colors" },
+      { "name": "The Tabular Numbers Rule", "body": "Todo número que se compara usa font-variant-numeric: tabular-nums.", "section": "typography" },
+      { "name": "The Cold Shadow Rule", "body": "Las sombras son azul-pizarra translúcidas, nunca negras ni grises puros.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar azul tinta solo para lo activo o seleccionado, y azul profundo solo para «Simular».",
+      "Do mantener azul = con robot y naranja = sin robot en todas las vistas.",
+      "Do usar números tabulares en todo dato comparable.",
+      "Do verificar contraste ≥ 4,5:1 en texto.",
+      "Do escribir los textos en español y traducirlos al inglés y al portugués."
+    ],
+    "donts": [
+      "Don't poner texto en naranja cosecha sobre blanco.",
+      "Don't usar sombras negras o grises puras.",
+      "Don't agregar colores de acento nuevos para estados que ya cubren azul, verde y ámbar.",
+      "Don't convertir el Simulador en una página llamativa: es una herramienta de investigación."
+    ]
+  }
+}

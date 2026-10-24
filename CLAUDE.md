@@ -8,6 +8,8 @@ HarvestView: a React + three.js (react-three-fiber) static site that visualizes 
 
 Owner: Ivan García (DISA doctorate, UNAB); this is the 3D viewer and simulator for his research. Reply to him in Spanish, concise and structured (short lists and tables), no filler.
 
+**Current state, pending work and design-doc links: `docs/estado.md`.** Read it at the start of a session (it replaces any local memory, which does not travel between machines) and update it when a phase closes.
+
 ## Workflow
 
 - **Spec first.** Each new phase (H6, H7, H8…) starts from a design document with options, a recommendation and numbered decisions. Implement only after Ivan says «aprobado».
@@ -79,6 +81,7 @@ The Spanish string in code **is the key**: `t('Simular', { var })`; dictionaries
 - E2E runs WebGL in software (swiftshader): tests open the viewer with `?look=schem` and pause playback; timeouts are deliberately long. Scene quality (`src/workload/calidad.js`) defaults to «Básica» on software WebGL; `?calidad=alta` forces the heavy path (sky light, textures, N8AO), only one e2e test uses it.
 - Coverage counts all `src/**/*.js` (c8 `--all`); `.jsx` is covered by Vitest component tests. Don't lower thresholds in `.c8rc.json`.
 - Parameters without a source are marked `'Supuesto: …'` in the parameter tables (`src/workload/parametros.js`) and in the ODD description (`src/workload/modelo.js`).
+- UI design work uses the Impeccable skill (`.claude/skills/impeccable`, no hooks) and `DESIGN.md` (the Simulator's design system); its last critique is in `.impeccable/critique/`. Export `DO_NOT_TRACK=1` before running its launcher (telemetry is on by default on a new machine). Its engine binary is gitignored and downloads itself on first use.
 - Don't add a LICENSE file.
 - This repo is the single source; `WorkloadProductionSim` consumes it as a submodule in `viz/`.
 - Further detail: `docs/simulador.md` (engine, profiles, orchard systems, safety rule), `docs/modelos_escenario.md` (3D model measurements/sources), `docs/testing.md`.
