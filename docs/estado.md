@@ -15,9 +15,9 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 ## Pendientes, en orden sugerido
 
-1. **Interfaz, fase `ui-p1`** (diseño en la tabla de abajo): los 3 P1 de la crítica de Impeccable y los decimales y
-   duraciones (P2), hechos en la rama `ui-p1`. Queda de la crítica: a 1.024 px la columna derecha desborda y las
-   pestañas se cortan (P2), y la ayuda que solo está en `title` (inaccesible con teclado o táctil).
+1. **Interfaz, lo que queda de la crítica:** la fase `ui-p1` (los 3 P1 y los decimales y duraciones) está en `main`
+   desde el 27-10. Falta: a 1.024 px la columna derecha desborda y las pestañas se cortan (P2), y la ayuda que solo
+   está en `title` (inaccesible con teclado o táctil).
 2. **H8, fase B: interfaz de la flota** (diseño: https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM): paso Agentes
    «Robots: 1 · 2 · 3» y estrategia; escena con varios robots (RB-01, RB-02, su ruta en su color); pestaña Robot por
    robot; «Comparar con» otra cantidad de robots. El motor ya registra `fx…fen` por robot y `ev.rutasFlota`; `toRun.js`
@@ -36,7 +36,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 | Documento                                     | Enlace                                                                                                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Interfaz: los 3 P1 de la crítica (aprobado)   | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
+| Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
 | H8: dos o más robots (aprobado, fase A hecha) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
 | H7: experimentos en lote                      | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
