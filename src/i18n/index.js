@@ -58,6 +58,16 @@ export function t(s, vars) {
 
 /** Número con el formato regional del idioma activo. */
 export const fmtNum = (v, opts) => Number(v).toLocaleString(locale(), opts)
+/** Número con `d` decimales fijos, en el formato del idioma (en vez de toFixed, que siempre usa punto). */
+export const fmtFix = (v, d) => fmtNum(v, { minimumFractionDigits: d, maximumFractionDigits: d })
+/** Duración con una sola regla: «48 s» bajo un minuto, «12,5 min» bajo una hora, «2 h 05 min» desde ahí. */
+export function fmtDur(s) {
+  if (!Number.isFinite(s)) return '—'
+  if (Math.round(s) < 60) return `${fmtNum(Math.round(s))} s`
+  if (Math.round(s / 6) < 600) return `${fmtNum(Math.round(s / 6) / 10, { maximumFractionDigits: 1 })} min`
+  const m = Math.round(s / 60)
+  return `${fmtNum(Math.floor(m / 60))} h ${String(m % 60).padStart(2, '0')} min`
+}
 
 export const subscribe = (fn) => {
   listeners.add(fn)

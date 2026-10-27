@@ -4,7 +4,7 @@ import { ROBOTS } from '../../hrsim/robots.js'
 import { FLAG, onboard } from '../run.js'
 import { ACT_LABEL } from '../spec.js'
 import { ACT_COLOR, f0, f1 } from '../ui.jsx'
-import { t as tr, useLang } from '../../i18n/index.js'
+import { fmtDur, fmtFix, t as tr, useLang } from '../../i18n/index.js'
 
 /* ---------------------------------------------------------------- trabajadores */
 export function Bar({ v, max, color }) {
@@ -29,7 +29,7 @@ export function Stack({ run, w }) {
           counts[f] ? (
             <i
               key={f}
-              title={`${tr(FLAG[f].label)}: ${(counts[f] * run.dt).toFixed(0)} s`}
+              title={`${tr(FLAG[f].label)}: ${fmtDur(counts[f] * run.dt)}`}
               style={{ width: `${(counts[f] / run.n) * 100}%`, background: FLAG[f].color }}
             />
           ) : null,
@@ -41,7 +41,7 @@ export function Stack({ run, w }) {
           .map((f) => (
             <span key={f}>
               <i style={{ background: FLAG[f].color }} />
-              {tr(FLAG[f].label)} {(counts[f] * run.dt).toFixed(0)} s
+              {tr(FLAG[f].label)} {fmtDur(counts[f] * run.dt)}
             </span>
           ))}
       </div>
@@ -122,7 +122,7 @@ export function Detail({ ho, hr, t, sel, labels }) {
         <div className="row">
           <span>{tr('Posición (x, y)')}</span>
           <b>
-            {p[j * 3].toFixed(1)} , {p[j * 3 + 1].toFixed(1)} m
+            {fmtFix(p[j * 3], 1)} m · {fmtFix(p[j * 3 + 1], 1)} m
           </b>
         </div>
         <div className="row">
@@ -141,7 +141,7 @@ export function Detail({ ho, hr, t, sel, labels }) {
           <span>{tr('Descargas en zona de carga')}</span>
           <b>{hr.robot.unloads.filter((u) => u.idx <= j && u.amount > 0).length}</b>
         </div>
-        <div className="hint">{tr('Ruta reconstruida desde el log de eventos (interpolación lineal entre waypoints).')}</div>
+        {!hr.meta?.simulated && <div className="hint">{tr('Ruta reconstruida desde el log de eventos (interpolación lineal entre waypoints).')}</div>}
       </div>
     )
   }

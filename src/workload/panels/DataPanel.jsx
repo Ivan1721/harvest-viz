@@ -1,5 +1,5 @@
 import { fmtT } from '../ui.jsx'
-import { t, useLang } from '../../i18n/index.js'
+import { fmtNum, t, useLang } from '../../i18n/index.js'
 
 function Item({ run, label }) {
   useLang()
@@ -28,10 +28,12 @@ export function DataPanel({ ho, hr }) {
     <>
       <Item run={ho} label="Solo humano" />
       <Item run={hr} label="Humano-robot" />
-      <div className="hint">
-        {t(
-          'Los CSV de MATLAB no registran trayectorias. Las posiciones de los trabajadores se reconstruyen desde sus banderas de actividad y la del robot desde el log de eventos. Producción y carga de trabajo son datos exactos del simulador.',
-        )}
+      <div className="hint" data-testid="nota-posiciones">
+        {(hr || ho)?.meta?.simulated
+          ? t('Posiciones exactas: el simulador registra la pose de cada agente cada {dt} s.', { dt: fmtNum((hr || ho).dt) })
+          : t(
+              'Los CSV de MATLAB no registran trayectorias. Las posiciones de los trabajadores se reconstruyen desde sus banderas de actividad y la del robot desde el log de eventos. Producción y carga de trabajo son datos exactos del simulador.',
+            )}
       </div>
     </>
   )

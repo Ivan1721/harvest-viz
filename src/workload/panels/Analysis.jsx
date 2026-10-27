@@ -3,7 +3,7 @@ import { SC } from '../charts.jsx'
 import { ZONES } from '../hri.js'
 import { Bar } from './Workers.jsx'
 import { Tabs, fmtT } from '../ui.jsx'
-import { fmtNum, t, useLang } from '../../i18n/index.js'
+import { fmtDur, fmtFix, fmtNum, t, useLang } from '../../i18n/index.js'
 import { protectionDistance } from '../../hrsim/ssm.js'
 
 /* ---------------------------------------------------------------- interacción y seguridad (corrida con robot) */
@@ -33,13 +33,13 @@ export function Analysis({ run, i, seek, select, note }) {
             {ZONES.map((z) => (
               <span key={z.key}>
                 <i style={{ background: z.color }} />
-                {t(z.label)} &lt; {z.r} m
+                {t(z.label)} &lt; {fmtNum(z.r)} m
               </span>
             ))}
           </div>
           <div className="row">
             <span>{t('Distancia mínima (sin traspasos)')}</span>
-            <b>{Math.min(...a.perWorker.map((w) => w.minD)).toFixed(2)} m</b>
+            <b>{fmtFix(Math.min(...a.perWorker.map((w) => w.minD)), 2)} m</b>
           </div>
           <div className="row">
             <span>{t('Trabajadores con invasión íntima')}</span>
@@ -48,7 +48,7 @@ export function Analysis({ run, i, seek, select, note }) {
           <div className="row">
             <span>{t('Distancia ahora (más cercano)')}</span>
             <b>
-              {a.minD[i].toFixed(2)} m · H{run.workers[a.minW[i]].h}
+              {fmtFix(a.minD[i], 2)} m · H{run.workers[a.minW[i]].h}
             </b>
           </div>
           <ZoneSplit a={a} />
@@ -63,7 +63,7 @@ export function Analysis({ run, i, seek, select, note }) {
                   <b style={{ width: 28 }}>H{w.h}</b>
                   <Bar v={w.tPersonal} max={Math.max(...a.perWorker.map((q) => q.tPersonal), 1)} color="#f59e0b" />
                   <span className="small num" style={{ width: 104, textAlign: 'right' }}>
-                    {w.tPersonal.toFixed(0)} s · {t('mín')} {w.minD.toFixed(1)} m
+                    {fmtDur(w.tPersonal)} · {t('mín')} {fmtFix(w.minD, 1)} m
                   </span>
                 </div>
               ))}
@@ -93,7 +93,7 @@ export function Analysis({ run, i, seek, select, note }) {
                 <b style={{ width: 46 }}>{fmtT(e.tMin)}</b>
                 <span style={{ width: 28 }}>H{e.h}</span>
                 <span className="small num" style={{ width: 44 }}>
-                  {e.minD.toFixed(2)} m
+                  {fmtFix(e.minD, 2)} m
                 </span>
                 <span className="muted small grow">{t(e.verdict)}</span>
               </div>
@@ -112,12 +112,12 @@ export function Analysis({ run, i, seek, select, note }) {
           <div className="row">
             <span>{t('Espera media · p90 · máxima')}</span>
             <b>
-              {a.assign.mean.toFixed(0)} s · {a.assign.p90.toFixed(0)} s · {a.assign.max.toFixed(0)} s
+              {fmtDur(a.assign.mean)} · {fmtDur(a.assign.p90)} · {fmtDur(a.assign.max)}
             </b>
           </div>
           <div className="row">
             <span>{t('Equidad entre trabajadores (Jain)')}</span>
-            <b className={a.assign.jain < 0.8 ? 'warn' : ''}>{a.assign.jain.toFixed(2)}</b>
+            <b className={a.assign.jain < 0.8 ? 'warn' : ''}>{fmtFix(a.assign.jain, 2)}</b>
           </div>
           <div className="row">
             <span>{t('Atención fuera de orden de detección')}</span>
@@ -137,7 +137,7 @@ export function Analysis({ run, i, seek, select, note }) {
                 <b style={{ width: 28 }}>H{w.h}</b>
                 <Bar v={w.mean} max={Math.max(...a.assign.byWorker.map((q) => q.mean), 1)} color={SC.hr.color} />
                 <span className="small num" style={{ width: 104, textAlign: 'right' }}>
-                  {w.n ? `${w.mean.toFixed(0)} s · ${t('{n} cajas', { n: w.n })}` : '—'}
+                  {w.n ? `${fmtDur(w.mean)} · ${t('{n} cajas', { n: w.n })}` : '—'}
                 </span>
               </div>
             ))}
@@ -145,16 +145,18 @@ export function Analysis({ run, i, seek, select, note }) {
         </>
       )}
       {tab === 'seguridad' && <Safety a={a} run={run} seek={seek} />}
-      <div className="note">
-        {t(
-          'Posiciones reconstruidas a partir de banderas de actividad y del log: las distancias son aproximadas. Registrar la pose por tick en MATLAB las hace exactas.',
-        )}
+      <div className="note" data-testid="nota-posiciones">
+        {run.meta?.simulated
+          ? t('Posiciones exactas: el simulador registra la pose de cada agente cada {dt} s.', { dt: fmtNum(run.dt) })
+          : t(
+              'Posiciones reconstruidas a partir de banderas de actividad y del log: las distancias son aproximadas. Registrar la pose por tick en MATLAB las hace exactas.',
+            )}
       </div>
     </>
   )
 }
 
-const pc = (x) => (x == null ? '—' : `${(x * 100).toFixed(0)} %`)
+const pc = (x) => (x == null ? '—' : `${fmtFix(x * 100, 0)} %`)
 const ROBOT_TIME = [
   ['move', 'En movimiento', '#2563eb'],
   ['wait', 'Esperando al trabajador', '#f59e0b'],
@@ -183,8 +185,8 @@ function ZoneSplit({ a }) {
             <td>
               <i className="sw" style={{ background: z.color }} /> {t(z.label)}
             </td>
-            <td className="num">{sum('zoneMoving', k).toFixed(0)} s</td>
-            <td className="num">{sum('zoneStopped', k).toFixed(0)} s</td>
+            <td className="num">{fmtDur(sum('zoneMoving', k))}</td>
+            <td className="num">{fmtDur(sum('zoneStopped', k))}</td>
           </tr>
         ))}
       </tbody>
@@ -271,16 +273,16 @@ export function Delays({ a }) {
       <div className="row">
         <span>{t('La caja espera al robot (media · p90)')}</span>
         <b>
-          {f.boxWait.mean.toFixed(0)} s · {f.boxWait.p90.toFixed(0)} s
+          {fmtDur(f.boxWait.mean)} · {fmtDur(f.boxWait.p90)}
         </b>
       </div>
       <div className="row">
         <span>{t('El robot espera al trabajador (total · media)')}</span>
-        <b>{f.robotWait ? `${f.robotWait.total.toFixed(0)} s · ${f.robotWait.mean.toFixed(0)} s` : '—'}</b>
+        <b>{f.robotWait ? `${fmtDur(f.robotWait.total)} · ${fmtDur(f.robotWait.mean)}` : '—'}</b>
       </div>
       <div className="row">
         <span>{t('Equidad de la espera de cajas (Jain)')}</span>
-        <b className={a.assign.jain < 0.8 ? 'warn' : ''}>{a.assign.jain.toFixed(2)}</b>
+        <b className={a.assign.jain < 0.8 ? 'warn' : ''}>{fmtFix(a.assign.jain, 2)}</b>
       </div>
     </>
   )
@@ -294,7 +296,7 @@ export function Attention({ a, select }) {
     <>
       <div className="row">
         <span>{t('Equidad del tiempo atendiendo al robot (Jain)')}</span>
-        <b className={f.jainAttend != null && f.jainAttend < 0.8 ? 'warn' : ''}>{f.jainAttend == null ? '—' : f.jainAttend.toFixed(2)}</b>
+        <b className={f.jainAttend != null && f.jainAttend < 0.8 ? 'warn' : ''}>{f.jainAttend == null ? '—' : fmtFix(f.jainAttend, 2)}</b>
       </div>
       {f.attend && (
         <>
@@ -309,7 +311,7 @@ export function Attention({ a, select }) {
                   <b style={{ width: 28 }}>H{w.h}</b>
                   <Bar v={w.s} max={Math.max(...f.attend.map((q) => q.s), 1)} color={SC.hr.color} />
                   <span className="small num" style={{ width: 104, textAlign: 'right' }}>
-                    {w.s.toFixed(0)} s · {(w.frac * 100).toFixed(1)} %
+                    {fmtDur(w.s)} · {fmtFix(w.frac * 100, 1)} %
                   </span>
                 </div>
               ))}
@@ -334,20 +336,20 @@ export function Safety({ a, run, seek }) {
         <div className="row">
           <span>{t('Paradas de seguridad')}</span>
           <b>
-            {f.safetyStops.length} · {f.safetyStops.reduce((s, e) => s + e.dur, 0).toFixed(0)} s
+            {f.safetyStops.length} · {fmtDur(f.safetyStops.reduce((s, e) => s + e.dur, 0))}
           </b>
         </div>
       )}
       <div className="row">
         <span>{t('Trabajador dentro de S_p(v) con el robot en movimiento')}</span>
         <b className={f.protection.n ? 'warn' : 'good'}>
-          {f.protection.s.toFixed(0)} s · {t('{n} eventos', { n: f.protection.n })}
+          {fmtDur(f.protection.s)} · {t('{n} eventos', { n: f.protection.n })}
         </b>
       </div>
       <div className="row">
         <span>{t('Distancia mínima · p5 en movimiento')}</span>
         <b>
-          {f.minDist.toFixed(2)} m · {f.p5Moving == null ? '—' : `${f.p5Moving.toFixed(2)} m`}
+          {fmtFix(f.minDist, 2)} m · {f.p5Moving == null ? '—' : `${fmtFix(f.p5Moving, 2)} m`}
         </b>
       </div>
       {f.protection.n > 0 && (
@@ -360,7 +362,7 @@ export function Safety({ a, run, seek }) {
                 <b style={{ width: 46 }}>{fmtT(e.t0)}</b>
                 <span style={{ width: 28 }}>H{e.h}</span>
                 <span className="small num grow">
-                  {e.minD.toFixed(2)} m &lt; {e.sp.toFixed(2)} m · {e.v.toFixed(1)} m/s
+                  {fmtFix(e.minD, 2)} m &lt; {fmtFix(e.sp, 2)} m · {fmtFix(e.v, 1)} m/s
                 </span>
               </div>
             ))}

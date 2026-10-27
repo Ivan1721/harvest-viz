@@ -15,17 +15,9 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 ## Pendientes, en orden sugerido
 
-1. **Los 3 P1 de interfaz** de la crítica de Impeccable (fase aparte, pedida por Ivan):
-   - El Simulador dice «posiciones reconstruidas… distancias aproximadas» aunque sus posiciones son exactas:
-     `src/workload/panels/Analysis.jsx` (nota al final) y `src/workload/panels/DataPanel.jsx`. Mostrarlo solo en la
-     Réplica MATLAB.
-   - «Simular» queda bajo el pliegue de la columna izquierda y en reposo es un botón gris (`SimPanel.jsx`). Propuesta:
-     bloque del paso 3 fijo abajo, botón principal siempre que lo configurado difiera de lo mostrado, atajo Ctrl+Enter.
-   - El punto «modificado» de los pasos no ve cosecheros, actividad, fila ni disposición: `changedSteps`
-     (`SimPanel.jsx`) solo compara `params`, no `cfg`. Además, atenuar la escena y las tablas desactualizadas y decir
-     qué cambió.
-   - P2 de la misma crítica: decimales mezclados (`toFixed` en `Analysis.jsx` junto a `fmtNum`) y unidades de duración;
-     a 1.024 px la columna derecha desborda.
+1. **Interfaz, fase `ui-p1`** (diseño en la tabla de abajo): los 3 P1 de la crítica de Impeccable y los decimales y
+   duraciones (P2), hechos en la rama `ui-p1`. Queda de la crítica: a 1.024 px la columna derecha desborda y las
+   pestañas se cortan (P2), y la ayuda que solo está en `title` (inaccesible con teclado o táctil).
 2. **H8, fase B: interfaz de la flota** (diseño: https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM): paso Agentes
    «Robots: 1 · 2 · 3» y estrategia; escena con varios robots (RB-01, RB-02, su ruta en su color); pestaña Robot por
    robot; «Comparar con» otra cantidad de robots. El motor ya registra `fx…fen` por robot y `ev.rutasFlota`; `toRun.js`
@@ -44,6 +36,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 | Documento                                     | Enlace                                                                                                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Interfaz: los 3 P1 de la crítica (aprobado)   | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
 | H8: dos o más robots (aprobado, fase A hecha) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
 | H7: experimentos en lote                      | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
