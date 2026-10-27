@@ -111,4 +111,12 @@ export default {
   'Calles recorridas por el robot': 'Ruas percorridas pelo robô',
   'Calles recorridas': 'Ruas percorridas',
   'Caminado hasta ahora': 'Caminhado até agora',
+  // fase ui-p1: barra de «Simular» y aviso de cambios
+  'Posiciones exactas: el simulador registra la pose de cada agente cada {dt} s.': 'Posições exatas: o simulador registra a pose de cada agente a cada {dt} s.',
+  '+{n} más': '+{n} mais',
+  'Simula lo configurado ({k})': 'Simula o que está configurado ({k})',
+  'Hay 1 cambio sin simular: {c}.': 'Há 1 mudança ainda não simulada: {c}.',
+  'Hay {n} cambios sin simular: {c}.': 'Há {n} mudanças ainda não simuladas: {c}.',
+  'Resultados al día.': 'Resultados em dia.',
+  'Cambió: {c}.': 'Mudou: {c}.',
 }

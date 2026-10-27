@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { DEFAULTS } from '../hrsim/common.js'
 import { runSimulation, cancelSimulation } from '../hrsim/simClient.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { saveSimulation } from './saveSim.js'
@@ -10,7 +9,8 @@ import { Analysis, Attention } from './panels/Analysis.jsx'
 import { ModelTab } from './panels/ModelTab.jsx'
 import { ConfigPanel } from './panels/ConfigPanel.jsx'
 import { DataPanel } from './panels/DataPanel.jsx'
-import { DEFAULTS_SIM } from './panels/SimPanel.jsx'
+import { CFG0, DEFAULTS_SIM, listaCambios } from './panels/SimPanel.jsx'
+import { camposCambiados } from './cambios.js'
 import { StaleBanner, ViewBar } from './panels/ViewBar.jsx'
 import { readRunState, writeRunState } from './urlState.js'
 import { CMP_DEFAULT, cmpValido, variante } from './variantes.js'
@@ -32,7 +32,6 @@ import { t, useLang } from '../i18n/index.js'
 /* ---------------------------------------------------------------- aplicación */
 const base = import.meta.env.BASE_URL // constante del build (ruta de publicación)
 
-const CFG0 = { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }
 /** Clave de lo configurado: si cambia después de simular, los resultados están desactualizados. */
 const simKeyOf = (params, cfg, cmp = CMP_DEFAULT) => JSON.stringify({ ...params, ...cfg, cmp })
 /** Clave del escenario (paso 1): si cambia, la escena muestra la vista previa del huerto nuevo en vez de resultados viejos. */
@@ -220,6 +219,20 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
     }
   }, [source, simNonce])
 
+  // Ctrl+Enter (⌘+Enter en Mac) simula desde cualquier parte del Simulador; los campos numéricos ya aplicaron su valor
+  const busyRef = useRef(simBusy)
+  busyRef.current = simBusy
+  useEffect(() => {
+    if (source !== 'sim') return
+    const onKey = (e) => {
+      if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || busyRef.current) return
+      e.preventDefault()
+      setSimNonce((n) => n + 1)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [source])
+
   // al cambiar de modo: se vacía la escena hasta que lleguen las corridas del modo nuevo
   const firstSource = useRef(true)
   useEffect(() => {
@@ -313,6 +326,11 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
   const labels = runs.labels && !showPreview ? { ho: t(runs.labels.ho), hr: t(runs.labels.hr) } : { ho: t(SC.ho.label), hr: t(SC.hr.label) }
   const cmpLabels = runs.labels ? labels : { ho: t('Sin robot'), hr: t('Con robot') }
   const runNow = () => setSimNonce((n) => n + 1)
+  // qué cambió desde la corrida que se ve (P1-c): lo nombran el aviso de la escena y la barra de «Simular»
+  const cambios = stale ? camposCambiados(JSON.parse(simKey), JSON.parse(simKeyOf(params, cfg, cmpEff))) : []
+  const staleText = cambios.length
+    ? `${t('Resultados de la configuración anterior.')} ${t('Cambió: {c}.', { c: listaCambios(cambios) })}`
+    : t('Resultados de la configuración anterior.')
   // el título describe lo que se ve (la corrida simulada), no lo que se está configurando
   const tc = source === 'sim' ? ref?.meta?.params || null : cfg
   const genHuerto = tc && source === 'sim' && tc.huerto && tc.huerto !== 'matlab-2026' ? SISTEMAS[tc.huerto] : null
@@ -372,6 +390,8 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           onCancel: () => cancelSimulation(),
           busy: simBusy,
           stale,
+          fresh: source === 'sim' && !!simKey && !simBusy && !stale,
+          cambios,
           cmp: cmpEff,
           setCmp,
           info:
@@ -438,14 +458,12 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           ov={ov}
           setOv={setOv}
         />
-        {stale && (
-          <StaleBanner
-            onRun={runNow}
-            busy={simBusy}
-            text={showPreview ? t('Vista previa del escenario nuevo: todavía no se simula.') : t('Resultados de la configuración anterior.')}
-          />
-        )}
-        <div className="wb-views" style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}>
+        {stale && <StaleBanner onRun={runNow} busy={simBusy} text={showPreview ? t('Vista previa del escenario nuevo: todavía no se simula.') : staleText} />}
+        <div
+          className={`wb-views${stale && !showPreview ? ' viejo' : ''}`}
+          data-testid="wb-views"
+          style={{ gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)` }}
+        >
           {!shown.length && (
             <div className="wb-empty panel">
               {showPreview ? (
@@ -507,8 +525,8 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
           ]}
         />
         {stale && (
-          <div className="stale small" role="status">
-            {t('Resultados de la configuración anterior.')}
+          <div className="stale small" role="status" data-testid="stale-derecha">
+            {staleText}
           </div>
         )}
         <div className="wb-scroll">

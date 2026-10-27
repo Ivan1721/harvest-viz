@@ -1071,6 +1071,41 @@ body {
 .wb .btn.primary:hover {
   background: #1b327a;
 }
+/* barra de «Simular» al pie de la columna izquierda: siempre a la vista al desplazarse */
+.wb .sim-accion {
+  position: sticky;
+  bottom: -10px;
+  margin: auto -10px -10px;
+  padding: 8px 10px 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -4px 12px rgba(20, 30, 60, 0.06);
+  z-index: 2;
+}
+.wb .sim-accion .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.wb .sim-accion kbd {
+  font:
+    500 10px Inter,
+    system-ui,
+    sans-serif;
+  opacity: 0.75;
+}
+.wb .sim-accion .note {
+  margin-top: 6px;
+}
+/* resultados de la configuración anterior: la escena se atenúa (las tablas no, por contraste) */
+.wb-views.viejo canvas {
+  filter: grayscale(0.6);
+  opacity: 0.85;
+  transition:
+    filter 0.2s,
+    opacity 0.2s;
+}
 .wb .btn.link {
   background: transparent;
   border-color: transparent;

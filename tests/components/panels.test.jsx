@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useState } from 'react'
 import { render, screen, fireEvent, cleanup, waitFor, within } from '@testing-library/react'
-import { SimSteps, DEFAULTS_SIM, changedSteps, resetStep } from '../../src/workload/panels/SimPanel.jsx'
+import { SimSteps, SimAction, DEFAULTS_SIM, CFG0, changedSteps, resetStep, listaCambios } from '../../src/workload/panels/SimPanel.jsx'
 import { profileDefaults } from '../../src/hrsim/common.js'
 import { Validation } from '../../src/workload/panels/Validation.jsx'
 
@@ -107,7 +107,7 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
       onExport = vi.fn()
     const { rerender } = render(<Harness onRun={onRun} />)
     expect(screen.queryByText('Exportar corridas')).toBeNull()
-    fireEvent.click(screen.getByText('Simular'))
+    fireEvent.click(screen.getByRole('button', { name: 'Simular' }))
     expect(onRun).toHaveBeenCalled()
     rerender(<Harness onRun={onRun} onExport={onExport} />)
     fireEvent.click(screen.getByText('Exportar corridas'))
@@ -217,6 +217,48 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     const mod = { ...base, duration: 600, capacityBoxes: 3 }
     expect(resetStep(mod, base, 3)).toEqual({ ...base, capacityBoxes: 3 })
     expect([...changedSteps(resetStep(mod, base, 2), base)]).toEqual([3])
+  })
+
+  it('changedSteps ve la cuadrilla (cfg): cosecheros y actividad en el paso 2; fila y disposición en el 1, solo en el mapa del estudio', () => {
+    const m = DEFAULTS_SIM,
+      g = profileDefaults('matlab-2026', 'palta-tradicional')
+    expect([...changedSteps(m, m, CFG0)]).toEqual([])
+    expect([...changedSteps(m, m, { ...CFG0, nw: 16 })]).toEqual([2])
+    expect([...changedSteps(m, m, { ...CFG0, act: 'ground' })]).toEqual([2])
+    expect([...changedSteps(m, m, { ...CFG0, row: 1 })]).toEqual([1])
+    expect([...changedSteps(g, g, { ...CFG0, rp: 1 })]).toEqual([])
+  })
+
+  it('el punto «modificado» se enciende con los cosecheros y «Restablecer» los devuelve', () => {
+    render(<Harness />)
+    const paso2 = screen.getByTestId('step-agentes')
+    expect(within(paso2).queryByTestId('reset-2')).toBeNull()
+    fireEvent.click(within(paso2).getByRole('button', { name: '16' }))
+    expect(screen.getByTestId('nw').textContent).toBe('16')
+    fireEvent.click(within(paso2).getByTestId('reset-2'))
+    expect(screen.getByTestId('nw').textContent).toBe('12')
+    expect(within(paso2).queryByTestId('reset-2')).toBeNull()
+  })
+
+  it('barra de acción: principal solo con cambios, los nombra; al día sin ellos; Cancelar mientras simula', () => {
+    const onRun = vi.fn(),
+      onCancel = vi.fn()
+    const { rerender } = render(<SimAction onRun={onRun} onCancel={onCancel} fresh />)
+    expect(screen.getByTestId('sim-run').className).not.toMatch(/primary/)
+    expect(screen.getByTestId('sim-estado').textContent).toBe('Resultados al día.')
+    expect(screen.getByTestId('sim-run').getAttribute('aria-keyshortcuts')).toMatch(/Control\+Enter/)
+    rerender(<SimAction onRun={onRun} onCancel={onCancel} stale cambios={['Cosecheros', 'Duración (s)', 'Hileras', 'Robot']} />)
+    expect(screen.getByTestId('sim-run').className).toMatch(/primary/)
+    expect(screen.getByTestId('sim-estado').textContent).toBe('Hay 4 cambios sin simular: Cosecheros, Duración (s), Hileras +1 más.')
+    fireEvent.click(screen.getByRole('button', { name: 'Simular' }))
+    expect(onRun).toHaveBeenCalledTimes(1)
+    rerender(<SimAction onRun={onRun} onCancel={onCancel} stale cambios={['Cosecheros']} />)
+    expect(screen.getByTestId('sim-estado').textContent).toBe('Hay 1 cambio sin simular: Cosecheros.')
+    rerender(<SimAction onRun={onRun} onCancel={onCancel} busy stale />)
+    expect(screen.queryByTestId('sim-estado')).toBeNull()
+    fireEvent.click(screen.getByTestId('sim-cancel'))
+    expect(onCancel).toHaveBeenCalled()
+    expect(listaCambios(['a', 'b'])).toBe('a, b')
   })
 })
 

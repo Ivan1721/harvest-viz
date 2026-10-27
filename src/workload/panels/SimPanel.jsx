@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PROFILES, profileDefaults } from '../../hrsim/common.js'
+import { DEFAULTS, PROFILES, profileDefaults } from '../../hrsim/common.js'
 import { SISTEMAS } from '../../hrsim/huertos/index.js'
 import { HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
@@ -70,10 +70,15 @@ export function resetStep(params, base, n) {
     }
   return out
 }
-/** Pasos con valores distintos de los de partida (un punto junto al título). */
-export function changedSteps(params, base) {
+/** Cuadrilla y corrida del mapa del estudio de partida (lo que el panel guarda aparte de `params`). */
+export const CFG0 = { nw: DEFAULTS.nw, row: DEFAULTS.row, act: DEFAULTS.act, rp: DEFAULTS.rp }
+/** Campos de `cfg` de cada paso. Fila y disposición solo existen en el mapa del estudio. */
+export const cfgDelPaso = (n, huerto) => (n === 2 ? ['nw', 'act'] : n === 1 && huerto === 'matlab-2026' ? ['row', 'rp'] : [])
+/** Pasos con valores distintos de los de partida (un punto junto al título), en `params` y en `cfg`. */
+export function changedSteps(params, base, cfg) {
   const s = new Set()
   for (const k of new Set([...Object.keys(params), ...Object.keys(base)])) if (JSON.stringify(params[k]) !== JSON.stringify(base[k])) s.add(STEP_OF(k))
+  if (cfg) for (const n of [1, 2]) if (cfgDelPaso(n, params.huerto).some((k) => cfg[k] !== CFG0[k])) s.add(n)
   return s
 }
 
@@ -131,6 +136,8 @@ export function SimSteps({
   onCancel,
   busy,
   stale,
+  fresh,
+  cambios,
   info,
   onExport,
   onCopyLink,
@@ -146,7 +153,12 @@ export function SimSteps({
     </label>
   )
   const base = profileDefaults(params.profile, params.huerto, params.robotTipo)
-  const steps = changedSteps(params, base)
+  const steps = changedSteps(params, base, cfg)
+  // «Restablecer» de un paso vuelve también su parte de `cfg` (cosecheros, actividad, fila, disposición)
+  const reset = (n) => {
+    setParams((p) => resetStep(p, base, n))
+    for (const k of cfgDelPaso(n, params.huerto)) if (cfg?.[k] !== CFG0[k]) pickCfg(k, CFG0[k])
+  }
   const hp = params.huertoParams
   const generated = !!hp
   const setHp = (k, v) => setParams((p) => ({ ...p, huertoParams: { ...p.huertoParams, [k]: v } }))
@@ -161,7 +173,7 @@ export function SimSteps({
   const robotChanged = differs(params, base, [...ROBOT.map((r) => r[0]), 'ssm', 'energia'])
   return (
     <>
-      <Step n={1} title={t('Escenario')} changed={steps.has(1)} onReset={() => setParams((p) => resetStep(p, base, 1))} testid="step-escenario">
+      <Step n={1} title={t('Escenario')} changed={steps.has(1)} onReset={() => reset(1)} testid="step-escenario">
         <Field label={t('Cultivo')}>
           <Seg
             size="mini"
@@ -369,7 +381,7 @@ export function SimSteps({
         )}
       </Step>
 
-      <Step n={2} title={t('Agentes')} changed={steps.has(2)} onReset={() => setParams((p) => resetStep(p, base, 2))} testid="step-agentes">
+      <Step n={2} title={t('Agentes')} changed={steps.has(2)} onReset={() => reset(2)} testid="step-agentes">
         <Field label={t('Cosecheros')}>
           <Seg
             value={cfg?.nw}
@@ -521,7 +533,7 @@ export function SimSteps({
         </Group>
       </Step>
 
-      <Step n={3} title={t('Simulación')} changed={steps.has(3)} onReset={() => setParams((p) => resetStep(p, base, 3))} testid="step-simulacion">
+      <Step n={3} title={t('Simulación')} changed={steps.has(3)} onReset={() => reset(3)} testid="step-simulacion">
         <div className="params">{row(...DURATION)}</div>
         {setCmp && (
           <Field label={t('Comparar con')}>
@@ -555,16 +567,6 @@ export function SimSteps({
             )}
           </Field>
         )}
-        {busy ? (
-          <button className="btn" onClick={onCancel} data-testid="sim-cancel">
-            {t('Simulando… · Cancelar')}
-          </button>
-        ) : (
-          <button className={`btn${stale ? ' primary' : ''}`} onClick={onRun} data-testid="sim-run">
-            {t('Simular')}
-          </button>
-        )}
-        {stale && !busy && <div className="note warn">{t('Hay cambios sin simular.')}</div>}
         {info && <div className="note">{info}</div>}
         {onExport && (
           <button
@@ -591,7 +593,58 @@ export function SimSteps({
         )}
       </Step>
       {videoPanel}
+      <SimAction onRun={onRun} onCancel={onCancel} busy={busy} stale={stale} fresh={fresh} cambios={cambios} />
     </>
+  )
+}
+
+const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '')
+/** Atajo de «Simular» como se escribe en este sistema. */
+export const ATAJO = MAC ? '⌘+Enter' : 'Ctrl+Enter'
+
+/** Cambios por nombre: hasta 3 y «+N más». */
+export function listaCambios(cambios, max = 3) {
+  const c = cambios.slice(0, max).map((k) => t(k))
+  return cambios.length > max ? `${c.join(', ')} ${t('+{n} más', { n: cambios.length - max })}` : c.join(', ')
+}
+
+/**
+ * Barra de acción al pie de la columna izquierda (P1-b): «Simular» y el estado de los resultados siempre a la vista.
+ * Principal solo con cambios sin simular: con todo igual, simular de nuevo da la misma corrida.
+ */
+export function SimAction({ onRun, onCancel, busy, stale, fresh, cambios = [] }) {
+  useLang()
+  return (
+    <div className="sim-accion" data-testid="sim-accion">
+      {busy ? (
+        <button className="btn" onClick={onCancel} data-testid="sim-cancel">
+          {t('Simulando… · Cancelar')}
+        </button>
+      ) : (
+        <button
+          className={`btn${stale ? ' primary' : ''}`}
+          onClick={onRun}
+          data-testid="sim-run"
+          aria-keyshortcuts="Control+Enter Meta+Enter"
+          title={t('Simula lo configurado ({k})', { k: ATAJO })}
+        >
+          {t('Simular')}
+          <kbd aria-hidden="true">{ATAJO}</kbd>
+        </button>
+      )}
+      {!busy && stale && (
+        <div className="note warn" data-testid="sim-estado">
+          {cambios.length
+            ? t(cambios.length === 1 ? 'Hay 1 cambio sin simular: {c}.' : 'Hay {n} cambios sin simular: {c}.', { n: cambios.length, c: listaCambios(cambios) })
+            : t('Hay cambios sin simular.')}
+        </div>
+      )}
+      {!busy && fresh && (
+        <div className="note" data-testid="sim-estado">
+          {t('Resultados al día.')}
+        </div>
+      )}
+    </div>
   )
 }
 

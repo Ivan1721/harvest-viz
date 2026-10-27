@@ -2,6 +2,22 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). Solo interfaz: el motor y los resultados no cambian.
+
+### Agregado
+
+- **Barra de «Simular»** fija al pie de la columna izquierda, siempre a la vista: botón principal solo con cambios sin simular («Hay 2 cambios sin simular: Cosecheros, Duración»), «Resultados al día» sin ellos y «Cancelar» mientras simula.
+- **Atajo Ctrl+Enter** (⌘+Enter en Mac): simula desde cualquier parte del Simulador.
+- El aviso de resultados desactualizados **nombra lo que cambió** (hasta 3 campos y «+N más»), y la escena 3D se atenúa hasta simular. Las tablas no se atenúan, para no bajar el contraste del texto.
+
+### Corregido
+
+- El Simulador decía que sus posiciones eran reconstruidas y aproximadas (pestañas Interacción y Datos, detalle del robot), aunque registra la pose exacta de cada agente cada 0,25 s. La nota depende ahora del origen de la corrida: «exactas» en el simulador, «reconstruidas» en las corridas de MATLAB.
+- El punto «modificado» de los pasos no se encendía al cambiar cosecheros, actividad, fila o disposición, y «Restablecer» no los devolvía.
+- Decimales con punto en Interacción y en el detalle (p. ej. «0.49 m» junto a «0,66»): todo número usa el formato del idioma. Las duraciones siguen una sola regla: «48 s», «12,5 min», «2 h 05 min».
+
 ## [0.9.0] — 2026-10-23
 
 H8, fase A: flota de 2 o 3 robots transportadores en el motor. Escena 3D más realista, fases R1 (luz, suelo y selector de calidad), R2 (robot real) y R3 (paltos con hojas); solo visual. **Motor 0.8.0**. Sin la opción nueva nada cambia: la réplica de MATLAB y las corridas de H2–H7 dan exactamente lo mismo (las huellas de 10 configuraciones representativas coinciden al bit).

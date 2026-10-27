@@ -3,6 +3,8 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import { RobotPanel } from '../../src/workload/panels/RobotPanel.jsx'
 import { Summary } from '../../src/workload/panels/Summary.jsx'
+import { Analysis } from '../../src/workload/panels/Analysis.jsx'
+import { DataPanel } from '../../src/workload/panels/DataPanel.jsx'
 import { HRSim } from '../../src/hrsim/engine.js'
 import { HOSim } from '../../src/hrsim/humanonly.js'
 import { simToRun } from '../../src/hrsim/toRun.js'
@@ -45,5 +47,27 @@ describe('Resultados por pregunta (I4)', () => {
     expect(ths).toEqual(['Métrica', 'Burro', 'Warthog', 'Δ'])
     expect(screen.getByText('Energía del robot por kg entregado')).toBeTruthy()
     expect(screen.getByText('Espera media de las cajas')).toBeTruthy()
+  })
+
+  it('Interacción y Datos: posiciones exactas en el simulador, reconstruidas en las corridas de MATLAB', () => {
+    render(<Analysis run={warthog} i={0} seek={() => {}} select={() => {}} />)
+    expect(screen.getByTestId('nota-posiciones').textContent).toBe('Posiciones exactas: el simulador registra la pose de cada agente cada 0,25 s.')
+    cleanup()
+    const matlab = { ...warthog, meta: { ...warthog.meta, simulated: undefined } }
+    render(<Analysis run={matlab} i={0} seek={() => {}} select={() => {}} />)
+    expect(screen.getByTestId('nota-posiciones').textContent).toMatch(/^Posiciones reconstruidas/)
+    cleanup()
+    render(<DataPanel ho={ho} hr={warthog} />)
+    expect(screen.getByTestId('nota-posiciones').textContent).toMatch(/^Posiciones exactas/)
+    cleanup()
+    render(<DataPanel ho={null} hr={matlab} />)
+    expect(screen.getByTestId('nota-posiciones').textContent).toMatch(/^Los CSV de MATLAB/)
+  })
+
+  it('Interacción: decimales con coma y duraciones con una sola regla', () => {
+    render(<Analysis run={warthog} i={0} seek={() => {}} select={() => {}} />)
+    const txt = document.body.textContent
+    expect(txt).not.toMatch(/\d\.\d+ m/)
+    expect(txt).toMatch(/\d,\d{2} m/)
   })
 })
