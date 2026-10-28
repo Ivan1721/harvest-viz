@@ -20,10 +20,17 @@ export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
     const i = mode === 'final' ? run.n - 1 : run.rowAt(t)
     return f(run, i)
   }
+  // con flota (H8) lo del robot es de toda la flota
+  const fl = !!(ho?.flota || hr?.flota)
   const M = [
     ['Cosecha total', 'u', (r, i) => r.series.total[i]],
     ['Entrega a zona de carga', 'u', (r, i) => r.series.cargo[i]],
-    ['Entregado por el robot', 'u', (r, i) => (r.robot ? r.robot.unloads.reduce((a, u) => (u.idx <= i ? a + (+u.amount || 0) : a), 0) : null), true],
+    [
+      fl ? 'Entregado por la flota' : 'Entregado por el robot',
+      'u',
+      (r, i) => (r.robot ? r.robot.unloads.reduce((a, u) => (u.idx <= i ? a + (+u.amount || 0) : a), 0) : null),
+      true,
+    ],
     ['Carga de trabajo total', 'kcal', (r, i) => r.series.work[i]],
     ['Carga por trabajador', 'kcal', (r, i) => r.series.work[i] / r.workers.length, false, 1],
     ['Energía por unidad entregada', 'kcal/u', (r, i) => (r.series.cargo[i] > 0 ? r.series.work[i] / r.series.cargo[i] : null), false, 2],
@@ -38,9 +45,20 @@ export function Compare({ ho, hr, t, mode, setMode, labels = DEF }) {
       0,
       true,
     ],
-    ['Calles recorridas por el robot', '', (r, i) => (i === r.n - 1 && r.robot?.calles != null ? r.robot.calles : null), true],
+    [
+      fl ? 'Calles recorridas por la flota' : 'Calles recorridas por el robot',
+      '',
+      (r, i) => (i === r.n - 1 && r.robot?.calles != null ? r.robot.calles : null),
+      true,
+    ],
     // del análisis de la corrida completa: solo en «Final»
-    ['Energía del robot por kg entregado', 'Wh/kg', (r, i) => (i === r.n - 1 ? r.hri?.fluency.energia?.whPorKg : null), true, 2],
+    [
+      fl ? 'Energía de la flota por kg entregado' : 'Energía del robot por kg entregado',
+      'Wh/kg',
+      (r, i) => (i === r.n - 1 ? r.hri?.fluency.energia?.whPorKg : null),
+      true,
+      2,
+    ],
     ['Espera media de las cajas', 's', (r, i) => (i === r.n - 1 ? r.hri?.fluency.boxWait.mean : null), true],
   ]
   return (

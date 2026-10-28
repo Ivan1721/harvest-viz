@@ -82,7 +82,7 @@ export function simToRun(sim, { robot }) {
       unloads: sim.ev.unloads.map((e) => ({ ...e })),
       // H7 fase C: la ruta que sigue a la cuadrilla (cada vez que se recalculó)
       rutas: sim.ev.rutas ? sim.ev.rutas.map((r) => ({ idx: r.idx, puntos: r.puntos.map((q) => [...q]) })) : null,
-      calles: huerto?.calles ? callesRecorridas(huerto, rec) : null,
+      calles: huerto?.calles ? callesRecorridas(huerto, rec.fx ? rec.fx.map((x, k) => [x, rec.fy[k]]) : [[rec.rx, rec.ry]]) : null,
       crates: (sim.ev.crates || []).map((e) => ({ ...e })),
       onboard,
       // huertos generados: energía acumulada (Wh) y pose del carro del robot de arrastre
@@ -180,16 +180,16 @@ function flotaDeRun(sim, rec, rob, n) {
   return { n: robots.length, estrategia: resumen.estrategia, resumen, robots }
 }
 
-/** Calles por las que pasó el robot entre las copas (H7, fase C); en la cabecera no cuenta. */
-function callesRecorridas(huerto, rec) {
+/** Calles por las que pasó el robot (o, con flota, alguno de ellos; `robots` = [[xs, ys], …]) entre las copas (H7, fase C); en la cabecera no cuenta. */
+function callesRecorridas(huerto, robots) {
   const c = huerto.calles,
     H = huerto.limites.h,
     set = new Set()
-  for (let i = 0; i < rec.rx.length; i++) {
-    const y = rec.ry[i]
-    if (y <= c.cabecera || y >= H - c.cabecera) continue
-    const x = rec.rx[i]
-    for (const e of c.ejes) if (Math.abs(x - e) < c.calle / 4) set.add(e)
-  }
+  for (const [xs, ys] of robots)
+    for (let i = 0; i < xs.length; i++) {
+      const y = ys[i]
+      if (y <= c.cabecera || y >= H - c.cabecera) continue
+      for (const e of c.ejes) if (Math.abs(xs[i] - e) < c.calle / 4) set.add(e)
+    }
   return set.size
 }

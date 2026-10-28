@@ -10,10 +10,18 @@ export const ESTRATEGIAS = {
   desfase: ['Desfase', 'La misma vuelta y el mismo sentido, separados por media vuelta.'],
 }
 
-/** Color de cada robot: azul (el de «Humano-robot»), ámbar y malva; distinguibles también con daltonismo (Okabe-Ito). */
-export const COLORES_ROBOT = ['#2a78d6', '#e69f00', '#cc79a7']
+/** Color de cada robot: el azul de siempre (RB-01, también cuando es uno solo), ámbar y malva; distinguibles con daltonismo. */
+export const COLORES_ROBOT = ['#2f6bff', '#e69f00', '#cc79a7']
 export const colorRobot = (k) => COLORES_ROBOT[k % COLORES_ROBOT.length]
 export const etiquetaRobot = (k) => `RB-0${k + 1}`
+
+/** Los robots de una corrida: con flota, uno por entrada de `run.flota.robots`; si no, el de siempre (o ninguno). */
+export const robotsDeRun = (run) => (run?.flota ? run.flota.robots : run?.robot ? [run.robot] : [])
+
+/** Identificador de selección del robot k en la escena y en la lista: 'robot' para RB-01 (como siempre), 'robot:1', 'robot:2'… */
+export const selRobot = (k) => (k === 0 ? 'robot' : `robot:${k}`)
+/** Índice del robot que nombra una selección, o -1 si no es un robot. */
+export const robotDeSel = (sel) => (sel === 'robot' ? 0 : typeof sel === 'string' && /^robot:\d$/.test(sel) ? Number(sel.slice(6)) : -1)
 
 /** La corrida vista desde el robot k: solo sus estados, cajas, energía y entregas, para analizarlo por separado. */
 export function vistaRobot(run, k) {
