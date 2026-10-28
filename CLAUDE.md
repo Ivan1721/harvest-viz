@@ -16,7 +16,7 @@ Owner: Ivan García (DISA doctorate, UNAB); this is the 3D viewer and simulator 
 - **One phase = one branch.** Report in chat (what changed, what changes in results, verification, a screenshot of the new feature) and ask for «aprobado». Merge into `main` with `git merge --no-ff <rama>` only after that, then delete the local and remote branch and check CI.
 - Claude runs all git; Ivan doesn't run commands. Commits in Spanish, ending with `Co-Authored-By: Claude <noreply@anthropic.com>`.
 - Closing a stage: bump the app version in `package.json`, update `CHANGELOG.md` and create tag `vX.Y.0`.
-- Before delivering a phase: `npm run lint`, `npm run format:check`, `npm run test:coverage`, `npm run test:components`, `npm run test:full` if the engine was touched, `npm run build`, `npm run test:e2e` (one new e2e test per visible feature).
+- Before delivering a phase: `npm run lint`, `npm run format:check`, `npm run test:coverage`, `npm run test:components`, `npm run test:full` if the engine was touched, `npm run build`, `npm run test:e2e` (one new e2e test per visible feature). The project skill `cerrar-fase` (`.claude/skills/cerrar-fase/`) runs this list, the report for «aprobado» and the merge; `gh` (GitHub CLI) is used to check CI.
 
 ## Commands
 
