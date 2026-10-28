@@ -18,13 +18,17 @@ las últimas ~30 líneas del error, corrígelo y vuelve a correr desde ese paso.
 | 2 | `npm run format:check` (si falla: `npm run format` y repetir) | siempre |
 | 3 | `npm run test:coverage` | siempre |
 | 4 | `npm run test:components` | siempre |
-| 5 | `npm run test:full` (en segundo plano, ~2 min) | si `git diff main --name-only` toca `src/hrsim/` |
+| 5 | `npm run test:full` (en segundo plano, ~2 min) | si `git diff main --name-only` toca el motor (ver abajo) |
 | 6 | `npm run build` | siempre |
 | 7 | `npm run test:e2e` (en segundo plano; necesita el build del paso 6) | siempre |
 
 Para filtrar la salida: `npm run <x> > "$TMP/x.log" 2>&1 && echo ✔ <x> || tail -30 "$TMP/x.log"`.
 
-Además, si se tocó el motor (`src/hrsim/`), comprueba sin leer archivos enteros:
+«Motor» = `engine.js`, `humanonly.js`, `common.js`, `flota.js`, `fis.js`, `goal_seeking.fis`, `robots.js`, `ssm.js`, `acopio.js`,
+`carga.js` y `huertos/`. `toRun.js`, `export.js`, `simClient.js` y `sim.worker.js` son adaptadores del visor: no disparan
+`test:full` ni la revisión de `ENGINE_VERSION`.
+
+Además, si se tocó el motor, comprueba sin leer archivos enteros:
 
 - `git diff main -- src/hrsim/common.js | grep ENGINE_VERSION`: si cambian los resultados, la versión debe subir.
 - `git diff main --stat -- CHANGELOG.md docs/simulador.md src/i18n/`: una opción nueva necesita entrada en los tres.
