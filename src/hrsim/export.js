@@ -22,15 +22,18 @@ export function timeseriesCSV(run, every = 1) {
   return lines.join('\n') + '\n'
 }
 
-/** Poses por tick: robot y trabajadores (equivalente al parche EXPORT_POSE_LOG de MATLAB). */
+/** Poses por tick: robot y trabajadores (equivalente al parche EXPORT_POSE_LOG de MATLAB). Con flota (H8), también los robots 2 y 3. */
 export function posesCSV(run) {
   const head = ['Time_s']
   if (run.robot) head.push('Robot_x', 'Robot_y', 'Robot_theta_rad', 'Robot_status')
+  const otros = run.flota ? run.flota.robots.slice(1) : []
+  otros.forEach((_, k) => head.push(`Robot${k + 2}_x`, `Robot${k + 2}_y`, `Robot${k + 2}_theta_rad`, `Robot${k + 2}_status`))
   run.workers.forEach((w) => head.push(`X_H${w.h}`, `Y_H${w.h}`, `Theta_H${w.h}_rad`, `State_H${w.h}`))
   const lines = [head.join(',')]
   for (let i = 0; i < run.n; i++) {
     const row = [r6(run.series.t[i])]
     if (run.robot) row.push(r6(run.robot.pos[i * 3]), r6(run.robot.pos[i * 3 + 1]), r6(run.robot.body[i]), run.robot.status[i])
+    for (const r of otros) row.push(r6(r.pos[i * 3]), r6(r.pos[i * 3 + 1]), r6(r.body[i]), r.status[i])
     run.workers.forEach((w) => row.push(r6(w.track[i * 4]), r6(w.track[i * 4 + 1]), r6(w.track[i * 4 + 3]), w.state ? w.state[i] : 0))
     lines.push(row.join(','))
   }

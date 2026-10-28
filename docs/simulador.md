@@ -188,14 +188,15 @@ Cambio de resultados: con la ruta que sigue a la cuadrilla, en palta alta densid
 entregado pasa de 4.845 a 5.790 kg. Donde la cuadrilla no cambia de calles (palta tradicional, uva, cerezo y arándano en
 4 h; todos en 45 min) los resultados no cambian. La réplica de MATLAB no cambia.
 
-## Flota de robots (H8, fase A)
+## Flota de robots (H8, fases A y B)
 
 Revisión previa: documento «H8: diseño — dos o más robots transportadores» (aprobado con las cinco decisiones
 recomendadas y tres ajustes). H7 mostró que un robot no alcanza a transportar lo cosechado; esta fase agrega 2 o 3.
 
 - **Opción** `flota: { n, estrategia }` (`src/hrsim/flota.js`), solo en huertos generados y con robot; ausente por
   defecto. Con `n: 1`, sin la clave o en el mapa de MATLAB, `resolveParams` la borra: los parámetros, el hash y los
-  resultados no cambian. Todos los robots son del tipo elegido. Todavía no está en la interfaz (fase B).
+  resultados no cambian. Todos los robots son del tipo elegido. En la interfaz (fase B): paso Agentes, «Comparar con» y
+  enlace (`?robots=2&estrategia=zonas`); ver «En el visor» más abajo.
 - **Estrategias.** `zonas` (por defecto): al terminar cada vuelta, el robot toma su grupo de calles contiguas de un
   reparto de las calles ocupadas (cosecheros trabajando + cajas esperando) en `n` grupos de peso parecido, de izquierda
   a derecha. `opuestas`: todos recorren las calles ocupadas; los robots impares, al revés. `desfase`: todos en el mismo
@@ -221,12 +222,24 @@ recomendadas y tres ajustes). H7 mostró que un robot no alcanza a transportar l
   regla de seguridad, límites físicos); cesión de paso; se mueven todos a la vez; acopio; registro.
 - **Registro**: `rx…rst` y `energy` siguen siendo los del robot 1; `delivered` y `onboard` son de toda la flota; `fx`,
   `fy`, `fth`, `fst`, `fon` y `fen` guardan pose, estado, carga a bordo y energía de cada robot. Los eventos llevan `r`
-  (número de robot, desde 0) y `ev.rutasFlota` guarda la ruta vigente de cada uno. El registro de texto sigue el formato
-  del MATLAB, con un solo robot: solo el robot 1.
+  (número de robot, desde 0) y `ev.rutasFlota` guarda la ruta vigente de cada uno. Con Burro con carro, `fcx`, `fcy` y
+  `fcth` guardan la pose del carro de cada robot (fase B; solo registro, los resultados no cambian). El registro de texto
+  sigue el formato del MATLAB, con un solo robot: solo el robot 1.
 - **Medidas** (`summary().flota`): por robot, cajas, kg entregados, energía, descargas, espera de calle, cesión de paso,
   espera en el acopio, tiempo estacionado y recorrido; en conjunto, equidad de cajas (Jain), distancia mínima entre
   robots y distancia mínima con alguno dentro de una calle. La energía del Resumen es la de la flota; la batería, la
   del robot que más gastó.
+- **En el visor** (fase B). `toRun.js` agrega `run.flota` (pose, estado, carga a bordo, energía, carro, rutas, cajas,
+  recogidas y descargas de cada robot, y el resumen del motor); `run.robot` sigue siendo el robot 1. El análisis HRI
+  (`src/workload/flota.js`) corre por robot (sus estados, su energía por kg entregado por él, su campo de protección S_p) y
+  para la flota: la geometría con las personas (distancias, zonas de proxemia, encuentros) es hacia el robot más cercano a
+  cada trabajador, los tiempos de estado son el promedio de los robots, las esperas, la energía y las descargas se suman, y
+  la batería restante es la del que más gastó. En la escena, cada robot lleva su etiqueta (RB-01…RB-03), su color (azul,
+  ámbar y malva; el azul de siempre para RB-01), su ruta vigente y su ruta anticipada; la lista y el detalle son por robot.
+  La pestaña Robot trae una columna por robot y el total, el equilibrio de cajas y las distancias entre robots: la mínima
+  con alguno en una calle (la relevante) y la de toda la corrida, que suele darse al salir del acopio, donde los robots
+  parten del mismo punto. «Comparar con» → «Otra cantidad de robots» (`cmp=flota:<n>`) corre el mismo escenario con otra
+  cantidad y la misma estrategia. Exportar agrega las columnas `Robot2_*` y `Robot3_*` a `*_poses.csv`.
 
 Primeros resultados (palta alta densidad, 12 cosecheros, 4 h; llega al acopio, de lo cosechado): 1 robot 69 %; 2
 robots: zonas 94 %, opuestas 73 %, desfase 78 %; 3 robots: zonas 96 %, opuestas 92 %, desfase 95 %. En direcciones

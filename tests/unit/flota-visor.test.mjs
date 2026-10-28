@@ -17,6 +17,7 @@ import {
   etiquetaRobot,
 } from '../../src/workload/flota.js'
 import { nombreFlota } from '../../src/workload/variantes.js'
+import { posesCSV } from '../../src/hrsim/export.js'
 import { FIS } from '../helpers.mjs'
 
 const AD = 'palta-alta-densidad'
@@ -236,4 +237,19 @@ test('los textos de la flota están traducidos al inglés y al portugués', asyn
   const faltan = []
   for (const k of claves) for (const [n, d] of Object.entries({ en, pt })) if (!(k in d)) faltan.push(n + ': ' + k)
   assert.deepEqual(faltan, [])
+})
+
+test('exportar: con flota, las poses de los robots 2 y 3 van en columnas propias; con un robot no cambia', () => {
+  const dos = corrida({ flota: { n: 2, estrategia: 'zonas' }, duration: 120 })
+  const [cab, ...filas] = posesCSV(dos).trim().split('\n')
+  const cols = cab.split(',')
+  assert.deepEqual(cols.slice(1, 9), ['Robot_x', 'Robot_y', 'Robot_theta_rad', 'Robot_status', 'Robot2_x', 'Robot2_y', 'Robot2_theta_rad', 'Robot2_status'])
+  assert.equal(cols.includes('Robot3_x'), false)
+  assert.equal(filas.length, dos.n)
+  assert.ok(filas.every((f) => f.split(',').length === cols.length))
+  // la fila del último tick lleva la pose del robot 2
+  const ult = filas.at(-1).split(',')
+  assert.equal(Number(ult[5]), Math.round(dos.flota.robots[1].pos[(dos.n - 1) * 3] * 1e6) / 1e6)
+  const uno = corrida({ duration: 120 })
+  assert.equal(posesCSV(uno).split('\n')[0].includes('Robot2_x'), false)
 })
