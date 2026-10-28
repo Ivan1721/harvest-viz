@@ -207,7 +207,9 @@ export default {
   Recorrido: 'Distance travelled',
   'Descargas en el acopio': 'Unloads at the collection point',
   'Equilibrio de cajas entre robots (Jain)': 'Box balance between robots (Jain)',
-  'Distancia mínima entre robots': 'Minimum distance between robots',
+  'Distancia mínima entre robots (toda la corrida)': 'Minimum distance between robots (whole run)',
+  'La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.':
+    'The whole-run minimum usually happens when leaving the collection point or in the headland, where robots can pass each other.',
   'Distancia mínima entre robots (con alguno en una calle)': 'Minimum distance between robots (one of them in a lane)',
   'Entregado por la flota': 'Delivered by the fleet',
   'Calles recorridas por la flota': 'Lanes travelled by the fleet',

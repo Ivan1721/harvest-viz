@@ -50,7 +50,7 @@ describe('Resultados por pregunta (I4)', () => {
     // cada fila: un valor por robot y el de la flota
     for (const tr of tabla.querySelectorAll('tbody tr')) expect(tr.querySelectorAll('td').length).toBe(4)
     expect(screen.getByText('Equilibrio de cajas entre robots (Jain)')).toBeTruthy()
-    expect(screen.getByText('Distancia mínima entre robots')).toBeTruthy()
+    expect(screen.getByText('Distancia mínima entre robots (toda la corrida)')).toBeTruthy()
     // sin variante no hay la tabla de comparación entre corridas
     expect(screen.queryByTestId('robot-cmp')).toBeNull()
     // el detalle: la flota por defecto; un robot lo cambia

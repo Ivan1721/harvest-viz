@@ -220,7 +220,8 @@ test('los textos de la flota están traducidos al inglés y al portugués', asyn
     ...[
       'Cultivo a bordo de cada robot',
       'Equilibrio de cajas entre robots (Jain)',
-      'Distancia mínima entre robots',
+      'Distancia mínima entre robots (toda la corrida)',
+      'La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.',
       'Distancia mínima entre robots (con alguno en una calle)',
     ],
     ...[

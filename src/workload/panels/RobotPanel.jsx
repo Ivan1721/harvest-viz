@@ -67,13 +67,14 @@ function TablaFlota({ run }) {
         <b className={res.jainCajas < 0.8 ? 'warn' : ''}>{fmt(res.jainCajas, 2)}</b>
       </div>
       <div className="row">
-        <span>{t('Distancia mínima entre robots')}</span>
-        <b>{res.distMin_m == null ? '—' : `${fmt(res.distMin_m, 1)} m`}</b>
-      </div>
-      <div className="row">
         <span>{t('Distancia mínima entre robots (con alguno en una calle)')}</span>
         <b>{res.distMinCalle_m == null ? '—' : `${fmt(res.distMinCalle_m, 1)} m`}</b>
       </div>
+      <div className="row">
+        <span>{t('Distancia mínima entre robots (toda la corrida)')}</span>
+        <b>{res.distMin_m == null ? '—' : `${fmt(res.distMin_m, 1)} m`}</b>
+      </div>
+      <div className="hint">{t('La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.')}</div>
     </>
   )
 }

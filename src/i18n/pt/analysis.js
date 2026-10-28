@@ -207,7 +207,9 @@ export default {
   Recorrido: 'Percurso',
   'Descargas en el acopio': 'Descargas no ponto de recolha',
   'Equilibrio de cajas entre robots (Jain)': 'Equilíbrio de caixas entre robôs (Jain)',
-  'Distancia mínima entre robots': 'Distância mínima entre robôs',
+  'Distancia mínima entre robots (toda la corrida)': 'Distância mínima entre robôs (toda a corrida)',
+  'La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.':
+    'A mínima de toda a corrida costuma ocorrer ao sair do ponto de recolha ou na cabeceira, onde os robôs podem se cruzar.',
   'Distancia mínima entre robots (con alguno en una calle)': 'Distância mínima entre robôs (um deles numa rua)',
   'Entregado por la flota': 'Entregue pela frota',
   'Calles recorridas por la flota': 'Ruas percorridas pela frota',
