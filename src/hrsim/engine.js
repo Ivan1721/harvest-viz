@@ -185,8 +185,13 @@ export class HRSim {
       ...(this.cosecha ? { energy: [], cx: [], cy: [], cth: [] } : {}),
       ...(this.acopio ? { desp: [], acop: [], bins: [], cam: [], cola: [] } : {}),
       ...(this.cosecha?.carga ? { dej: [] } : {}),
-      // flota (H8): pose, estado, carga a bordo y energía [Wh] de cada robot (rx…rst y energy son los del robot 1)
-      ...(this.flota ? Object.fromEntries(['fx', 'fy', 'fth', 'fst', 'fon', 'fen'].map((k) => [k, Array.from({ length: nR }, () => [])])) : {}),
+      // flota (H8): pose, estado, carga a bordo y energía [Wh] de cada robot (rx…rst y energy son los del robot 1);
+      // con carro (Burro con carro), también la pose del carro de cada uno
+      ...(this.flota
+        ? Object.fromEntries(
+            ['fx', 'fy', 'fth', 'fst', 'fon', 'fen', ...(cr ? ['fcx', 'fcy', 'fcth'] : [])].map((k) => [k, Array.from({ length: nR }, () => [])]),
+          )
+        : {}),
       wx: Array.from({ length: NH }, () => []),
       wy: Array.from({ length: NH }, () => []),
       wth: Array.from({ length: NH }, () => []),
@@ -323,6 +328,11 @@ export class HRSim {
         r.fst[i].push(q.rstatus)
         r.fon[i].push(q.prodRobot)
         r.fen[i].push(q.energyJ / 3600)
+        if (r.fcx) {
+          r.fcx[i].push(q.carro ? q.carro[0] : NaN)
+          r.fcy[i].push(q.carro ? q.carro[1] : NaN)
+          r.fcth[i].push(q.carro ? q.carro[2] : NaN)
+        }
       })
     for (let h = 0; h < NH; h++) {
       const w = this.W[h]

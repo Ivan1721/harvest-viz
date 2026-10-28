@@ -60,27 +60,47 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
   const hand = run.workers.map((w) => handoffMask(w, n, DT))
   const isHandoff = (k, i) => hand[k][i] === 1
   const rp = run.robot.pos
+  // flota (H8): la geometría con las personas (distancias, zonas, encuentros) es hacia el robot más cercano a cada
+  // trabajador; lo propio de cada robot (estados, energía, campo de protección) se analiza por robot (flota.js)
+  const RP = run.flota && run.flota.robots.length > 1 ? run.flota.robots.map((r) => r.pos) : [rp]
   // velocidad instantánea (desplazamiento en el tick) para S_p; `speed` (ventana de 1 s) para los encuentros
-  const vInst = new Float32Array(n)
-  for (let i = 1; i < n; i++) vInst[i] = Math.hypot(rp[i * 3] - rp[(i - 1) * 3], rp[i * 3 + 1] - rp[(i - 1) * 3 + 1]) / DT
-  const moving = (i) => vInst[i] > V_MOVE
+  const vAll = RP.map((P) => {
+    const v = new Float32Array(n)
+    for (let i = 1; i < n; i++) v[i] = Math.hypot(P[i * 3] - P[(i - 1) * 3], P[i * 3 + 1] - P[(i - 1) * 3 + 1]) / DT
+    return v
+  })
+  const vInst = vAll[0]
+  const moving = (i, r = 0) => vAll[r][i] > V_MOVE
+  const near = RP.length > 1 ? new Uint8Array(n * nw) : null // robot más cercano a cada trabajador, por tick
   const dist = new Float32Array(n * nw)
   const minD = new Float32Array(n)
   const minW = new Uint8Array(n)
   const speed = new Float32Array(n)
   for (let i = 0; i < n; i++) {
     const j = Math.max(0, i - Math.max(1, Math.round(1 / DT)))
-    speed[i] = i === j ? 0 : Math.hypot(rp[i * 3] - rp[j * 3], rp[i * 3 + 1] - rp[j * 3 + 1]) / ((i - j) * DT)
     let m = 1e9,
-      mw = 0
+      mw = 0,
+      mr = 0
     run.workers.forEach((w, k) => {
-      const d = Math.hypot(w.track[i * 4] - rp[i * 3], w.track[i * 4 + 1] - rp[i * 3 + 1])
+      let d = Math.hypot(w.track[i * 4] - rp[i * 3], w.track[i * 4 + 1] - rp[i * 3 + 1]),
+        rr = 0
+      for (let r = 1; r < RP.length; r++) {
+        const dr = Math.hypot(w.track[i * 4] - RP[r][i * 3], w.track[i * 4 + 1] - RP[r][i * 3 + 1])
+        if (dr < d) {
+          d = dr
+          rr = r
+        }
+      }
       dist[i * nw + k] = d
+      if (near) near[i * nw + k] = rr
       if (d < m) {
         m = d
         mw = k
+        mr = rr
       }
     })
+    const P = RP[mr]
+    speed[i] = i === j ? 0 : Math.hypot(P[i * 3] - P[j * 3], P[i * 3 + 1] - P[j * 3 + 1]) / ((i - j) * DT)
     minD[i] = m
     minW[i] = mw
   }
@@ -99,7 +119,7 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
         continue
       }
       if (d < mn) mn = d
-      const mv = moving(i)
+      const mv = moving(i, near ? near[i * nw + k] : 0)
       for (let z = 0; z < 3; z++)
         if (d < ZONES[z].r) {
           t[z] += DT
@@ -197,14 +217,25 @@ export function analyzeHRI(run, ssm = run.meta?.params?.ssm ?? SSM_DEFAULTS) {
   // --- Fluidez y seguridad (fase 2) ---
   // estado del robot por tick (solo motor JS): 0 se mueve, 1 espera al trabajador, 2 descarga/carga,
   // 3 parada de seguridad, 4 velocidad reducida por seguridad (los dos últimos solo en el perfil hri),
-  // 5 sin tracción, 6 en la cola del acopio (H7, con acopiador)
+  // 5 sin tracción, 6 en la cola del acopio (H7, con acopiador), 7 espera calle libre y 8 cede el paso (H8, con flota)
   const st = run.robot.status
   const T = n * DT
   const robotTime = st
     ? (() => {
-        const c = [0, 0, 0, 0, 0, 0, 0]
-        for (let i = 0; i < n; i++) if (st[i] <= 6) c[st[i]]++
-        return { move: c[0] / n, wait: c[1] / n, stop: c[2] / n, safety: c[3] / n, slow: c[4] / n, traction: c[5] / n, acopio: c[6] / n, exact: true }
+        const c = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        for (let i = 0; i < n; i++) if (st[i] <= 8) c[st[i]]++
+        return {
+          move: c[0] / n,
+          wait: c[1] / n,
+          stop: c[2] / n,
+          safety: c[3] / n,
+          slow: c[4] / n,
+          traction: c[5] / n,
+          acopio: c[6] / n,
+          calle: c[7] / n,
+          cede: c[8] / n,
+          exact: true,
+        }
       })()
     : (() => {
         let m = 0
