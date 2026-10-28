@@ -214,4 +214,6 @@ export default {
   'Entregado por la flota': 'Delivered by the fleet',
   'Calles recorridas por la flota': 'Lanes travelled by the fleet',
   'Energía de la flota por kg entregado': 'Fleet energy per kg delivered',
+  'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.':
+    'With a fleet, distances, zones and encounters are with the robot closest to each worker; the protection field and stops are per robot.',
 }

@@ -214,4 +214,6 @@ export default {
   'Entregado por la flota': 'Entregue pela frota',
   'Calles recorridas por la flota': 'Ruas percorridas pela frota',
   'Energía de la flota por kg entregado': 'Energia da frota por kg entregue',
+  'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.':
+    'Com frota, as distâncias, as zonas e os encontros são com o robô mais próximo de cada colhedor; o campo de proteção e as paradas, de cada robô.',
 }

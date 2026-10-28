@@ -232,6 +232,7 @@ test('los textos de la flota están traducidos al inglés y al portugués', asyn
       'Calles recorridas por la flota',
       'Energía de la flota por kg entregado',
       'Estado',
+      'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.',
     ],
   ])
   const faltan = []

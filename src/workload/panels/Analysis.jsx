@@ -27,6 +27,13 @@ export function Analysis({ run, i, seek, select, note }) {
           {note}
         </div>
       )}
+      {run.flota && (
+        <div className="hint" data-testid="nota-flota-hri">
+          {t(
+            'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.',
+          )}
+        </div>
+      )}
       <Tabs className="seg" label={t('Análisis de interacción')} value={tab} onChange={setTab} options={tabs} />
       {tab === 'cortesia' && (
         <>

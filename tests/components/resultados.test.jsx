@@ -91,6 +91,14 @@ describe('Resultados por pregunta (I4)', () => {
     expect(screen.getByText('Espera media de las cajas')).toBeTruthy()
   })
 
+  it('H8: Interacción avisa que con flota la geometría es con el robot más cercano', () => {
+    render(<Analysis run={flota2} i={0} seek={() => {}} select={() => {}} />)
+    expect(screen.getByTestId('nota-flota-hri').textContent).toMatch(/robot más cercano a cada trabajador/)
+    cleanup()
+    render(<Analysis run={warthog} i={0} seek={() => {}} select={() => {}} />)
+    expect(screen.queryByTestId('nota-flota-hri')).toBeNull()
+  })
+
   it('H8: el resumen dice «de la flota» cuando alguna corrida tiene flota', () => {
     render(<Summary ho={warthog} hr={flota2} t={0} seek={() => {}} labels={{ ho: 'Con 1 robot', hr: 'Con 2 robots' }} />)
     expect(screen.getByText('Entregado por la flota')).toBeTruthy()
