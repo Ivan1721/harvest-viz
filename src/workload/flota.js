@@ -3,6 +3,13 @@
 // cercano a cada trabajador (ver analyzeHRI). Sin flota nada de esto se usa.
 import { analyzeHRI } from './hri.js'
 
+/** Cómo se reparten los robots (claves de traducción): el nombre y una línea que lo explica. */
+export const ESTRATEGIAS = {
+  zonas: ['Zonas', 'Cada robot recorre un grupo de calles contiguas; se reparten de nuevo en cada vuelta.'],
+  opuestas: ['Direcciones opuestas', 'La misma vuelta en sentidos contrarios, con reserva de calles: un robot por calle.'],
+  desfase: ['Desfase', 'La misma vuelta y el mismo sentido, separados por media vuelta.'],
+}
+
 /** Color de cada robot: azul (el de «Humano-robot»), ámbar y malva; distinguibles también con daltonismo (Okabe-Ito). */
 export const COLORES_ROBOT = ['#2a78d6', '#e69f00', '#cc79a7']
 export const colorRobot = (k) => COLORES_ROBOT[k % COLORES_ROBOT.length]

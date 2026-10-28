@@ -118,4 +118,20 @@ export default {
   'Hay {n} cambios sin simular: {c}.': '{n} changes not yet simulated: {c}.',
   'Resultados al día.': 'Results up to date.',
   'Cambió: {c}.': 'Changed: {c}.',
+  // H8: flota de robots (paso Agentes y «Comparar con»)
+  'Cantidad de robots': 'Number of robots',
+  'Cómo se reparten': 'How they split up',
+  Zonas: 'Zones',
+  'Direcciones opuestas': 'Opposite directions',
+  Desfase: 'Offset',
+  'Cada robot recorre un grupo de calles contiguas; se reparten de nuevo en cada vuelta.':
+    'Each robot covers a group of adjacent lanes; they are split up again every lap.',
+  'La misma vuelta en sentidos contrarios, con reserva de calles: un robot por calle.':
+    'The same lap in opposite directions, with lane reservation: one robot per lane.',
+  'La misma vuelta y el mismo sentido, separados por media vuelta.': 'The same lap in the same direction, half a lap apart.',
+  'Otra cantidad de robots': 'Different number of robots',
+  'Cantidad de robots de la comparación': 'Number of robots in the comparison',
+  'Con 1 robot': 'With 1 robot',
+  'Con 2 robots': 'With 2 robots',
+  'Con 3 robots': 'With 3 robots',
 }

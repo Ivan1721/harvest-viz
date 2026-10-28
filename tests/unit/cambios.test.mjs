@@ -22,7 +22,13 @@ test('los objetos anidados se nombran por campo; activarlos o quitarlos, por su 
   assert.deepEqual(camposCambiados(clave({ ...AD, acopio: { binKg: 400 } }), clave({ ...AD, acopio: { binKg: 500 } })), ['Capacidad del bin (kg)'])
   assert.deepEqual(camposCambiados(clave(AD), clave(AD, undefined, 'perfil')), ['Comparar con'])
   // un campo sin etiqueta conocida se nombra por su clave
-  assert.deepEqual(camposCambiados(clave(AD), clave({ ...AD, flota: { robots: 2 } })), ['flota'])
+  assert.deepEqual(camposCambiados(clave(AD), clave({ ...AD, inventado: { x: 2 } })), ['inventado'])
+  // flota de robots (H8): activarla o quitarla se nombra por su etiqueta; luego, por campo
+  const dos = { ...AD, flota: { n: 2, estrategia: 'zonas' } }
+  assert.deepEqual(camposCambiados(clave(AD), clave(dos)), ['Cantidad de robots'])
+  assert.deepEqual(camposCambiados(clave(dos), clave({ ...dos, flota: { n: 3, estrategia: 'zonas' } })), ['Cantidad de robots'])
+  assert.deepEqual(camposCambiados(clave(dos), clave({ ...dos, flota: { n: 2, estrategia: 'desfase' } })), ['Cómo se reparten'])
+  assert.deepEqual(camposCambiados(clave(dos), clave(dos, undefined, 'flota:1')), ['Comparar con'])
 })
 
 test('con otro huerto, sus medidas no se nombran aparte; el robot y su energía son un solo nombre', () => {

@@ -85,3 +85,39 @@ test('H7: el acopio y la carga (opciones ausente en los valores de partida) viaj
   const r2 = readRunState(new URLSearchParams(writeRunState(new URLSearchParams(), p, CFG0).toString()), CFG0)
   assert.equal('acopio' in r2.params, false)
 })
+
+test('H8: la cantidad de robots y cómo se reparten viajan en claves legibles y vuelven igual', () => {
+  const p = profileDefaults('hri', 'palta-alta-densidad', 'burro')
+  p.flota = { n: 3, estrategia: 'opuestas' }
+  const sp = writeRunState(new URLSearchParams(), p, CFG0)
+  assert.equal(sp.get('robots'), '3')
+  assert.equal(sp.get('estrategia'), 'opuestas')
+  assert.equal(sp.has('ajustes'), false, 'la flota no va en `ajustes`')
+  const r = readRunState(new URLSearchParams(sp.toString()), CFG0)
+  assert.equal(r.error, null)
+  assert.deepEqual(r.params, p)
+  assert.equal(paramsHash(resolveParams(r.params)), paramsHash(resolveParams(p)))
+  // con un robot (o sin la clave) no hay flota; sin estrategia, zonas
+  const uno = profileDefaults('hri', 'palta-alta-densidad', 'burro')
+  assert.equal(writeRunState(new URLSearchParams(), uno, CFG0).has('robots'), false)
+  assert.equal(readRunState(new URLSearchParams('huerto=palta-alta-densidad&robots=1'), CFG0).params.flota, undefined)
+  assert.deepEqual(readRunState(new URLSearchParams('huerto=palta-alta-densidad&robots=2'), CFG0).params.flota, { n: 2, estrategia: 'zonas' })
+  // al cambiar de flota, las claves viejas de la URL se reemplazan
+  const sp2 = writeRunState(new URLSearchParams('robots=3&estrategia=desfase'), uno, CFG0)
+  assert.equal(sp2.has('robots') || sp2.has('estrategia'), false)
+})
+
+test('H8: robots y estrategia inválidos se ignoran y se informan; el mapa del estudio no tiene flota', () => {
+  const r = readRunState(new URLSearchParams('huerto=palta-alta-densidad&robots=4&estrategia=volar'), CFG0)
+  assert.equal(r.params.flota, undefined)
+  assert.deepEqual(r.error, ['robots'])
+  const e = readRunState(new URLSearchParams('huerto=palta-alta-densidad&robots=2&estrategia=volar'), CFG0)
+  assert.deepEqual(e.params.flota, { n: 2, estrategia: 'zonas' })
+  assert.deepEqual(e.error, ['estrategia'])
+  const m = readRunState(new URLSearchParams('huerto=matlab-2026&robots=2'), CFG0)
+  assert.equal(m.params.flota, undefined)
+  assert.deepEqual(m.error, ['robots'])
+  // `flota` en `ajustes` no entra: viaja en sus claves
+  const aj = Buffer.from(JSON.stringify({ flota: { n: 3 } })).toString('base64url')
+  assert.equal(readRunState(new URLSearchParams(`huerto=palta-alta-densidad&ajustes=${aj}`), CFG0).params.flota, undefined)
+})

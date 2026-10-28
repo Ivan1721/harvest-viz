@@ -15,6 +15,7 @@ const ETIQUETA = {
   robotTipo: 'Robot',
   energia: 'Robot',
   reparto: 'Reparto de la cuadrilla',
+  flota: 'Cantidad de robots',
   avance: 'Avance del bloque',
   acopio: 'Acopio',
   carga: 'Carga variable y ritmo que cae',
@@ -29,6 +30,7 @@ const SUB = {
   acopio: fila(ACOPIO),
   carga: fila(CARGA),
   ssm: { ...fila(SSM), enabled: 'Regla de seguridad activa' },
+  flota: { n: 'Cantidad de robots', estrategia: 'Cómo se reparten' },
 }
 // la cuadrilla primero: es lo que más se cambia y lo que el título de la escena nombra
 const ORDEN = ['nw', 'act', 'row', 'rp', 'huerto']
