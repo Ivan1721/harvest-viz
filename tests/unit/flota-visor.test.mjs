@@ -4,7 +4,19 @@ import assert from 'node:assert/strict'
 import { HRSim } from '../../src/hrsim/engine.js'
 import { simToRun } from '../../src/hrsim/toRun.js'
 import { analyzeHRI } from '../../src/workload/hri.js'
-import { analizarFlota, vistaRobot, COLORES_ROBOT, colorRobot, etiquetaRobot } from '../../src/workload/flota.js'
+import {
+  analizarFlota,
+  vistaRobot,
+  filasFlota,
+  robotsDeRun,
+  selRobot,
+  robotDeSel,
+  ESTRATEGIAS,
+  COLORES_ROBOT,
+  colorRobot,
+  etiquetaRobot,
+} from '../../src/workload/flota.js'
+import { nombreFlota } from '../../src/workload/variantes.js'
 import { FIS } from '../helpers.mjs'
 
 const AD = 'palta-alta-densidad'
@@ -154,4 +166,73 @@ test('colores y etiquetas de los robots', () => {
   assert.equal(new Set(COLORES_ROBOT).size, 3)
   assert.equal(colorRobot(0), COLORES_ROBOT[0])
   assert.equal(colorRobot(3), COLORES_ROBOT[0], 'si hubiera más robots, los colores se repiten')
+})
+
+test('filasFlota: un valor por robot y el de la flota; la fila de S_p solo con la regla de seguridad', () => {
+  const run = corrida({ flota: { n: 2, estrategia: 'zonas' }, duration: 1800 })
+  run.hri = analizarFlota(run)
+  const filas = filasFlota(run)
+  const f = (k) => filas.find((x) => x.key === k)
+  for (const x of filas) assert.equal(x.robots.length, 2, x.key)
+  assert.equal(f('cajas').flota, f('cajas').robots[0] + f('cajas').robots[1])
+  cerca(f('entregado').flota, run.series.cargo.at(-1), 1e-2, 'entregado por la flota')
+  cerca(f('energia').flota, f('energia').robots[0] + f('energia').robots[1], 1e-6, 'energía de la flota')
+  cerca(f('mov').flota, (f('mov').robots[0] + f('mov').robots[1]) / 2, 1e-9, 'movimiento medio')
+  assert.equal(f('sp'), undefined, 'sin regla de seguridad no hay fila de S_p')
+  assert.equal(f('parado'), undefined, 'ninguno quedó estacionado: la fila opcional se omite')
+  const hri = corrida({ profile: 'hri', flota: { n: 2, estrategia: 'zonas' }, duration: 600 })
+  hri.hri = analizarFlota(hri)
+  assert.ok(filasFlota(hri).some((x) => x.key === 'sp'))
+  // dos cosecheros y tres robots: dos quedan estacionados y la fila aparece
+  const sin = corrida({ nw: 2, flota: { n: 3, estrategia: 'zonas' }, duration: 600 })
+  sin.hri = analizarFlota(sin)
+  const p = filasFlota(sin).find((x) => x.key === 'parado')
+  assert.ok(p.robots[1] > 500 && p.robots[2] > 500 && p.robots[0] === 0)
+})
+
+test('selección de robots en la escena y en la lista', () => {
+  assert.deepEqual([0, 1, 2].map(selRobot), ['robot', 'robot:1', 'robot:2'])
+  assert.deepEqual(['robot', 'robot:1', 'robot:2', 5, null, 'robot:x', 'robot:12'].map(robotDeSel), [0, 1, 2, -1, -1, -1, -1])
+  const run = corrida({ flota: { n: 2, estrategia: 'zonas' }, duration: 300 })
+  assert.equal(robotsDeRun(run).length, 2)
+  assert.equal(robotsDeRun(corrida({ duration: 300 })).length, 1)
+  assert.deepEqual(robotsDeRun(null), [])
+})
+
+test('los textos de la flota están traducidos al inglés y al portugués', async () => {
+  const en = (await import('../../src/i18n/en/index.js')).default
+  const pt = (await import('../../src/i18n/pt/index.js')).default
+  const run = corrida({ nw: 2, profile: 'hri', flota: { n: 3, estrategia: 'zonas' }, duration: 600 })
+  run.hri = analizarFlota(run)
+  const claves = new Set([
+    ...Object.values(ESTRATEGIAS).flat(),
+    ...[1, 2, 3].map(nombreFlota),
+    ...filasFlota(run).map((x) => x.nombre),
+    ...[
+      'Cantidad de robots',
+      'Cómo se reparten',
+      'Otra cantidad de robots',
+      'Cantidad de robots de la comparación',
+      'Flota',
+      'Cada robot y la flota',
+      'Detalle de',
+    ],
+    ...[
+      'Cultivo a bordo de cada robot',
+      'Equilibrio de cajas entre robots (Jain)',
+      'Distancia mínima entre robots',
+      'Distancia mínima entre robots (con alguno en una calle)',
+    ],
+    ...[
+      'Esperando calle libre',
+      'Cediendo el paso',
+      'Entregado por la flota',
+      'Calles recorridas por la flota',
+      'Energía de la flota por kg entregado',
+      'Estado',
+    ],
+  ])
+  const faltan = []
+  for (const k of claves) for (const [n, d] of Object.entries({ en, pt })) if (!(k in d)) faltan.push(n + ': ' + k)
+  assert.deepEqual(faltan, [])
 })

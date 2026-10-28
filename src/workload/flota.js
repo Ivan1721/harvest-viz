@@ -99,3 +99,37 @@ function fluidezFlota(run, f0, por) {
     p5Moving: p5.length ? Math.min(...p5) : null,
   }
 }
+
+/**
+ * Filas de la tabla de la flota (pestaña Robot): una por medida, con el valor de cada robot y el de toda la flota.
+ * `dg` son los decimales; las filas con `opcional` se omiten si valen cero en todos los robots.
+ */
+export function filasFlota(run) {
+  const rs = run.flota.resumen.robots,
+    por = run.hri.porRobot,
+    F = run.hri.fluency
+  const suma = (xs) => sumaDe(xs)
+  const pct = (v) => (v == null ? null : 100 * v)
+  const delTiempo = (k) => ({ robots: por.map((a) => pct(a.fluency.robotTime[k])), flota: pct(F.robotTime[k]) })
+  const deResumen = (k) => ({ robots: rs.map((r) => r[k]), flota: suma(rs.map((r) => r[k])) })
+  const filas = [
+    { key: 'cajas', nombre: 'Cajas atendidas', unidad: '', ...deResumen('cajas') },
+    { key: 'entregado', nombre: 'Entregado al acopio', unidad: 'u', ...deResumen('entregado') },
+    { key: 'mov', nombre: 'En movimiento', unidad: '%', ...delTiempo('move') },
+    { key: 'espera', nombre: 'Esperando al trabajador', unidad: '%', ...delTiempo('wait') },
+    { key: 'calle', nombre: 'Esperando calle libre', unidad: 's', ...deResumen('esperaCalle_s') },
+    { key: 'cede', nombre: 'Cediendo el paso', unidad: 's', ...deResumen('cede_s') },
+    { key: 'acopio', nombre: 'Esperando en el acopio', unidad: 's', ...deResumen('esperaAcopio_s'), opcional: true },
+    { key: 'parado', nombre: 'Estacionado o esperando su salida', unidad: 's', ...deResumen('estacionado_s'), opcional: true },
+    { key: 'recorrido', nombre: 'Recorrido', unidad: 'm', ...deResumen('recorrido_m') },
+    { key: 'descargas', nombre: 'Descargas en el acopio', unidad: '', ...deResumen('descargas') },
+  ]
+  const E = por.map((a) => a.fluency.energia)
+  if (E[0]) {
+    filas.push({ key: 'energia', nombre: 'Energía', unidad: 'Wh', robots: E.map((e) => e.wh), flota: F.energia.wh })
+    filas.push({ key: 'bateria', nombre: 'Batería restante', unidad: '%', robots: E.map((e) => e.bateriaPct), flota: F.energia.bateriaPct })
+  }
+  if (run.meta?.params?.ssm?.enabled)
+    filas.push({ key: 'sp', nombre: 'Tiempo dentro de S_p(v)', unidad: 's', robots: por.map((a) => a.fluency.protection.s), flota: F.protection.s })
+  return filas.filter((f) => !f.opcional || f.robots.some((v) => v > 0))
+}
