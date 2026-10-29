@@ -1,6 +1,7 @@
 // Mide la fluidez del visor en el navegador: FPS, ms por cuadro (p95), draw calls y triángulos
 // para cada combinación de estilo y vista. Requiere el sitio servido (npm run build && npx vite preview).
 // uso: node scripts/bench-visual.mjs [--url http://localhost:4173/] [--channel chrome|msedge] [--headed] [--label antes] [--secs 15]
+//      [--query 'huerto=palta-alta-densidad&perfil=hri&calidad=alta'] (se agrega al enlace de cada escenario)
 import fs from 'node:fs'
 import os from 'node:os'
 import { chromium } from '@playwright/test'
@@ -14,6 +15,7 @@ const channel = arg('channel', undefined)
 const headed = process.argv.includes('--headed')
 const label = arg('label', 'actual')
 const secs = Number(arg('secs', 15))
+const query = arg('query', '')
 const SCEN = [
   ['Realista', 'cmp'],
   ['Realista', 'hr'],
@@ -31,7 +33,7 @@ const gpu = await page.evaluate(() => {
 })
 const rows = []
 for (const [look, view] of SCEN) {
-  await page.goto(`${url}?perf=1&view=${view}&speed=10${look === 'Esquemático' ? '&look=schem' : ''}`)
+  await page.goto(`${url}?perf=1&view=${view}&speed=10${look === 'Esquemático' ? '&look=schem' : ''}${query ? `&${query}` : ''}`)
   await page.locator('canvas').first().waitFor({ timeout: 120000 })
   await page.waitForTimeout(6000) // calentamiento: carga de texturas y compilación de shaders
   const samples = []
@@ -56,7 +58,7 @@ for (const [look, view] of SCEN) {
   )
 }
 await browser.close()
-const out = { label, date: new Date().toISOString(), host: os.hostname(), cpu: os.cpus()[0]?.model, gpu, browser: channel || 'chromium', url, rows }
+const out = { label, date: new Date().toISOString(), host: os.hostname(), cpu: os.cpus()[0]?.model, gpu, browser: channel || 'chromium', url, query, rows }
 fs.mkdirSync(new URL('../bench/', import.meta.url), { recursive: true })
 const file = new URL(`../bench/visual-${label}.json`, import.meta.url)
 fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n')
