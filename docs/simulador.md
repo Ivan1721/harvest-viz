@@ -241,22 +241,34 @@ recomendadas y tres ajustes). H7 mostró que un robot no alcanza a transportar l
   parten del mismo punto. «Comparar con» → «Otra cantidad de robots» (`cmp=flota:<n>`) corre el mismo escenario con otra
   cantidad y la misma estrategia. Exportar agrega las columnas `Robot2_*` y `Robot3_*` a `*_poses.csv`.
 
-Primeros resultados (palta alta densidad, 12 cosecheros, 4 h; llega al acopio, de lo cosechado): 1 robot 69 %; 2
-robots: zonas 94 %, opuestas 73 %, desfase 78 %; 3 robots: zonas 96 %, opuestas 92 %, desfase 95 %. En direcciones
-opuestas los robots esperan calle libre en cada vuelta (≈1.100 s en 4 h con 2 robots), como anticipaba el diseño. El lote
-de H8-exp los revisa en todos los huertos.
+Primeros resultados (palta alta densidad, base simple —sin acopiador, carga variable ni regla de seguridad—, 12
+cosecheros, 4 h; llega al acopio, de lo cosechado): 1 robot 66 % (69 % con el motor 0.8.0, antes de corregir el tramo
+de regreso); 2 robots: zonas 94 %, opuestas 73 %, desfase 78 %; 3 robots: zonas 96 %, opuestas 92 %, desfase 95 %. En
+direcciones opuestas los robots esperan calle libre en cada vuelta (≈1.100 s en 4 h con 2 robots), como anticipaba el
+diseño. Son una corrida por celda: el lote de H8-exp los revisa con semillas, con la base realista de H7 y en todos los
+huertos.
+
+**Tramo de regreso** (corregido en H8-C, motor 0.8.1). Con un número impar de calles, la vuelta replanificada vuelve de
+la cabecera de arriba al acopio por la última calle en un solo tramo de ~100 m (defecto del generador, de antes de H8).
+Con un único waypoint al fondo, el controlador se abría al girar y bajaba en diagonal, invadiendo la hilera vecina (hasta
+3,1 m de la calle), y al doble de la velocidad que lleva en las calles (61 s contra 124 s en 98 m). Con flota se corrigió
+en la fase A con un waypoint cada 3 m en las calles (`densificar`); con un robot quedó igual para no mover H2–H7, y en
+H8-C se corrigió también ahí, para que 1, 2 y 3 robots sigan la misma lógica de ruta. Cambian las corridas con un robot en
+huertos generados cuya cuadrilla cambia de calles con un número impar de ellas (palta alta densidad y ladera; en el lote
+de H7, también algunas de uva y arándano): lo entregado por corrida varía entre −2,6 % y +10,1 % (5 de 24 casos de
+prueba, 12 cosecheros, 4 h; los demás, iguales al kilo), pero la media casi no se mueve: con 5 semillas en alta densidad,
+−1,6 % con Warthog y +2,4 % con Burro con carro, frente a una variación entre semillas de hasta el 25 % de la media. El
+lote de H7 repetido con el motor corregido cambia 87 de sus 1.510 celdas con robot y mantiene sus cuatro conclusiones:
+el límite de transporte en alta densidad pasa de 21–85 % a 21–91 % de lo cosechado, el efecto de alejar el bloque
+(Warthog, 45 min) de +33→+55 % a +33→+53 %, y el costo de la regla de seguridad de 3,9 a 1,4 puntos como máximo; el
+reparto y los resultados de cerezo y palta tradicional no cambian. `experimentos/h7/` conserva los resultados del motor
+0.7.0.
 
 Limitaciones:
 
 - Los robots son puntos: en la cabecera y en el acopio uno puede pasar «a través» de otro detenido (la cabecera, de
   6 m, da espacio para esquivarlo, pero el modelo no dibuja la maniobra). La distancia mínima entre robots llega a ~0 m
   ahí; con alguno dentro de una calle no baja de 2,6 m en alta densidad.
-- **Tramo de regreso** (defecto del generador, de antes de H8): con un número impar de calles, la vuelta vuelve de la
-  cabecera de arriba al acopio por la última calle en un solo tramo de ~100 m. Con un único waypoint al fondo, el
-  controlador se abre al girar y baja en diagonal, invadiendo la hilera vecina. Con flota eso rompía la reserva, así que
-  las vueltas de la flota llevan un waypoint cada 3 m también ahí (`densificar`). Con un robot la vuelta sigue igual
-  para no cambiar H2–H7; corregirla también ahí bajaría lo entregado hasta 2,6 % (palta alta densidad y ladera, 12
-  cosecheros, 4 h; uva y cerezo sin cambio). Decisión pendiente.
 
 ## Experimentos en lote (H6)
 

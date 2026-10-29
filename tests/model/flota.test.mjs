@@ -122,8 +122,10 @@ test('un solo cosechero con dos robots en zonas: el segundo espera estacionado y
   for (const huerto of [AD, 'palta-tradicional', 'cerezo-ufo']) {
     const a = new HRSim({ nw: 1, huerto, duration: 2700 }, FIS).run()
     const b = new HRSim({ nw: 1, huerto, duration: 2700, flota: { n: 2, estrategia: 'zonas' } }, FIS).run()
-    // la trayectoria del primero difiere solo en el regreso por la última calle (densificar en flota.js)
+    // el primer robot hace lo mismo con uno o con dos: la misma ruta (densificada también con uno, H8-C) y la misma trayectoria al tick
     assert.equal(b.rec.delivered.at(-1), a.rec.delivered.at(-1), huerto)
+    assert.deepEqual(b.rec.rx, a.rec.rx, `${huerto}: trayectoria x del primer robot`)
+    assert.deepEqual(b.rec.ry, a.rec.ry, `${huerto}: trayectoria y del primer robot`)
     const r2 = b.summary().flota.robots[1]
     assert.equal(r2.cajas, 0)
     const pk = estacionamiento(b.huerto, 1)
@@ -133,6 +135,41 @@ test('un solo cosechero con dos robots en zonas: el segundo espera estacionado y
       `${huerto}: nunca entra a una calle`,
     )
   }
+})
+
+// tramo recto más largo entre waypoints que comparten x (los tramos por una calle)
+const rectoMax = (pts) => {
+  let m = 0
+  for (let i = 1; i < pts.length; i++) if (Math.abs(pts[i][0] - pts[i - 1][0]) < 1e-9) m = Math.max(m, Math.abs(pts[i][1] - pts[i - 1][1]))
+  return m
+}
+
+test('un solo robot (H8-C): la vuelta del huerto generado lleva un waypoint cada 3 m en las calles, también al replanificar; el mapa de MATLAB no cambia', () => {
+  // densificar deja tramos de a lo más 1,5 pasos (4,5 m); sin él, la vuelta con calles impares vuelve al acopio en un tramo de ~100 m
+  for (const huerto of [AD, 'palta-tradicional', 'palta-ladera', 'uva-parron', 'arandano', 'cerezo-ufo']) {
+    const s = new HRSim({ nw: 12, huerto, duration: 60 }, FIS)
+    const recto = rectoMax(s.R[0].waypoints)
+    assert.ok(recto <= 4.5 + 1e-9, `${huerto}: tramo recto de ${recto.toFixed(1)} m`)
+  }
+  // solo se agregan puntos sobre la misma línea: los vértices de la vuelta base siguen todos, en orden (la ruta de las cajas no cambia)
+  const s = new HRSim({ nw: 12, huerto: AD, duration: 7200 }, FIS)
+  let j = 0
+  for (const q of s.baseRoute) {
+    while (j < s.R[0].waypoints.length && (s.R[0].waypoints[j][0] !== q[0] || s.R[0].waypoints[j][1] !== q[1])) j++
+    assert.ok(j < s.R[0].waypoints.length, 'un vértice de la vuelta base falta en la ruta del robot')
+  }
+  // al replanificar (la cuadrilla cambia de calles), la ruta nueva también va densificada
+  s.run()
+  const nuevas = s.ev.rutas.slice(1)
+  assert.ok(nuevas.length > 0, 'en 2 h la cuadrilla cambia de calles')
+  for (const r of nuevas)
+    assert.ok(rectoMax(r.puntos) <= 4.5 + 1e-9, `ruta replanificada en t=${r.idx * s.dt}: tramo recto de ${rectoMax(r.puntos).toFixed(1)} m`)
+  // el mapa de MATLAB no es un huerto generado: su ruta es la de siempre
+  const m = new HRSim({ nw: 4, duration: 60 }, FIS)
+  assert.deepEqual(
+    m.R[0].waypoints.map((q) => [q[0], q[1]]),
+    m.baseRoute,
+  )
 })
 
 test('sin zona: con más robots que calles ocupadas, los que sobran esperan estacionados (estado 6) y se suman después', () => {

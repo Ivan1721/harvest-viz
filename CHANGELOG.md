@@ -4,7 +4,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). H8, fase B: la flota de robots en la interfaz. Solo interfaz: el motor (0.8.0) y los resultados no cambian; con flota y Burro con carro el motor registra además la pose del carro de cada robot.
+Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). H8, fase B: la flota de robots en la interfaz (solo interfaz: el motor no cambia; con flota y Burro con carro registra además la pose del carro de cada robot). H8, fase C: el tramo de regreso del robot solo. **Motor 0.8.1**: cambian las corridas con un robot en palta alta densidad y ladera; la réplica de MATLAB no cambia.
 
 ### Agregado
 
@@ -15,6 +15,7 @@ Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-1
 
 ### Corregido
 
+- **Tramo de regreso del robot solo** (H8, fase C). Con un número impar de calles, la vuelta replanificada volvía de la cabecera al acopio en un solo tramo de ~100 m: el robot bajaba en diagonal entre las copas (hasta 3,1 m de la calle) al doble de la velocidad que lleva en las calles (61 s contra 124 s en 98 m). Con flota ya llevaba un waypoint cada 3 m (`densificar`); ahora también con un robot, en los huertos generados. **Motor 0.8.1.** La réplica de MATLAB y las huellas del motor no cambian. Cambian las corridas con un robot en palta alta densidad y ladera: lo entregado por corrida varía entre −2,6 % y +10,1 % (5 de 24 casos de prueba, 12 cosecheros, 4 h) y la media casi no se mueve (5 semillas en alta densidad: −1,6 % con Warthog, +2,4 % con Burro con carro, frente a una variación entre semillas de hasta el 25 % de la media). El lote de H7, repetido con el motor corregido, cambia 87 de sus 1.510 celdas con robot (alta densidad, y algunas de uva y arándano) y mantiene sus cuatro conclusiones: el límite de transporte en alta densidad pasa de 21–85 % a 21–91 % de lo cosechado, el efecto de alejar el bloque (Warthog, 45 min) de +33→+55 % a +33→+53 %, y el costo de la regla de seguridad de 3,9 a 1,4 puntos como máximo; el reparto y los resultados de cerezo y palta tradicional no cambian. `experimentos/h7/` conserva los resultados del motor 0.7.0.
 - El Simulador decía que sus posiciones eran reconstruidas y aproximadas (pestañas Interacción y Datos, detalle del robot), aunque registra la pose exacta de cada agente cada 0,25 s. La nota depende ahora del origen de la corrida: «exactas» en el simulador, «reconstruidas» en las corridas de MATLAB.
 - El punto «modificado» de los pasos no se encendía al cambiar cosecheros, actividad, fila o disposición, y «Restablecer» no los devolvía.
 - Decimales con punto en Interacción y en el detalle (p. ej. «0.49 m» junto a «0,66»): todo número usa el formato del idioma. Las duraciones siguen una sola regla: «48 s», «12,5 min», «2 h 05 min».

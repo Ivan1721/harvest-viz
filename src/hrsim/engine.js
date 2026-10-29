@@ -21,7 +21,7 @@ import { paso } from './huertos/pendiente.js'
 import { ROBOTS, potencia, fuerzaAvance, limiteTraccion, frenadaEfectiva } from './robots.js'
 import { Acopio, recordAcopio, resumenAcopio } from './acopio.js'
 import { prepararCarga, resumenCarga } from './carga.js'
-import { vueltaDeRobot, estacionamiento, jain } from './flota.js'
+import { vueltaDeRobot, estacionamiento, jain, densificar } from './flota.js'
 
 // estados del trabajador dedicados al robot (camina a la caja, la carga, baja la escalera para atenderlo):
 // en la regla de seguridad ese trabajador no detiene al robot, solo lo obliga a ir lento (silenciamiento, ISO 3691-4)
@@ -126,8 +126,10 @@ export class HRSim {
     const nR = this.flota ? this.flota.n : 1
     this.R = []
     const ejes0 = this.cosecha ? this._ejesOcupados(W) : null
+    // huertos generados: un waypoint cada 3 m en las calles también con un solo robot (ver densificar); la ruta base de las cajas no cambia
+    const lapRobot = this.cosecha ? densificar(lap) : lap
     for (let i = 0; i < nR; i++) {
-      const mia = this.flota ? vueltaDeRobot(huerto, this.flota.estrategia, i, nR, ejes0, (e) => this._pesoEje(e)) : { ejes: ejes0, lap }
+      const mia = this.flota ? vueltaDeRobot(huerto, this.flota.estrategia, i, nR, ejes0, (e) => this._pesoEje(e)) : { ejes: ejes0, lap: lapRobot }
       const wps = []
       for (let k = 0; k < p.lapRepeats; k++) for (const w of mia.lap) wps.push([w[0], w[1]])
       const r = nuevoRobot(i, wps, huerto.inicioRobot, NH)
@@ -572,7 +574,8 @@ export class HRSim {
     // con flota, un robot sin zona recorre su «vuelta» (quedarse en el acopio) muy rápido: siempre le queda al menos una
     const vueltas = Math.max(this.flota ? 1 : 0, resto.filter((q) => q.fin).length)
     const cajas = resto.filter((q) => q.caja)
-    const lap = mia ? mia.lap : this.huerto.vuelta(ejes)
+    const base = mia ? null : this.huerto.vuelta(ejes)
+    const lap = mia ? mia.lap : densificar(base)
     const nuevo = []
     const marcar = (pts) =>
       pts.forEach((q, j) => {
@@ -582,7 +585,7 @@ export class HRSim {
       })
     for (let i = 0; i < vueltas; i++) marcar(lap)
     r.waypoints = [...W.slice(0, k + 1), ...nuevo]
-    this.baseRoute = (mia ? this.huerto.vuelta(todos) : lap).map((q) => [q[0], q[1]])
+    this.baseRoute = (mia ? this.huerto.vuelta(todos) : base).map((q) => [q[0], q[1]])
     for (const q of cajas) r.waypoints.splice(this._insertAt(q, r), 0, q)
     r.rutaEjes = ejes
     if (r.id === 0) this.ev.rutas.push({ idx: this.idx, puntos: lap.map((q) => [q[0], q[1]]) })
