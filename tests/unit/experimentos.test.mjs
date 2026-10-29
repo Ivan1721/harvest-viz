@@ -1,8 +1,22 @@
-// H6: experimentos en lote — expansión del diseño, filas, efectos contra «sin robot» y CSV.
+// H6–H8: experimentos en lote — expansión del diseño, filas, efectos contra «sin robot» y contra 1 robot, resumen y CSV.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { COLS, EFECTO_COLS, SIN_ROBOT, aCSV, cartesiano, celdas, clave, conEfectos, correr, deCSV, opciones } from '../../scripts/experimentos/lib.mjs'
+import {
+  COLS,
+  EFECTO_COLS,
+  RESUMEN_COLS,
+  SIN_ROBOT,
+  aCSV,
+  cartesiano,
+  celdas,
+  clave,
+  conEfectos,
+  correr,
+  deCSV,
+  opciones,
+  resumen,
+} from '../../scripts/experimentos/lib.mjs'
 import { FIS } from '../helpers.mjs'
 
 test('cartesiano: todas las combinaciones, la última clave varía más rápido', () => {
@@ -106,4 +120,62 @@ test('correr con las opciones de H7: acopio, carga, reparto y avance en la fila;
   assert.equal(e.efecto_cosecha_pct, '', 'la fila sin robot no tiene efecto')
   const conE = conEfectos([otro, ho, hr]).at(-1)
   assert.equal(conE.efecto_cosecha_pct, +((100 * (hr.cosecha_kg - ho.cosecha_kg)) / ho.cosecha_kg).toFixed(2))
+})
+
+test('el diseño de H8: 3240 corridas en el bloque A y 288 más en el de sensibilidad (sus referencias son las de A)', () => {
+  const d = JSON.parse(fs.readFileSync(new URL('../../experimentos/h8.json', import.meta.url), 'utf8'))
+  const [A, S] = d.bloques.map(celdas)
+  // 6 huertos × (sin robot + 2 tipos × 7 flotas) × 3 avances × 2 cuadrillas, cada una con la corrida de siempre y 5 semillas
+  assert.equal(A.length, 6 * 15 * 3 * 2 * 6)
+  assert.ok(A.every((c) => c.duration === 14400))
+  // sin robot la flota no aplica: una sola celda por escenario
+  assert.ok(A.filter((c) => c.robot === SIN_ROBOT).every((c) => !('flota' in c)))
+  assert.equal(A.filter((c) => c.robot === SIN_ROBOT).length, 6 * 3 * 2 * 6)
+  assert.equal(S.length, 2 * 16 * 2 * 6)
+  const kA = new Set(A.map(clave))
+  assert.equal(kA.size, A.length)
+  assert.equal(new Set([...A, ...S].map(clave)).size, 3240 + 2 * 12 * 2 * 6)
+  // la flota de 1 robot es la corrida de siempre: misma clave que sin la opción
+  const c = { bloque: 'X', huerto: 'cerezo-ufo', nw: 12, act: 'mixed', duration: 600, profile: 'hri', robot: 'warthog' }
+  assert.equal(clave({ ...c, flota: null }), clave(c))
+  assert.notEqual(clave({ ...c, flota: { n: 2, estrategia: 'zonas' } }), clave(c))
+})
+
+test('correr con flota (H8): robots, estrategia y métricas de la flota en la fila; efecto contra 1 robot; resumen de las semillas', () => {
+  const base = { bloque: 'T', huerto: 'palta-alta-densidad', nw: 6, act: 'mixed', duration: 600, profile: 'hri' }
+  const ho = correr({ ...base, robot: SIN_ROBOT }, FIS),
+    uno = correr({ ...base, robot: 'warthog', flota: null }, FIS),
+    dos = correr({ ...base, robot: 'warthog', flota: { n: 2, estrategia: 'zonas' } }, FIS)
+  for (const f of [ho, uno, dos]) assert.deepEqual(Object.keys(f), COLS)
+  assert.deepEqual([ho.robots, uno.robots, dos.robots], [0, 1, 2])
+  assert.deepEqual([ho.estrategia, uno.estrategia, dos.estrategia], ['', '', 'zonas'])
+  assert.deepEqual([dos.ceder_m, dos.reserva_m, dos.espera_acopio_dist_m], [2, 3, 3])
+  assert.equal(uno.jain_cajas, '')
+  assert.ok(dos.jain_cajas > 0 && dos.jain_cajas <= 1)
+  assert.ok(dos.espera_calle_s >= 0 && dos.cede_s >= 0 && dos.estacionado_s >= 0 && dos.espera_acopio_s >= 0)
+  assert.ok(uno.recorrido_m > 0 && dos.recorrido_m > 0)
+  assert.equal(ho.recorrido_m, '')
+  const [e0, e1, e2] = conEfectos([ho, uno, dos])
+  assert.equal(e0.efecto1_entregado_pct, '')
+  assert.equal(e1.efecto1_entregado_pct, '', '1 robot no se compara consigo mismo')
+  assert.ok(e1.efecto_entregado_pct !== '')
+  assert.equal(e2.efecto1_cosecha_pct, +((100 * (dos.cosecha_kg - uno.cosecha_kg)) / uno.cosecha_kg).toFixed(2))
+  // resumen: una fila por celda (la semilla no la distingue), con media y rango
+  const s1 = { ...e2, semilla: 1, entregado_kg: e2.entregado_kg + 10 }
+  const res = resumen([e1, e2, s1])
+  assert.equal(res.length, 2)
+  assert.deepEqual(Object.keys(res[0]), RESUMEN_COLS)
+  const r2 = res.find((r) => r.robots === 2)
+  assert.equal(r2.corridas, 2)
+  assert.equal(r2.entregado_kg_min, e2.entregado_kg)
+  assert.equal(r2.entregado_kg_max, e2.entregado_kg + 10)
+  assert.equal(r2.entregado_kg_media, +(e2.entregado_kg + 5).toFixed(3))
+  assert.equal(r2.entregado_pct_min, +((100 * e2.entregado_kg) / e2.cosecha_kg).toFixed(3))
+  assert.equal(res.find((r) => r.robots === 1).jain_cajas_media, '')
+  // también desde la caché (CSV con texto)
+  const back = deCSV(aCSV([e1, e2, s1], [...COLS, ...EFECTO_COLS]))
+  assert.deepEqual(
+    resumen(back).map((r) => r.entregado_kg_media),
+    res.map((r) => r.entregado_kg_media),
+  )
 })
