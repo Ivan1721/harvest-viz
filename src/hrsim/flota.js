@@ -61,7 +61,8 @@ export function vueltaDeRobot(huerto, estrategia, i, n, ejes, peso) {
 /**
  * Un waypoint cada `paso` m en los tramos largos por una calle. La vuelta con un número impar de calles vuelve de la
  * cabecera de arriba al acopio en un solo tramo; con un único waypoint al fondo, el controlador se abre al girar y baja
- * en diagonal entre las copas, y con flota entra a la calle vecina sin reservarla. (Con un robot la vuelta sigue igual.)
+ * en diagonal entre las copas, y con flota entra a la calle vecina sin reservarla. Vale con uno o con varios robots (con
+ * uno, desde el motor 0.8.1: antes su vuelta no se densificaba).
  */
 export function densificar(lap, paso = 3) {
   const out = [lap[0]]

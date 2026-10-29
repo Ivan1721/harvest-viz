@@ -1,7 +1,7 @@
 // Constantes, geometría y utilidades compartidas por los simuladores Humano-Robot y Solo humano.
 
 /** Versión del motor JS. Súbela cuando un cambio altere resultados (la regresión vs MATLAB debe seguir pasando). */
-export const ENGINE_VERSION = '0.8.0'
+export const ENGINE_VERSION = '0.8.1'
 
 /**
  * Parámetros de una simulación (todos con valor por defecto en DEFAULTS).
