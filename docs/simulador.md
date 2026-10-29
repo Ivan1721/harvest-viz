@@ -241,12 +241,7 @@ recomendadas y tres ajustes). H7 mostró que un robot no alcanza a transportar l
   parten del mismo punto. «Comparar con» → «Otra cantidad de robots» (`cmp=flota:<n>`) corre el mismo escenario con otra
   cantidad y la misma estrategia. Exportar agrega las columnas `Robot2_*` y `Robot3_*` a `*_poses.csv`.
 
-Primeros resultados (palta alta densidad, base simple —sin acopiador, carga variable ni regla de seguridad—, 12
-cosecheros, 4 h; llega al acopio, de lo cosechado): 1 robot 66 % (69 % con el motor 0.8.0, antes de corregir el tramo
-de regreso); 2 robots: zonas 94 %, opuestas 73 %, desfase 78 %; 3 robots: zonas 96 %, opuestas 92 %, desfase 95 %. En
-direcciones opuestas los robots esperan calle libre en cada vuelta (≈1.100 s en 4 h con 2 robots), como anticipaba el
-diseño. Son una corrida por celda: el lote de H8-exp los revisa con semillas, con la base realista de H7 y en todos los
-huertos.
+Resultados: ver «Experimentos en lote (H8)» más abajo (lote con la base realista de H7, 6 huertos y 5 semillas).
 
 **Tramo de regreso** (corregido en H8-C, motor 0.8.1). Con un número impar de calles, la vuelta replanificada vuelve de
 la cabecera de arriba al acopio por la última calle en un solo tramo de ~100 m (defecto del generador, de antes de H8).
@@ -299,7 +294,54 @@ resultados en `experimentos/h7/`. Columnas nuevas: `acopiador`, `carga_variable`
 `calles_robot`; el efecto de cada robot se mide contra la corrida sin robot con las mismas opciones. Hallazgos en el
 documento «H7: experimentos en lote»: el robot ayuda en proporción a la caminata que le ahorra al cosechero, así que su
 aporte crece con la distancia al acopio (avance del bloque) y con la cuadrilla repartida; el acopiador no se satura, el
-límite de transporte de un solo robot se mantiene y la regla de seguridad cuesta a lo más 3,9 puntos.
+límite de transporte de un solo robot se mantiene y la regla de seguridad cuesta a lo más 3,9 puntos (1,4 con el motor
+0.8.1; ver «Tramo de regreso»).
+
+## Experimentos en lote (H8)
+
+`npm run experimentos -- experimentos/h8.json` compara 1, 2 y 3 robots (motor 0.8.1) con la base realista del bloque B
+de H7: perfil `hri`, actividad mixta, acopiador, carga variable, cuadrilla cerca del acopio y 4 h. Tres bloques: **A**,
+6 huertos (los 5 de H7 y palta en ladera) × sin robot, Warthog y Burro con carro × 1 robot o 2 y 3 robots en zonas,
+opuestas y desfase × avance 0, 50 y 80 % × 12 y 24 cosecheros, con la corrida de siempre y las semillas 1 a 5 (3.240
+corridas); **S**, sensibilidad de las distancias de convivencia (`ceder`, `reserva`, `esperaAcopio`) con 3 Warthog en
+alta densidad y cerezo (288); **R**, desempate de estrategias con las semillas 6 a 10 (990). En total 4.518 corridas, unos
+65 min en 8 hilos. Resultados en `experimentos/h8/`.
+
+- **Diseño.** Sin robot, `celdas` quita también `flota` (esas celdas se corren una vez). Un bloque puede traer `lista`
+  (las combinaciones una por una) en vez de `factores`: así se escribió el desempate, solo con las celdas empatadas.
+- **Columnas nuevas:** `robots` (0, 1, 2 o 3), `estrategia`, `ceder_m`, `reserva_m`, `espera_acopio_dist_m`,
+  `jain_cajas`, `espera_calle_s`, `cede_s`, `espera_acopio_s` (esperando que otro robot descargue; no es
+  `espera_robot_acopio_s`, la cola del acopiador), `estacionado_s`, `dist_min_calle_m` y `recorrido_m` (de todos los
+  robots, también con uno). Con flota, las métricas de interacción salen de `analizarFlota`, como en el visor.
+- **Efecto contra 1 robot:** `efecto1_entregado_pct` y `efecto1_cosecha_pct`, contra la corrida de 1 robot del mismo tipo,
+  escenario y semilla.
+- **`resumen.csv`** (cuando el diseño tiene repeticiones): una fila por celda, con la media, el mínimo y el máximo de sus
+  corridas para lo entregado (kg y % de lo cosechado), la cosecha, los efectos, energía por kg, caminata, esperas de la
+  flota, distancias y seguridad. Una caché `corridas.csv` con otras columnas se reescribe con las de ahora.
+
+Hallazgos (documento «H8: experimentos en lote — ¿el segundo robot rompe el límite de transporte?»):
+
+- **Sí lo rompe.** En palta alta densidad y ladera, con el bloque junto al acopio, lo que llega al acopio pasa de
+  35–70 % de lo cosechado con 1 robot a 73–97 % con 2 y a 94–96 % con 3 (Warthog; con 24 cosecheros el tercero suma
+  19–21 puntos). En cerezo, uva y arándano con Burro con carro, el segundo suma de 0 a 12 puntos. En palta tradicional y
+  arándano con Warthog (el robot recorre la cabecera), más robots no entregan más.
+- **El primer robot sube la cosecha; los siguientes, lo entregado.** En alta densidad, 1 robot cosecha 48 % más que sin
+  robot pero entrega 22 % menos (las cajas esperan junto a las calles); con 2 robots entrega 37 % más.
+- **Zonas** gana en 32 de 144 comparaciones pareadas por semilla, opuestas en 1 y desfase en ninguna; los 111 empates
+  siguen empatados con 11 corridas y, por la regla del diseño, se recomienda zonas. Opuestas y desfase pierden por esperar
+  calle libre (hasta 15–19 % del turno con 3 robots).
+- **Convivencia y seguridad.** Con zonas, la espera de calle es ≤ 1,4 % del turno con 2 robots y ≤ 5,5 % con 3. Las
+  paradas de seguridad crecen con los robots (103, 167 y 212 por turno en promedio con 1, 2 y 3); el tiempo de las
+  personas dentro de S_p(v) sigue bajo 1 s por turno en promedio. La energía por kg entregado sube ×1,5–2 donde los
+  robots caben en las calles y ×2,7–5 donde recorren la cabecera.
+- **Avance del bloque.** Con el bloque lejos, un robot se queda corto en más huertos (uva, 24 cosecheros, avance 50 %:
+  52 % con 1 robot, 89 % con 2). En palta alta densidad y ladera con avance 50–80 %, la cuadrilla se acaba el bloque
+  antes de las 4 h y hasta 1 robot alcanza: esas celdas no miden el límite de transporte.
+- **Distancias de convivencia (bloque S):** moverlas cambia lo entregado a lo más 3,4 puntos en promedio.
+
+Limitación encontrada: un Burro con carro trabado por tracción en la pendiente vence el tiempo máximo de su waypoint, pasa
+al siguiente y cruza en línea recta la hilera hacia una calle que puede tener reservada otro robot (distancia entre robots
+< 1 m en 27 de 2.592 corridas con flota, 25 de ellas en la ladera). Corregirlo cambia el motor: queda pendiente.
 
 ## Validación (métricas agregadas)
 

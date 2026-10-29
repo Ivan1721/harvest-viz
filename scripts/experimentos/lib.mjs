@@ -26,13 +26,14 @@ function asignar(o, ruta, v) {
 /**
  * Celdas de un bloque: fijos + cada combinación de factores, con «robot» = ninguno | tipo de robot.
  * Sin robot el perfil y la flota no aplican: esas celdas se colapsan en una sola (perfil matlab-2026, sin `flota`).
+ * En vez de `factores`, un bloque puede traer `lista`: las combinaciones una por una (p. ej. solo las celdas empatadas).
  * Con `repeticiones`, las celdas que cumplen `solo` se repiten con cada semilla (además de la corrida sin semilla).
  */
 export function celdas(bloque) {
   const out = [],
     vistos = new Set()
   const reps = bloque.repeticiones
-  for (const comb of cartesiano(bloque.factores)) {
+  for (const comb of bloque.lista ?? cartesiano(bloque.factores)) {
     const c = { bloque: bloque.id, ...structuredClone(bloque.fijos || {}) }
     for (const [k, v] of Object.entries(comb)) asignar(c, k, v)
     if (c.robot === SIN_ROBOT) {

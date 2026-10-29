@@ -122,9 +122,14 @@ test('correr con las opciones de H7: acopio, carga, reparto y avance en la fila;
   assert.equal(conE.efecto_cosecha_pct, +((100 * (hr.cosecha_kg - ho.cosecha_kg)) / ho.cosecha_kg).toFixed(2))
 })
 
-test('el diseño de H8: 3240 corridas en el bloque A y 288 más en el de sensibilidad (sus referencias son las de A)', () => {
+test('el diseño de H8: 3240 corridas en el bloque A, 288 en el de sensibilidad y las semillas 6 a 10 del desempate', () => {
   const d = JSON.parse(fs.readFileSync(new URL('../../experimentos/h8.json', import.meta.url), 'utf8'))
-  const [A, S] = d.bloques.map(celdas)
+  const [A, S, R] = d.bloques.map(celdas)
+  // desempate: una lista de celdas (no un producto de factores); su corrida de siempre y las semillas 1 a 5 ya están en A
+  const nR = d.bloques[2].lista.length
+  assert.equal(R.length, nR * 6)
+  assert.ok(R.every((c) => c.flota?.n >= 2 && c.duration === 14400))
+  assert.equal(new Set([...A, ...S, ...R].map(clave)).size, 3240 + 288 + nR * 5)
   // 6 huertos × (sin robot + 2 tipos × 7 flotas) × 3 avances × 2 cuadrillas, cada una con la corrida de siempre y 5 semillas
   assert.equal(A.length, 6 * 15 * 3 * 2 * 6)
   assert.ok(A.every((c) => c.duration === 14400))

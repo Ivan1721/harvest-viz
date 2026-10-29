@@ -34,11 +34,13 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 1. **Interfaz, lo que queda de la crítica:** la fase `ui-p1` (los 3 P1 y los decimales y duraciones) está en `main`
    desde el 27-10. Falta: a 1.024 px la columna derecha desborda y las pestañas se cortan (P2), y la ayuda que solo
    está en `title` (inaccesible con teclado o táctil).
-2. **H8-exp: el lote de la flota** (diseño aprobado el 29-10: https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm; las
-   fases A, B y C están en `main`). Rama `h8-exp`: columnas de flota en `scripts/experimentos/lib.mjs`, `resumen.csv`
-   con las repeticiones, `experimentos/h8.json` (6 huertos × Warthog y Burro con carro × 1–3 robots × estrategia ×
-   avance 0/50/80 % × 12 y 24 cosecheros, 4 h, semillas 1–5; ~3.240 corridas, ~1 h 10 min) e informe en Claude Docs.
-   El cierre de H8 será la **0.10.0** (etiqueta `v0.10.0`).
+2. **H8-exp: el lote de la flota**, entregado el 29-10 en la rama `h8-exp`, a la espera del «aprobado» (informe:
+   https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ). 4.518 corridas (bloques A, S de sensibilidad y R de desempate)
+   en `experimentos/h8/`; detalle en `docs/simulador.md` («Experimentos en lote (H8)»). Tras el «aprobado»: fusión,
+   app **0.10.0** y etiqueta `v0.10.0`, que cierra H8.
+   - Encontrado en el lote: un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle
+     reservada por otro robot (27 de 2.592 corridas con flota). Corregirlo cambia el motor: otra fase.
+   - El visor no lee `semilla` desde la URL: las corridas con semilla no tienen enlace reproducible.
    - Anotado en la fase B: el análisis HRI de la flota (`src/workload/flota.js`) corre en el hilo de la interfaz y suma
      ~2 s en el caso más pesado (4 h, 24 cosecheros, 3 robots); si molesta, pasarlo al worker. La distancia mínima entre
      robots «de toda la corrida» sale ~0,2 m porque los robots parten del mismo punto del acopio; la que importa es la
@@ -54,6 +56,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
+| H8: experimentos en lote (informe)            | https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ                                                     |
 | H8-exp: diseño del lote (aprobado)            | https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm                                                     |
 | H8: dos o más robots (aprobado, A y B hechas) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
 | H7: experimentos en lote                      | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
