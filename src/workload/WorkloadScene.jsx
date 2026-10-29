@@ -6,8 +6,9 @@ import * as THREE from 'three'
 import { MAP, toW, setMap } from './spec.js'
 import { sceneGeometry } from './geometry.js'
 import { ROBOTS } from '../hrsim/robots.js'
-import { FLAG, onboard } from './run.js'
+import { FLAG } from './run.js'
 import { ZONES, zoneOf } from './hri.js'
+import { colorRobot, etiquetaRobot, robotsDeRun, selRobot } from './flota.js'
 import { protectionDistance } from '../hrsim/ssm.js'
 import { Person, Crate, CrateReal, CrateSet, Ladder } from '../shared/models.jsx'
 import { RealGround, RealGroundAlta, SkyBackground } from '../shared/realistic.jsx'
@@ -199,10 +200,14 @@ function WarthogReal({ ruedas, onListo }) {
   return <primitive object={obj} />
 }
 
-function RobotCarrier({ run, onSelect, selected, alta }) {
+// `rb` son las series del robot (con flota, las de cada uno; si no, `run.robot`); `k` es su número (0 = RB-01)
+function RobotCarrier({ run, rb = run.robot, k = 0, onSelect, selected, alta }) {
+  const color = colorRobot(k),
+    etiqueta = etiquetaRobot(k),
+    hri = run.hri?.porRobot?.[k] ?? run.hri
   const root = useRef(),
     load = useRef(),
-    lab = useRef('RB-01'),
+    lab = useRef(etiqueta),
     zr = useRef([])
   const wheels = useRef([]),
     ruedasReal = useRef([])
@@ -225,7 +230,7 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
   useFrame(() => {
     const smp = sampleAt(run.n, run.dt, play.t),
       i = smp.i
-    const [rx, ry, h] = trackAt(run.robot.pos, 3, smp, rtmp.current, { angleIdx: 2 })
+    const [rx, ry, h] = trackAt(rb.pos, 3, smp, rtmp.current, { angleIdx: 2 })
     const [px, , pz] = toW(rx, ry)
     root.current.position.set(px, 0, pz)
     root.current.rotation.y = h
@@ -247,9 +252,9 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
     ruedasReal.current.forEach((w) => (w.m.rotation.z = -(w.der ? s.angR : s.angL)))
     zr.current.forEach((m) => m && (m.visible = play.zones))
     // campos de seguridad (fase 3, perfil hri): radio según la velocidad del tick, color según el estado
-    if (ssm && run.hri) {
-      const v = run.hri.vInst[i],
-        rs = run.robot.status ? run.robot.status[i] : 0
+    if (ssm && hri) {
+      const v = hri.vInst[i],
+        rs = rb.status ? rb.status[i] : 0
       const sp = protectionDistance(v, ssm)
       prot.current.scale.set(sp, sp, 1)
       warn.current.scale.set(sp + ssm.warn, sp + ssm.warn, 1)
@@ -259,7 +264,7 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
       warn.current.material.opacity = rs === 4 ? 0.9 : 0.4
     }
     // la carga a bordo cambia con la tasa de carga (3,6 s por caja) y de descarga (1,44 s por caja), no de golpe
-    const target = onboard(run, i),
+    const target = rb.onboard[Math.min(i, run.n - 1)],
       sh = shown.current,
       dts = play.t - sh.t
     if (dts < 0 || dts > 4) sh.v = target
@@ -267,14 +272,14 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
     else sh.v = Math.max(target, sh.v - (unit / 1.44) * dts)
     sh.t = play.t
     if (load.current) load.current.scale.y = Math.max(0.001, Math.min(1, sh.v / cap))
-    lab.current = `RB-01 · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap })}`
+    lab.current = `${etiqueta} · ${t('a bordo {v} / {cap}', { v: Math.round(sh.v), cap })}`
   })
   return (
     <group
       ref={root}
       onClick={(e) => {
         e.stopPropagation()
-        onSelect('robot')
+        onSelect(selRobot(k))
       }}
     >
       {ZONES.map((z, k) => (
@@ -305,11 +310,11 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
       {/* campo de detección (FOV 120°, 3 m) y LIDAR (±90°, 1.5 m) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <circleGeometry args={[3, 28, -Math.PI / 3, (2 * Math.PI) / 3]} />
-        <meshBasicMaterial color="#2f6bff" transparent opacity={0.08} depthWrite={false} />
+        <meshBasicMaterial color={color} transparent opacity={0.08} depthWrite={false} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.035, 0]}>
         <circleGeometry args={[1.5, 24, -Math.PI / 2, Math.PI]} />
-        <meshBasicMaterial color="#2f6bff" transparent opacity={0.1} depthWrite={false} />
+        <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} />
       </mesh>
       {real && (
         <Suspense fallback={null}>
@@ -332,7 +337,7 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
         </mesh>
         <mesh position={[0, ROBOT.H + 0.02, 0]}>
           <boxGeometry args={[ROBOT.L - 0.16, 0.04, ROBOT.W - 2 * ROBOT.tireW + 0.1]} />
-          <meshStandardMaterial color="#2f6bff" />
+          <meshStandardMaterial color={color} />
         </mesh>
         {[
           [WX, WZ],
@@ -370,24 +375,23 @@ function RobotCarrier({ run, onSelect, selected, alta }) {
           <meshStandardMaterial color="#2b3447" />
         </mesh>
       </group>
-      <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current, videoAccent: true, tagColor: '#2f6bff' }} />
+      <object3D position={[0, 1.7, 0]} userData={{ videoTag: () => lab.current, videoAccent: true, tagColor: color }} />
       {selected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
           <ringGeometry args={[1.0, 1.1, 40]} />
-          <meshBasicMaterial color="#2f6bff" />
+          <meshBasicMaterial color={color} />
         </mesh>
       )}
     </group>
   )
 }
 
-// Carro del robot de arrastre: sigue la pose registrada por el motor (remolque con enganche en el eje)
-function Trailer({ run }) {
+// Carro del robot de arrastre `T` (la pose que registró el motor): remolque con enganche en el eje
+function Trailer({ run, T }) {
   const g = useRef()
   const cr = ROBOTS[run.meta.params.robotTipo]?.carro || { largo: 1.2, ancho: 0.92 }
   useFrame(() => {
-    const T = run.robot.trailer,
-      i = Math.min(run.n - 1, Math.max(0, Math.floor(play.t / run.dt)))
+    const i = Math.min(run.n - 1, Math.max(0, Math.floor(play.t / run.dt)))
     const [px, , pz] = toW(T.x[i], T.y[i])
     g.current.position.set(px, 0, pz)
     g.current.rotation.y = T.th[i]
@@ -413,8 +417,8 @@ function Trailer({ run }) {
   )
 }
 
-// Ruta anticipada del robot (legibilidad): próximos 8 s; cambia de color si se prevé un conflicto con un humano
-function Intent({ run }) {
+// Ruta anticipada del robot `rb` (legibilidad): próximos 8 s; cambia de color si se prevé un conflicto con un humano
+function Intent({ run, rb = run.robot, hri = run.hri }) {
   const line = useRef(),
     cone = useRef()
   const AHEAD = Math.max(4, Math.round(8 / run.dt))
@@ -423,14 +427,14 @@ function Intent({ run }) {
   const lastI = useRef(-1),
     coneOn = useRef(false)
   useFrame(() => {
-    const on = play.intent && run.robot && run.robot.pos
+    const on = play.intent && rb && rb.pos
     if (line.current) line.current.visible = !!on
     if (cone.current) cone.current.visible = !!on && coneOn.current
     if (!on) return (lastI.current = -1)
     const i = Math.min(run.n - 1, Math.floor(play.t / run.dt))
     if (i === lastI.current) return // la ruta solo cambia de tick en tick: no rehacer la geometría en cada cuadro
     lastI.current = i
-    const p = run.robot.pos
+    const p = rb.pos
     let minD = 1e9
     for (let k = 0; k <= AHEAD; k++) {
       const j = Math.min(run.n - 1, i + k)
@@ -438,7 +442,7 @@ function Intent({ run }) {
       buf[k * 3] = w[0]
       buf[k * 3 + 1] = 0.35
       buf[k * 3 + 2] = w[2]
-      if (run.hri) minD = Math.min(minD, run.hri.minD[j])
+      if (hri) minD = Math.min(minD, hri.minD[j])
     }
     const col = minD < 0.45 ? '#dc2626' : minD < 1.2 ? '#f59e0b' : '#16a34a'
     line.current.geometry.setPositions(buf)
@@ -609,9 +613,10 @@ function Parron({ trees, techo }) {
   )
 }
 
-// H7 fase C: la ruta del robot sigue a la cuadrilla; se ve la vigente en el instante de la reproducción
-function RutaRobot({ run }) {
-  const rutas = useMemo(() => run.robot.rutas.map((r) => ({ idx: r.idx, pts: r.puntos.map(([x, y]) => [toW(x, y)[0], 0.05, toW(x, y)[2]]) })), [run])
+// H7 fase C: la ruta del robot sigue a la cuadrilla; se ve la vigente en el instante de la reproducción. Con flota (H8),
+// cada robot dibuja la suya en su color.
+function RutaRobot({ run, lista = run.robot.rutas, color = '#2f6bff' }) {
+  const rutas = useMemo(() => lista.map((r) => ({ idx: r.idx, pts: r.puntos.map(([x, y]) => [toW(x, y)[0], 0.05, toW(x, y)[2]]) })), [lista])
   const refs = useRef([])
   useFrame(() => {
     const i = Math.floor(play.t / run.dt)
@@ -624,7 +629,7 @@ function RutaRobot({ run }) {
       key={j}
       ref={(m) => (refs.current[j] = m)}
       points={r.pts}
-      color="#2f6bff"
+      color={color}
       lineWidth={1.5}
       dashed
       dashSize={0.5}
@@ -737,7 +742,9 @@ function Ground({ run, real, alta, geom }) {
       )}
       {run.plantas && run.plantas.ini.length === trees.length && <EstadoPlantas run={run} trees={trees} R={geom.R} />}
       {run.robot &&
-        (run.robot.rutas ? (
+        (run.flota ? (
+          run.flota.robots.map((r, k) => <RutaRobot key={k} run={run} lista={r.rutas} color={colorRobot(k)} />)
+        ) : run.robot.rutas ? (
           <RutaRobot run={run} />
         ) : (
           <Line points={route} color="#2f6bff" lineWidth={1.5} dashed dashSize={0.5} gapSize={0.35} transparent opacity={0.7} />
@@ -751,6 +758,8 @@ function World({ run, selected, onSelect, version, look, geom, calidad }) {
   const alta = real && calidad === 'alta'
   // la sombra cubre todo el huerto (el del estudio mide ~30 m; uno generado, ~100 m)
   const sh = Math.max(22, Math.max(MAP.w, MAP.h) / 2 + 6)
+  // los robots de la escena: con flota (H8), uno por entrada; si no, el de siempre
+  const robots = robotsDeRun(run)
   return (
     <>
       {real ? <SkyBackground /> : <color attach="background" args={['#e9eefb']} />}
@@ -794,13 +803,19 @@ function World({ run, selected, onSelect, version, look, geom, calidad }) {
       <group rotation={[geom.tilt || 0, 0, 0]}>
         <Ground run={run} real={real} alta={alta} geom={geom} />
         {run.acopio ? <AcopioBins run={run} geom={geom} /> : <CargoPile run={run} real={real} geom={geom} />}
-        {run.robot && <Intent run={run} />}
+        {robots.map((rb, k) => (
+          <Intent key={k} run={run} rb={rb} hri={run.hri?.porRobot?.[k] ?? run.hri} />
+        ))}
         <Boxes run={run} real={real} />
         {run.workers.map((w) => (
           <Worker key={`${version}-${look}-${w.h}`} w={w} run={run} onSelect={onSelect} selected={selected === w.h} real={real} />
         ))}
-        {run.robot && <RobotCarrier run={run} onSelect={onSelect} selected={selected === 'robot'} alta={alta} />}
-        {run.robot?.trailer && <Trailer run={run} />}
+        {robots.map((rb, k) => (
+          <React.Fragment key={k}>
+            <RobotCarrier run={run} rb={rb} k={k} onSelect={onSelect} selected={selected === selRobot(k)} alta={alta} />
+            {rb.trailer && <Trailer run={run} T={rb.trailer} />}
+          </React.Fragment>
+        ))}
       </group>
     </>
   )

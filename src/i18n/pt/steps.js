@@ -119,4 +119,20 @@ export default {
   'Hay {n} cambios sin simular: {c}.': 'Há {n} mudanças ainda não simuladas: {c}.',
   'Resultados al día.': 'Resultados em dia.',
   'Cambió: {c}.': 'Mudou: {c}.',
+  // H8: flota de robots (paso Agentes y «Comparar con»)
+  'Cantidad de robots': 'Quantidade de robôs',
+  'Cómo se reparten': 'Como se dividem',
+  Zonas: 'Zonas',
+  'Direcciones opuestas': 'Direções opostas',
+  Desfase: 'Defasagem',
+  'Cada robot recorre un grupo de calles contiguas; se reparten de nuevo en cada vuelta.':
+    'Cada robô percorre um grupo de ruas contíguas; são divididas de novo a cada volta.',
+  'La misma vuelta en sentidos contrarios, con reserva de calles: un robot por calle.':
+    'A mesma volta em sentidos opostos, com reserva de ruas: um robô por rua.',
+  'La misma vuelta y el mismo sentido, separados por media vuelta.': 'A mesma volta e o mesmo sentido, separados por meia volta.',
+  'Otra cantidad de robots': 'Outra quantidade de robôs',
+  'Cantidad de robots de la comparación': 'Quantidade de robôs na comparação',
+  'Con 1 robot': 'Com 1 robô',
+  'Con 2 robots': 'Com 2 robôs',
+  'Con 3 robots': 'Com 3 robôs',
 }

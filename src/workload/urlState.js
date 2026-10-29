@@ -1,19 +1,20 @@
 // Enlace reproducible (I2): la URL guarda el escenario, los agentes y la duración de la corrida que se ve.
 // Como el motor es determinista, abrir el enlace reproduce exactamente esa corrida.
 //
-//   ?modo=sim&huerto=palta-alta-densidad&nw=12&act=mixed&robot=burro&perfil=hri&dur=2700&cmp=robot:warthog&ajustes=<base64url>
+//   ?modo=sim&huerto=palta-alta-densidad&nw=12&act=mixed&robot=burro&robots=2&estrategia=opuestas&perfil=hri&dur=2700&cmp=robot:warthog&ajustes=<base64url>
 //
 // Las claves legibles cubren lo que se elige con botones; `ajustes` lleva solo los parámetros que difieren de los
 // valores de partida del perfil, el huerto y el robot (JSON en base64url). Se ignoran las demás claves de la URL
 // (?look, ?speed, ?lang, ?view…), que siguen siendo de cada lector.
 import { profileDefaults, PROFILES } from '../hrsim/common.js'
+import { FLOTA_ESTRATEGIAS, FLOTA_MAX } from '../hrsim/flota.js'
 import { SISTEMAS } from '../hrsim/huertos/index.js'
 import { ROBOTS } from '../hrsim/robots.js'
 
 const ACTS = ['ground', 'ladder', 'picker', 'mixed']
-const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'perfil', 'dur', 'cmp', 'ajustes']
+const LEGIBLES = ['huerto', 'nw', 'act', 'row', 'rp', 'robot', 'robots', 'estrategia', 'perfil', 'dur', 'cmp', 'ajustes']
 // parámetros que viajan en claves legibles (o que se derivan de ellas) y no en `ajustes`
-const FUERA = new Set(['profile', 'huerto', 'robotTipo', 'duration'])
+const FUERA = new Set(['profile', 'huerto', 'robotTipo', 'duration', 'flota'])
 // opciones que no están en los valores de partida y se activan con su objeto (H7: acopio, carga, reparto, avance)
 const OPCIONALES = new Set(['acopio', 'carga', 'reparto', 'avance'])
 
@@ -58,6 +59,11 @@ export function writeRunState(search, params, cfg, cmp = 'sinrobot') {
     search.set('rp', String(cfg.rp))
   }
   if (params.robotTipo) search.set('robot', params.robotTipo)
+  // flota de robots (H8): cantidad y cómo se reparten; con un robot no hay clave
+  if (params.flota?.n > 1) {
+    search.set('robots', String(params.flota.n))
+    search.set('estrategia', params.flota.estrategia ?? 'zonas')
+  }
   search.set('perfil', params.profile)
   search.set('dur', String(params.duration))
   if (cmp && cmp !== 'sinrobot') search.set('cmp', cmp)
@@ -103,6 +109,12 @@ export function readRunState(search, cfg0) {
       malos.push('ajustes')
     }
   }
+  // flota de robots (H8): solo en los huertos generados; con 1 robot (o sin la clave) no hay flota
+  if (search.has('robots')) {
+    const n = int(search.get('robots'), (v) => v >= 1 && v <= FLOTA_MAX)
+    if (n === undefined || !SISTEMAS[huerto]?.generador) malos.push('robots')
+    else if (n > 1) params.flota = { n, estrategia: pick('estrategia', (v) => FLOTA_ESTRATEGIAS.includes(v)) ?? 'zonas' }
+  }
   const cfg = { ...cfg0 }
   for (const [k, ok] of [
     ['nw', (n) => n >= 1 && n <= 48],
@@ -116,7 +128,15 @@ export function readRunState(search, cfg0) {
     }
   const act = pick('act', (v) => ACTS.includes(v))
   if (act) cfg.act = act
-  // «Comparar con» (I4): sinrobot | perfil | robot:<tipo>
-  const cmp = pick('cmp', (v) => v === 'sinrobot' || v === 'perfil' || (/^robot:/.test(v) && v.slice(6) in ROBOTS)) ?? 'sinrobot'
+  // «Comparar con» (I4): sinrobot | perfil | robot:<tipo> | flota:<n> (H8)
+  const cmp =
+    pick(
+      'cmp',
+      (v) =>
+        v === 'sinrobot' ||
+        v === 'perfil' ||
+        (/^robot:/.test(v) && v.slice(6) in ROBOTS) ||
+        (/^flota:\d$/.test(v) && Number(v.slice(6)) >= 1 && Number(v.slice(6)) <= FLOTA_MAX),
+    ) ?? 'sinrobot'
   return { params, cfg, cmp, error: malos.length ? malos : null }
 }

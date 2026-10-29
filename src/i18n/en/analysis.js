@@ -194,4 +194,26 @@ export default {
   'Distancia a la boca para reservar una calle (m)': 'Distance to the entrance to reserve a lane (m)',
   'Distancia de espera al acopio si otro robot descarga (m)': 'Waiting distance from the collection point while another robot unloads (m)',
   'Supuesto: 3': 'Assumed: 3',
+  // H8: flota de robots (pestaña Robot y resumen)
+  'Cada robot y la flota': 'Each robot and the fleet',
+  Flota: 'Fleet',
+  'Detalle de': 'Detail for',
+  'Cultivo a bordo de cada robot': 'Crop on board each robot',
+  'Cajas atendidas': 'Boxes served',
+  'Entregado al acopio': 'Delivered to the collection point',
+  'Esperando calle libre': 'Waiting for a free lane',
+  'Cediendo el paso': 'Giving way',
+  'Estacionado o esperando su salida': 'Parked or waiting to depart',
+  Recorrido: 'Distance travelled',
+  'Descargas en el acopio': 'Unloads at the collection point',
+  'Equilibrio de cajas entre robots (Jain)': 'Box balance between robots (Jain)',
+  'Distancia mínima entre robots (toda la corrida)': 'Minimum distance between robots (whole run)',
+  'La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.':
+    'The whole-run minimum usually happens when leaving the collection point or in the headland, where robots can pass each other.',
+  'Distancia mínima entre robots (con alguno en una calle)': 'Minimum distance between robots (one of them in a lane)',
+  'Entregado por la flota': 'Delivered by the fleet',
+  'Calles recorridas por la flota': 'Lanes travelled by the fleet',
+  'Energía de la flota por kg entregado': 'Fleet energy per kg delivered',
+  'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.':
+    'With a fleet, distances, zones and encounters are with the robot closest to each worker; the protection field and stops are per robot.',
 }

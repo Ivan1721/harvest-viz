@@ -3,13 +3,15 @@ import { DEFAULTS, PROFILES, profileDefaults } from '../../hrsim/common.js'
 import { SISTEMAS } from '../../hrsim/huertos/index.js'
 import { HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
+import { FLOTA_ESTRATEGIAS, FLOTA_MAX } from '../../hrsim/flota.js'
+import { ESTRATEGIAS } from '../flota.js'
 import { Field, Seg } from '../ui.jsx'
 import { ACTS } from '../library.js'
 import { ACT_LABEL } from '../spec.js'
 import { ACOPIO, CARGA, COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
 import { ACOPIO_DEFAULTS } from '../../hrsim/acopio.js'
 import { CARGA_DEFAULTS, cvDe, fMinima } from '../../hrsim/carga.js'
-import { robotVariante } from '../variantes.js'
+import { flotaVariante, robotVariante, robotsDe } from '../variantes.js'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
 /** Campo numérico: deja escribir libremente y solo aplica valores válidos (≥ min, no vacío). */
@@ -496,6 +498,36 @@ export function SimSteps({
             {params.robotTipo !== 'warthog' && hp.pendiente > 15 && <div className="warn">{t('pendiente fuera de la ficha del Burro (15 %)')}</div>}
           </div>
         )}
+        {generated && (
+          <Field label={t('Cantidad de robots')}>
+            <Seg
+              size="mini"
+              value={robotsDe(params)}
+              onChange={(n) =>
+                setParams((p) => {
+                  const q = { ...p }
+                  if (n === 1) delete q.flota
+                  else q.flota = { n, estrategia: p.flota?.estrategia ?? 'zonas' }
+                  return q
+                })
+              }
+              options={Array.from({ length: FLOTA_MAX }, (_, i) => [i + 1, String(i + 1)])}
+            />
+          </Field>
+        )}
+        {generated && params.flota && (
+          <Field label={t('Cómo se reparten')}>
+            <Seg
+              size="mini wrap"
+              value={params.flota.estrategia}
+              onChange={(e) => setParams((p) => ({ ...p, flota: { ...p.flota, estrategia: e } }))}
+              options={FLOTA_ESTRATEGIAS.map((k) => [k, t(ESTRATEGIAS[k][0])])}
+            />
+            <div className="note" style={{ marginTop: 2 }} data-testid="flota-nota">
+              {t(ESTRATEGIAS[params.flota.estrategia][1])}
+            </div>
+          </Field>
+        )}
         <Field label={t('Comportamiento del robot')}>
           <Seg
             size="mini"
@@ -538,15 +570,27 @@ export function SimSteps({
         {setCmp && (
           <Field label={t('Comparar con')}>
             <Seg
-              size="mini"
-              value={cmp.startsWith('robot:') ? 'robot' : cmp}
-              onChange={(k) => setCmp(k === 'robot' ? `robot:${robotVariante('', params)}` : k)}
+              size="mini wrap"
+              value={cmp.startsWith('robot:') ? 'robot' : cmp.startsWith('flota:') ? 'flota' : cmp}
+              onChange={(k) => setCmp(k === 'robot' ? `robot:${robotVariante('', params)}` : k === 'flota' ? `flota:${flotaVariante('', params)}` : k)}
               options={[
                 ['sinrobot', t('Sin robot')],
                 ['robot', t('Otro robot'), !generated, generated ? undefined : t('Solo en los huertos generados')],
+                ['flota', t('Otra cantidad de robots'), !generated, generated ? undefined : t('Solo en los huertos generados')],
                 ['perfil', t('Otro comportamiento')],
               ]}
             />
+            {cmp.startsWith('flota:') && generated && (
+              <Seg
+                size="mini"
+                label={t('Cantidad de robots de la comparación')}
+                value={flotaVariante(cmp, params)}
+                onChange={(n) => setCmp(`flota:${n}`)}
+                options={Array.from({ length: FLOTA_MAX }, (_, i) => i + 1)
+                  .filter((n) => n !== robotsDe(params))
+                  .map((n) => [n, String(n)])}
+              />
+            )}
             {cmp.startsWith('robot:') && generated && (
               <Seg
                 size="mini"

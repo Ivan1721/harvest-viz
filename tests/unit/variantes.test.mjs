@@ -1,7 +1,7 @@
 // I4: «Comparar con» — parámetros y nombres de la segunda corrida.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CMP_DEFAULT, cmpValido, comportamiento, robotVariante, variante } from '../../src/workload/variantes.js'
+import { CMP_DEFAULT, cmpValido, comportamiento, flotaVariante, nombreFlota, robotVariante, robotsDe, variante } from '../../src/workload/variantes.js'
 import { profileDefaults, resolveParams } from '../../src/hrsim/common.js'
 import { readRunState, writeRunState } from '../../src/workload/urlState.js'
 
@@ -30,6 +30,34 @@ test('otro robot: cambia el robot, su capacidad real y su energía; el resto que
   assert.equal(robotVariante('', { ...p, robotTipo: 'burro' }), 'warthog')
 })
 
+test('otra cantidad de robots (H8): misma estrategia y escenario; solo en huertos generados', () => {
+  assert.equal(cmpValido('flota:2', AD), true)
+  assert.equal(cmpValido('flota:2', profileDefaults('matlab-2026')), false, 'el mapa del estudio no tiene flota')
+  assert.equal(variante('flota:2', profileDefaults('matlab-2026')), null)
+  assert.equal(cmpValido('flota:4', AD), false)
+  assert.equal(cmpValido('flota:0x', AD), false)
+  // un robot → la comparación pide 2: sin flota 1 contra con flota 2
+  assert.equal(robotsDe(AD), 1)
+  const v = variante('flota:2', AD)
+  assert.deepEqual(v.params.flota, { n: 2, estrategia: 'zonas' })
+  assert.deepEqual(v.labels, { ho: 'Con 2 robots', hr: 'Con 1 robot' })
+  assert.equal(nombreFlota(3), 'Con 3 robots')
+  resolveParams(v.params)
+  // con una flota de 2 en «opuestas», pedir 1 quita la flota y pedir 3 conserva la estrategia
+  const dos = { ...AD, flota: { n: 2, estrategia: 'opuestas' } }
+  const uno = variante('flota:1', dos)
+  assert.equal('flota' in uno.params, false)
+  assert.deepEqual(uno.labels, { ho: 'Con 1 robot', hr: 'Con 2 robots' })
+  assert.deepEqual(variante('flota:3', dos).params.flota, { n: 3, estrategia: 'opuestas' })
+  // si coincide con la cantidad de la corrida principal, se toma la otra más cercana (1 → 2; 2 o 3 → 1)
+  assert.equal(flotaVariante('flota:2', dos), 1)
+  assert.equal(flotaVariante('flota:1', AD), 2)
+  assert.equal(flotaVariante('', { ...AD, flota: { n: 3, estrategia: 'zonas' } }), 1)
+  // el resto de los parámetros queda igual y la principal no se modifica
+  assert.equal(variante('flota:3', { ...dos, walkSpeed: 0.9 }).params.walkSpeed, 0.9)
+  assert.equal(dos.flota.n, 2)
+})
+
 test('otro comportamiento: el otro perfil con las modificaciones del usuario', () => {
   const p = { ...AD, loadTimePerBox: 5 }
   const v = variante('perfil', p)
@@ -52,4 +80,9 @@ test('la comparación viaja en el enlace', () => {
   const malo = readRunState(new URLSearchParams('huerto=arandano&cmp=robot:tractor'), { nw: 12, row: 3, act: 'mixed', rp: 0 })
   assert.equal(malo.cmp, 'sinrobot')
   assert.deepEqual(malo.error, ['cmp'])
+  // otra cantidad de robots (H8)
+  const f = writeRunState(new URLSearchParams(), AD, { nw: 12, row: 3, act: 'mixed', rp: 0 }, 'flota:2')
+  assert.equal(f.get('cmp'), 'flota:2')
+  assert.equal(readRunState(f, { nw: 12, row: 3, act: 'mixed', rp: 0 }).cmp, 'flota:2')
+  assert.deepEqual(readRunState(new URLSearchParams('huerto=arandano&cmp=flota:4'), { nw: 12, row: 3, act: 'mixed', rp: 0 }).error, ['cmp'])
 })

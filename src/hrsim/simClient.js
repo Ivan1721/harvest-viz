@@ -2,6 +2,7 @@
 // Una nueva simulación cancela la anterior (se termina el worker y la promesa vieja se rechaza con AbortError).
 import { simToRun } from './toRun.js'
 import { analyzeHRI } from '../workload/hri.js'
+import { analizarFlota } from '../workload/flota.js'
 
 let worker = null,
   seq = 0,
@@ -68,7 +69,7 @@ export async function runSimulation(opts, which = ['ho', 'hr'], { timeoutMs = SI
   }
   if (out.hr) {
     res.hr = simToRun(out.hr, { robot: true })
-    res.hr.hri = analyzeHRI(res.hr)
+    res.hr.hri = res.hr.flota ? analizarFlota(res.hr) : analyzeHRI(res.hr)
     res.hr.summary = norm(out.hr.summary)
     res.hr.entryId = `sim-hr-${id}`
     res.hr.events = out.hr.events

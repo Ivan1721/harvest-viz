@@ -11,9 +11,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_SIM }) {
+function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_SIM, conCmp = false }) {
   const [params, setParams] = useState(start)
   const [cfg, setCfg] = useState({ nw: 12, row: 3, act: 'mixed', rp: 0 })
+  const [cmp, setCmp] = useState('sinrobot')
   return (
     <>
       <SimSteps
@@ -21,6 +22,8 @@ function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_S
         setParams={setParams}
         cfg={cfg}
         pickCfg={(k, v) => setCfg((c) => ({ ...c, [k]: v }))}
+        cmp={cmp}
+        setCmp={conCmp ? setCmp : undefined}
         onRun={onRun}
         busy={false}
         stale={stale}
@@ -34,6 +37,8 @@ function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_S
       <output data-testid="reparto">{params.reparto ? JSON.stringify(params.reparto) : ''}</output>
       <output data-testid="carga">{params.carga ? JSON.stringify(params.carga) : ''}</output>
       <output data-testid="acopio">{params.acopio ? JSON.stringify(params.acopio) : ''}</output>
+      <output data-testid="flota">{params.flota ? JSON.stringify(params.flota) : ''}</output>
+      <output data-testid="cmp">{cmp}</output>
     </>
   )
 }
@@ -206,6 +211,73 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     expect(screen.getByTestId('avance').textContent).toBe('0.5') // el paso 1 no se toca
     fireEvent.click(screen.getByTestId('reset-1'))
     expect(screen.getByTestId('avance').textContent).toBe('')
+  })
+
+  it('H8: cantidad de robots y cómo se reparten (paso 2), solo en huertos generados, con su restablecer', () => {
+    render(<Harness />)
+    expect(screen.queryByRole('group', { name: 'Cantidad de robots' })).toBeNull()
+    fireEvent.click(screen.getByText('Alta densidad'))
+    const cant = screen.getByRole('group', { name: 'Cantidad de robots' })
+    expect(
+      within(cant)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['1', '2', '3'])
+    expect(within(cant).getByRole('button', { name: '1' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('group', { name: 'Cómo se reparten' }), 'con un robot no hay estrategia').toBeNull()
+    fireEvent.click(within(cant).getByRole('button', { name: '2' }))
+    expect(JSON.parse(screen.getByTestId('flota').textContent)).toEqual({ n: 2, estrategia: 'zonas' })
+    expect(screen.getByTestId('step-agentes').querySelector('.step-dot')).toBeTruthy()
+    const rep = screen.getByRole('group', { name: 'Cómo se reparten' })
+    expect(
+      within(rep)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Zonas', 'Direcciones opuestas', 'Desfase'])
+    expect(screen.getByTestId('flota-nota').textContent).toMatch(/grupo de calles contiguas/)
+    fireEvent.click(within(rep).getByText('Direcciones opuestas'))
+    expect(JSON.parse(screen.getByTestId('flota').textContent)).toEqual({ n: 2, estrategia: 'opuestas' })
+    expect(screen.getByTestId('flota-nota').textContent).toMatch(/sentidos contrarios/)
+    // cambiar la cantidad conserva la estrategia
+    fireEvent.click(within(cant).getByRole('button', { name: '3' }))
+    expect(JSON.parse(screen.getByTestId('flota').textContent)).toEqual({ n: 3, estrategia: 'opuestas' })
+    // volver a 1 quita la flota; «Restablecer» del paso también
+    fireEvent.click(within(cant).getByRole('button', { name: '1' }))
+    expect(screen.getByTestId('flota').textContent).toBe('')
+    fireEvent.click(within(cant).getByRole('button', { name: '2' }))
+    fireEvent.click(screen.getByTestId('reset-2'))
+    expect(screen.getByTestId('flota').textContent).toBe('')
+    // el mapa del estudio no tiene flota
+    fireEvent.click(screen.getByText('Mapa del estudio'))
+    expect(screen.queryByRole('group', { name: 'Cantidad de robots' })).toBeNull()
+  })
+
+  it('H8: «Comparar con» otra cantidad de robots, solo en huertos generados', () => {
+    render(<Harness conCmp />)
+    const cmp = screen.getByRole('group', { name: 'Comparar con' })
+    expect(within(cmp).getByRole('button', { name: 'Otra cantidad de robots' }).disabled).toBe(true)
+    fireEvent.click(screen.getByText('Alta densidad'))
+    fireEvent.click(within(cmp).getByRole('button', { name: 'Otra cantidad de robots' }))
+    expect(screen.getByTestId('cmp').textContent).toBe('flota:2')
+    const sub = screen.getByRole('group', { name: 'Cantidad de robots de la comparación' })
+    // con 1 robot en la corrida principal, se ofrecen 2 y 3
+    expect(
+      within(sub)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['2', '3'])
+    fireEvent.click(within(sub).getByRole('button', { name: '3' }))
+    expect(screen.getByTestId('cmp').textContent).toBe('flota:3')
+    // con 2 robots en la principal, se ofrecen 1 y 3
+    fireEvent.click(within(screen.getByRole('group', { name: 'Cantidad de robots' })).getByRole('button', { name: '2' }))
+    expect(
+      within(screen.getByRole('group', { name: 'Cantidad de robots de la comparación' }))
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['1', '3'])
+    // otra opción de la comparación saca el selector
+    fireEvent.click(within(cmp).getByRole('button', { name: 'Sin robot' }))
+    expect(screen.queryByRole('group', { name: 'Cantidad de robots de la comparación' })).toBeNull()
   })
 
   it('changedSteps asigna cada parámetro a su paso', () => {

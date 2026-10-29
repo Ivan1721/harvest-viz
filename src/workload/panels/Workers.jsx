@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { SC } from '../charts.jsx'
 import { ROBOTS } from '../../hrsim/robots.js'
 import { FLAG, onboard } from '../run.js'
+import { ESTADOS_ROBOT } from '../modelo.js'
+import { colorRobot, etiquetaRobot, robotDeSel, robotsDeRun, selRobot } from '../flota.js'
 import { ACT_LABEL } from '../spec.js'
 import { ACT_COLOR, f0, f1 } from '../ui.jsx'
 import { fmtDur, fmtFix, t as tr, useLang } from '../../i18n/index.js'
@@ -82,14 +84,14 @@ export function WorkerList({ ho, hr, t, sel, select, labels }) {
             </div>
           )
         })}
-        {hr && hr.robot && (
-          <div className={`li ${sel === 'robot' ? 'sel' : ''}`} onClick={() => select('robot')}>
-            <span className="dotc" style={{ background: SC.hr.color }} />
-            <b>RB-01</b>
+        {robotsDeRun(hr).map((rb, k) => (
+          <div key={k} className={`li ${sel === selRobot(k) ? 'sel' : ''}`} onClick={() => select(selRobot(k))}>
+            <span className="dotc" style={{ background: hr.flota ? colorRobot(k) : SC.hr.color }} />
+            <b>{etiquetaRobot(k)}</b>
             <span className="muted grow small">{tr('Transportador')}</span>
-            <span className="tag-s">{tr('{n} cajas', { n: hr.robot.picks.filter((p) => p.idx <= iR).length })}</span>
+            <span className="tag-s">{tr('{n} cajas', { n: rb.picks.filter((p) => p.idx <= iR).length })}</span>
           </div>
-        )}
+        ))}
       </div>
       {ho && hr && (
         <div className="note">
@@ -106,16 +108,18 @@ export function Detail({ ho, hr, t, sel, labels }) {
   const run = hr || ho
   if (!run) return null
   const i = run.rowAt(t)
-  if (sel === 'robot' && hr?.robot) {
+  const kRob = robotDeSel(sel)
+  const rb = kRob >= 0 ? robotsDeRun(hr)[kRob] : null
+  if (rb) {
     const j = hr.rowAt(t)
-    const picked = hr.robot.picks.filter((p) => p.idx <= j)
-    const p = hr.robot.pos
+    const picked = rb.picks.filter((p) => p.idx <= j)
+    const p = rb.pos
     return (
       <div className="detail">
         <div className="detail-head">
           <div>
             <div className="muted small">{tr('ROBOT TRANSPORTADOR')}</div>
-            <div className="detail-title">RB-01</div>
+            <div className="detail-title">{etiquetaRobot(kRob)}</div>
           </div>
           <span className="pill blue">{tr(ROBOTS[hr.meta?.params?.robotTipo]?.label ?? 'Warthog 4WS')}</span>
         </div>
@@ -125,21 +129,27 @@ export function Detail({ ho, hr, t, sel, labels }) {
             {fmtFix(p[j * 3], 1)} m · {fmtFix(p[j * 3 + 1], 1)} m
           </b>
         </div>
+        {hr.flota && (
+          <div className="row">
+            <span>{tr('Estado')}</span>
+            <b>{tr(ESTADOS_ROBOT.find((e) => e.id === rb.status[j])?.label ?? 'En ruta')}</b>
+          </div>
+        )}
         <div className="row">
           <span>{tr('Cajas recogidas')}</span>
           <b>{picked.length}</b>
         </div>
         <div className="row">
           <span>{tr('Cultivo recogido (total)')}</span>
-          <b>{f0(hr.series.robot[j])} u</b>
+          <b>{f0(hr.flota ? picked.reduce((s, q) => s + q.amount, 0) : hr.series.robot[j])} u</b>
         </div>
         <div className="row">
           <span>{tr('A bordo ahora')}</span>
-          <b>{f0(onboard(hr, j))} u</b>
+          <b>{f0(hr.flota ? rb.onboard[j] : onboard(hr, j))} u</b>
         </div>
         <div className="row">
           <span>{tr('Descargas en zona de carga')}</span>
-          <b>{hr.robot.unloads.filter((u) => u.idx <= j && u.amount > 0).length}</b>
+          <b>{rb.unloads.filter((u) => u.idx <= j && u.amount > 0).length}</b>
         </div>
         {!hr.meta?.simulated && <div className="hint">{tr('Ruta reconstruida desde el log de eventos (interpolación lineal entre waypoints).')}</div>}
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SC } from '../charts.jsx'
 import { ZONES } from '../hri.js'
 import { Bar } from './Workers.jsx'
+import { etiquetaRobot } from '../flota.js'
 import { Tabs, fmtT } from '../ui.jsx'
 import { fmtDur, fmtFix, fmtNum, t, useLang } from '../../i18n/index.js'
 import { protectionDistance } from '../../hrsim/ssm.js'
@@ -24,6 +25,13 @@ export function Analysis({ run, i, seek, select, note }) {
       {note && (
         <div className="note" style={{ marginTop: 0 }}>
           {note}
+        </div>
+      )}
+      {run.flota && (
+        <div className="hint" data-testid="nota-flota-hri">
+          {t(
+            'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.',
+          )}
         </div>
       )}
       <Tabs className="seg" label={t('Análisis de interacción')} value={tab} onChange={setTab} options={tabs} />
@@ -165,6 +173,9 @@ const ROBOT_TIME = [
   ['slow', 'Velocidad reducida por seguridad', '#8b5cf6'],
   ['traction', 'Sin tracción (pendiente o carga)', '#7c2d12'],
   ['acopio', 'Esperando en el acopio', '#0d9488'],
+  // con flota (H8): estados 7 y 8
+  ['calle', 'Esperando calle libre', '#0891b2'],
+  ['cede', 'Cediendo el paso', '#be185d'],
 ]
 
 // exposición por zona de Hall, total del equipo, separada en robot en movimiento / detenido
@@ -361,6 +372,7 @@ export function Safety({ a, run, seek }) {
               <div key={k} className="li" onClick={() => seek(Math.max(0, e.t0 - 3))}>
                 <b style={{ width: 46 }}>{fmtT(e.t0)}</b>
                 <span style={{ width: 28 }}>H{e.h}</span>
+                {e.r != null && <span style={{ width: 44 }}>{etiquetaRobot(e.r)}</span>}
                 <span className="small num grow">
                   {fmtFix(e.minD, 2)} m &lt; {fmtFix(e.sp, 2)} m · {fmtFix(e.v, 1)} m/s
                 </span>

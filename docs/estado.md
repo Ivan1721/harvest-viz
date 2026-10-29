@@ -1,6 +1,6 @@
 # Estado del proyecto y pendientes
 
-Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 24-10-2026.
+Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 28-10-2026.
 
 ## Dónde estamos
 
@@ -9,6 +9,16 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 - La 0.9.0 trae **H8, fase A** (flota de 2–3 robots en el motor, opción `flota`, todavía sin interfaz) y la **escena 3D
   más realista** completa (R1 luz y suelo con selector de calidad, R2 Warthog real, R3 paltos con hojas). Detalle en
   `CHANGELOG.md`, `docs/simulador.md` («Flota de robots») y `docs/modelos_escenario.md`.
+- Desde la 0.9.0, en `main` y sin versión nueva (la siguiente es la 0.10.0, al cerrar H8): la interfaz `ui-p1` (27-10) y
+  **H8, fase B** (28-10), la flota en la interfaz: paso Agentes «Cantidad de robots» y «Cómo se reparten», escena con
+  RB-01…RB-03 (color, ruta y etiqueta), pestaña Robot por robot y total de la flota, «Comparar con» otra cantidad de
+  robots y enlace `?robots=2&estrategia=…`. Solo interfaz: el motor sigue en 0.8.0 y no cambia ningún resultado (con
+  Burro con carro registra además la pose del carro de cada robot). Detalle en `docs/simulador.md` («En el visor») y
+  `CHANGELOG.md`.
+- **Entorno de trabajo:** `.claude/settings.json` permite sin preguntar lint, pruebas, build y git de lectura, y la skill
+  `cerrar-fase` (`.claude/skills/cerrar-fase/`) corre la lista de entrega de una fase y arma el informe para el
+  «aprobado». En el PC de Ivan, `gh` está instalado pero sin sesión, y los e2e corren con el Chrome instalado
+  (`PW_CHROMIUM`).
 - **Impeccable** 4.7.0 (skill de diseño de interfaz, Apache-2.0) está en `.claude/skills/impeccable`, sin hooks.
   `DESIGN.md` es el sistema de diseño del Simulador («El cuaderno de campo»); `.impeccable/critique/` guarda la crítica
   del 23-10 (26/40).
@@ -18,15 +28,17 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 1. **Interfaz, lo que queda de la crítica:** la fase `ui-p1` (los 3 P1 y los decimales y duraciones) está en `main`
    desde el 27-10. Falta: a 1.024 px la columna derecha desborda y las pestañas se cortan (P2), y la ayuda que solo
    está en `title` (inaccesible con teclado o táctil).
-2. **H8, fase B: interfaz de la flota** (diseño: https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM): paso Agentes
-   «Robots: 1 · 2 · 3» y estrategia; escena con varios robots (RB-01, RB-02, su ruta en su color); pestaña Robot por
-   robot; «Comparar con» otra cantidad de robots. El motor ya registra `fx…fen` por robot y `ev.rutasFlota`; `toRun.js`
-   todavía muestra solo el robot 1.
-   - **Decisión abierta antes de H8-exp:** corregir el tramo de regreso de la vuelta con número impar de calles también
+2. **H8-exp: el lote de la flota** (diseño: https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM; las fases A y B, el motor
+   y la interfaz, están en `main`).
+   - **Decisión abierta antes del lote:** corregir el tramo de regreso de la vuelta con número impar de calles también
      para un robot (hoy solo con flota, `densificar` en `src/hrsim/flota.js`). Cambia H7 hasta −2,6 % (palta alta
      densidad y ladera, 12 cosecheros, 4 h); recomendado hacerlo, con `ENGINE_VERSION` nuevo.
-   - Luego **H8-exp** (lote de 1–3 robots × estrategia × huerto × avance × 12 y 24 cosecheros). El cierre de H8 será la
-     **0.10.0**.
+   - Luego **H8-exp** (lote de 1–3 robots × estrategia × huerto × avance × 12 y 24 cosecheros, con informe). El cierre
+     de H8 será la **0.10.0**.
+   - Anotado en la fase B: el análisis HRI de la flota (`src/workload/flota.js`) corre en el hilo de la interfaz y suma
+     ~2 s en el caso más pesado (4 h, 24 cosecheros, 3 robots); si molesta, pasarlo al worker. La distancia mínima entre
+     robots «de toda la corrida» sale ~0,2 m porque los robots parten del mismo punto del acopio; la que importa es la
+     de «con alguno en una calle».
 3. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
    distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo.
@@ -38,7 +50,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
-| H8: dos o más robots (aprobado, fase A hecha) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
+| H8: dos o más robots (aprobado, A y B hechas) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
 | H7: experimentos en lote                      | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
 | H7: diseño                                    | https://claude.ai/artifact/RqERGRHDwRo9DxnsFrNBZC                                                     |
 | Escenarios y árboles sin trabajar             | https://claude.ai/artifact/PdPLJePMfNRH15HPQSLeuV                                                     |

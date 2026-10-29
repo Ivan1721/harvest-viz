@@ -194,4 +194,26 @@ export default {
   'Distancia a la boca para reservar una calle (m)': 'Distância até a entrada para reservar uma rua (m)',
   'Distancia de espera al acopio si otro robot descarga (m)': 'Distância de espera do ponto de recolha enquanto outro robô descarrega (m)',
   'Supuesto: 3': 'Suposto: 3',
+  // H8: flota de robots (pestaña Robot y resumen)
+  'Cada robot y la flota': 'Cada robô e a frota',
+  Flota: 'Frota',
+  'Detalle de': 'Detalhe de',
+  'Cultivo a bordo de cada robot': 'Cultura a bordo de cada robô',
+  'Cajas atendidas': 'Caixas atendidas',
+  'Entregado al acopio': 'Entregue ao ponto de recolha',
+  'Esperando calle libre': 'Esperando rua livre',
+  'Cediendo el paso': 'Dando passagem',
+  'Estacionado o esperando su salida': 'Estacionado ou esperando a saída',
+  Recorrido: 'Percurso',
+  'Descargas en el acopio': 'Descargas no ponto de recolha',
+  'Equilibrio de cajas entre robots (Jain)': 'Equilíbrio de caixas entre robôs (Jain)',
+  'Distancia mínima entre robots (toda la corrida)': 'Distância mínima entre robôs (toda a corrida)',
+  'La mínima de toda la corrida suele darse al salir del acopio o en la cabecera, donde los robots sí pueden cruzarse.':
+    'A mínima de toda a corrida costuma ocorrer ao sair do ponto de recolha ou na cabeceira, onde os robôs podem se cruzar.',
+  'Distancia mínima entre robots (con alguno en una calle)': 'Distância mínima entre robôs (um deles numa rua)',
+  'Entregado por la flota': 'Entregue pela frota',
+  'Calles recorridas por la flota': 'Ruas percorridas pela frota',
+  'Energía de la flota por kg entregado': 'Energia da frota por kg entregue',
+  'Con flota, las distancias, las zonas y los encuentros son con el robot más cercano a cada trabajador; el campo de protección y las paradas, de cada robot.':
+    'Com frota, as distâncias, as zonas e os encontros são com o robô mais próximo de cada colhedor; o campo de proteção e as paradas, de cada robô.',
 }

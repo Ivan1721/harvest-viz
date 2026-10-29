@@ -4,10 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). Solo interfaz: el motor y los resultados no cambian.
+Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). H8, fase B: la flota de robots en la interfaz. Solo interfaz: el motor (0.8.0) y los resultados no cambian; con flota y Burro con carro el motor registra además la pose del carro de cada robot.
 
 ### Agregado
 
+- **Flota de robots en la interfaz** (H8, fase B). Paso Agentes: «Cantidad de robots» (1·2·3) y «Cómo se reparten» (zonas, direcciones opuestas, desfase), solo en huertos generados; enlace `?robots=2&estrategia=opuestas`. La escena muestra todos los robots con su etiqueta (RB-01…RB-03), su color, su ruta vigente y anticipada y su carro; la lista y el detalle del robot son por robot, con su estado en cada instante. La pestaña Robot trae una columna por robot y el total de la flota (cajas, entregado, movimiento, esperas por calle, por cesión y en el acopio, recorrido, energía, batería), el equilibrio de cajas (Jain), las distancias entre robots y el detalle de la flota o de un robot. «Comparar con» → «Otra cantidad de robots». Exportar agrega las poses de los robots 2 y 3. Con flota, la geometría con las personas es hacia el robot más cercano y el resumen dice «de la flota».
 - **Barra de «Simular»** fija al pie de la columna izquierda, siempre a la vista: botón principal solo con cambios sin simular («Hay 2 cambios sin simular: Cosecheros, Duración»), «Resultados al día» sin ellos y «Cancelar» mientras simula.
 - **Atajo Ctrl+Enter** (⌘+Enter en Mac): simula desde cualquier parte del Simulador.
 - El aviso de resultados desactualizados **nombra lo que cambió** (hasta 3 campos y «+N más»), y la escena 3D se atenúa hasta simular. Las tablas no se atenúan, para no bajar el contraste del texto.

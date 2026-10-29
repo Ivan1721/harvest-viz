@@ -652,6 +652,10 @@ body {
   font-size: 11px;
   flex: none;
 }
+/* con más opciones de las que caben en una línea, pasan a la siguiente */
+.seg.wrap {
+  flex-wrap: wrap;
+}
 .tag.small {
   font-size: 10.5px;
   padding: 1px 6px;
