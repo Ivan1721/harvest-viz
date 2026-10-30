@@ -47,7 +47,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
    distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo.
 4. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
-   (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en la rama `follaje-a`. Etapa B:
+   (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en `main` desde el 29-10. Etapa B:
    Ivan dibuja `public/texturas/palto-racimos.png` sobre `docs/plantillas/palto-racimos.svg`; luego una rama corta
    `follaje-b` carga el PNG con respaldo al atlas de canvas. Uva, arándano y cerezo con hojas quedan para otra fase.
 5. Del diseño de H7: nada pendiente.
