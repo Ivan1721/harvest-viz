@@ -27,7 +27,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary.jsx'
 import { downloadRuns } from '../hrsim/export.js'
 import { ACT_LABEL } from './spec.js'
 import { Seg, Tabs, Toast, f0, fmtT } from './ui.jsx'
-import { t, useLang } from '../i18n/index.js'
+import { fmtNum, t, useLang } from '../i18n/index.js'
 
 /* ---------------------------------------------------------------- aplicación */
 const base = import.meta.env.BASE_URL // constante del build (ruta de publicación)
@@ -572,7 +572,6 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
         {hr?.hri && !showPreview && (
           <div
             className="heatwrap2"
-            title={t('Distancia mínima robot–humano: rojo < 0,45 m · naranja < 1,2 m · amarillo < 3,6 m')}
             onClick={(e) => {
               const r = e.currentTarget.getBoundingClientRect()
               seek(((e.clientX - r.left) / r.width) * tmax)
@@ -581,10 +580,29 @@ export default function WorkloadApp({ modeSwitch, source = 'sim' }) {
             <div className="heat" style={{ background: heatGradient(hr.hri) }}>
               {/* paradas de seguridad (fase 3, perfil hri) */}
               {hr.hri.fluency?.safetyStops.map((e, k) => (
-                <i key={k} className="ssm-mark" style={{ left: `${(e.t0 / tmax) * 100}%` }} title={t('Parada de seguridad')} />
+                <i key={k} className="ssm-mark" style={{ left: `${(e.t0 / tmax) * 100}%` }} />
               ))}
             </div>
-            <span className="small muted">{t('Proximidad robot–humano')}</span>
+            {/* leyenda visible (antes solo en title): distancia mínima robot–humano y paradas */}
+            <span className="heat-ley small muted" data-testid="heat-ley">
+              {t('Proximidad robot–humano')}
+              {[
+                ['#dc2626', 0.45],
+                ['#f59e0b', 1.2],
+                ['#fde68a', 3.6],
+              ].map(([c, d]) => (
+                <span key={d}>
+                  <i style={{ background: c }} />
+                  &lt; {fmtNum(d)} m
+                </span>
+              ))}
+              {hr.hri.fluency?.safetyStops.length > 0 && (
+                <span>
+                  <i className="ley-parada" />
+                  {t('Parada de seguridad')}
+                </span>
+              )}
+            </span>
           </div>
         )}
         <div className="timeline2">

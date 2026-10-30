@@ -32,8 +32,10 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 ## Pendientes, en orden sugerido
 
 1. **Interfaz, lo que queda de la crítica:** la fase `ui-p1` (los 3 P1 y los decimales y duraciones) está en `main`
-   desde el 27-10. Falta: a 1.024 px la columna derecha desborda y las pestañas se cortan (P2), y la ayuda que solo
-   está en `title` (inaccesible con teclado o táctil).
+   desde el 27-10. La fase `ui-p2` (diseño aprobado el 29-10: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa;
+   pestañas que caben desde 1.024 px, un solo punto de quiebre en 1.200 px, componente `Ayuda` en lugar de `title`)
+   está en la rama `ui-p2`, a la espera del «aprobado»; entra en la 0.10.0. Las capturas de `e2e/visual.spec.js`
+   cambian por las pestañas: aceptarlas con `npm run test:visual -- --update-snapshots` en la máquina que las generó.
 2. **H8-exp: el lote de la flota** (diseño aprobado el 29-10: https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm; las
    fases A, B y C están en `main`). Rama `h8-exp`: columnas de flota en `scripts/experimentos/lib.mjs`, `resumen.csv`
    con las repeticiones, `experimentos/h8.json` (6 huertos × Warthog y Burro con carro × 1–3 robots × estrategia ×
@@ -57,6 +59,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 | Documento                                     | Enlace                                                                                                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Follaje de paltos (aprobado)                  | https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk                                                     |
+| Interfaz P2: columna derecha y ayuda (aprob.) | https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa                                                     |
 | Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
 | H8-exp: diseño del lote (aprobado)            | https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm                                                     |

@@ -887,9 +887,55 @@ body {
 .wb .seg button {
   flex: 1 1 auto;
 }
-.wb .seg button:disabled {
+.wb .seg button:disabled,
+.wb .seg button[aria-disabled='true'] {
   opacity: 0.4;
   cursor: not-allowed;
+}
+.wb .seg .seg-ayuda {
+  display: flex;
+  flex: 1 1 auto;
+}
+.wb .seg .seg-ayuda > button {
+  flex: 1 1 auto;
+}
+.wb .note.seg-motivo {
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+/* Ayuda accesible (<Ayuda>): reemplaza a title; burbuja fija para que no la corten las columnas con scroll */
+.ayuda-burbuja {
+  position: fixed;
+  z-index: 50;
+  max-width: 280px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ink, #1c2434);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 6px 20px rgba(20, 30, 60, 0.15);
+  pointer-events: none;
+}
+.ayuda-burbuja[hidden] {
+  display: none;
+}
+.params label.ayuda > span:first-child {
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 3px;
+}
+.params label.ayuda.supuesto > span:first-child {
+  text-decoration: underline dashed #d97706;
+}
+span.ayuda[tabindex]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 .wb .note {
   font-size: 11px;
@@ -1163,12 +1209,28 @@ body {
   border-radius: 8px;
   max-width: 80%;
 }
+/* Pestañas compactas: se encogen al ancho de su texto; si aun así no caben, la fila se desplaza con un degradado al borde */
 .wb .tabs {
   margin-bottom: 4px;
   border-bottom: 1px solid var(--line);
   gap: 0;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wb .tabs::-webkit-scrollbar {
+  display: none;
+}
+.wb .tabs.desborda {
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+.wb .tabs.desborda.al-final {
+  mask-image: none;
 }
 .wb .tabs button {
+  flex: 1 0 auto;
+  padding: 7px 5px;
+  white-space: nowrap;
   border-radius: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -1363,6 +1425,32 @@ body {
   height: 8px;
   border-radius: 4px;
 }
+.wb .heat-ley {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.wb .heat-ley > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.wb .heat-ley i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.wb .heat-ley i.ley-parada {
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: #7f1d1d;
+}
+.ayuda-bloque {
+  display: block;
+}
 .wb .timeline2 {
   display: flex;
   align-items: center;
@@ -1375,9 +1463,14 @@ body {
   width: 92px;
   text-align: right;
 }
-@media (max-width: 1100px) {
+/* Único punto de quiebre (DESIGN.md): columnas más angostas y pestañas más compactas; las seis caben desde 1.024 px */
+@media (max-width: 1200px) {
   .wb {
-    grid-template-columns: 210px 1fr 320px;
+    grid-template-columns: 220px 1fr 344px;
+  }
+  .wb .tabs button {
+    padding: 7px 4px;
+    font-size: 11.5px;
   }
 }
 

@@ -7,7 +7,6 @@ export default {
   'No hay resultados todavía.': 'No results yet.',
   'Resultados de la configuración anterior.': 'Results of the previous configuration.',
   'Simulando la misma configuración con los parámetros de MATLAB…': 'Simulating the same configuration with the MATLAB parameters…',
-  'Tiene valores distintos de los de partida': 'Has values different from the defaults',
   modificado: 'modified',
   Escenario: 'Scenario',
   'Mapa del estudio: 3 filas × 4 árboles, simulado con el modelo de MATLAB.': 'Study map: 3 rows × 4 trees, simulated with the MATLAB model.',
@@ -113,7 +112,6 @@ export default {
   'Posiciones exactas: el simulador registra la pose de cada agente cada {dt} s.':
     'Exact positions: the simulator records the pose of every agent every {dt} s.',
   '+{n} más': '+{n} more',
-  'Simula lo configurado ({k})': 'Simulates the current setup ({k})',
   'Hay 1 cambio sin simular: {c}.': '1 change not yet simulated: {c}.',
   'Hay {n} cambios sin simular: {c}.': '{n} changes not yet simulated: {c}.',
   'Resultados al día.': 'Results up to date.',

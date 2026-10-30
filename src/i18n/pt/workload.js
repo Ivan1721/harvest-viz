@@ -24,8 +24,6 @@ export default {
   Interacción: 'Interação',
   Validación: 'Validação',
   Datos: 'Dados',
-  'Distancia mínima robot–humano: rojo < 0,45 m · naranja < 1,2 m · amarillo < 3,6 m':
-    'Distância mínima robô–humano: vermelho < 0,45 m · laranja < 1,2 m · amarelo < 3,6 m',
   'Proximidad robot–humano': 'Proximidade robô–humano',
   Pausar: 'Pausar',
   Reproducir: 'Reproduzir',

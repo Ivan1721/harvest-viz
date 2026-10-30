@@ -5,7 +5,7 @@ import { HOLGURA_CALLE } from '../../hrsim/huertos/rectangular.js'
 import { ROBOTS, capacidadCajas } from '../../hrsim/robots.js'
 import { FLOTA_ESTRATEGIAS, FLOTA_MAX } from '../../hrsim/flota.js'
 import { ESTRATEGIAS } from '../flota.js'
-import { Field, Seg } from '../ui.jsx'
+import { Ayuda, Field, Seg } from '../ui.jsx'
 import { ACTS } from '../library.js'
 import { ACT_LABEL } from '../spec.js'
 import { ACOPIO, CARGA, COSTS, CREW, DURATION, HUERTO, PERIODS, ROBOT, SSM } from '../parametros.js'
@@ -95,11 +95,13 @@ export function Step({ n, title, changed, onReset, children, testid }) {
           {n}
         </span>
         {title}
-        {changed && <i className="step-dot" title={t('Tiene valores distintos de los de partida')} aria-label={t('modificado')} />}
+        {changed && <i className="step-dot" role="img" aria-label={t('modificado')} />}
         {changed && onReset && (
-          <button className="step-reset" onClick={onReset} title={t('Vuelve a los valores de partida de este paso')} data-testid={`reset-${n}`}>
-            {t('Restablecer')}
-          </button>
+          <Ayuda texto={t('Vuelve a los valores de partida de este paso')}>
+            <button className="step-reset" onClick={onReset} data-testid={`reset-${n}`}>
+              {t('Restablecer')}
+            </button>
+          </Ayuda>
         )}
       </h4>
       {children}
@@ -117,6 +119,15 @@ function Group({ title, changed, testid, children }) {
       </summary>
       <div className="params">{children}</div>
     </details>
+  )
+}
+
+/** Etiqueta de un parámetro con su fuente en una <Ayuda>; los supuestos (sin fuente) van subrayados en ámbar. */
+function ParamLabel({ src, children }) {
+  return (
+    <Ayuda as="label" texto={src ? t(src) : null} className={/^Supuesto/.test(src || '') ? 'supuesto' : ''}>
+      {children}
+    </Ayuda>
   )
 }
 
@@ -149,10 +160,10 @@ export function SimSteps({
   useLang()
   const set = (k, v) => setParams((p) => ({ ...p, [k]: v }))
   const row = (k, l, st, src, min, max) => (
-    <label key={k} title={src ? t(src) : undefined}>
+    <ParamLabel key={k} src={src}>
       <span>{t(l)}</span>
       <NumField value={params[k]} step={st} min={min} max={max} label={t(l)} onCommit={(v) => set(k, v)} />
-    </label>
+    </ParamLabel>
   )
   const base = profileDefaults(params.profile, params.huerto, params.robotTipo)
   const steps = changedSteps(params, base, cfg)
@@ -296,7 +307,7 @@ export function SimSteps({
             testid="acopio-params"
           >
             {ACOPIO.map(([k, l, st, src, min, max, int]) => (
-              <label key={k} title={t(src)}>
+              <ParamLabel key={k} src={src}>
                 <span>{t(l)}</span>
                 <NumField
                   value={params.acopio[k]}
@@ -306,7 +317,7 @@ export function SimSteps({
                   label={t(l)}
                   onCommit={(v) => (!int || Number.isInteger(v)) && setParams((p) => ({ ...p, acopio: { ...p.acopio, [k]: v } }))}
                 />
-              </label>
+              </ParamLabel>
             ))}
           </Group>
         )}
@@ -348,7 +359,7 @@ export function SimSteps({
             testid="carga-params"
           >
             {CARGA.map(([k, l, st, src, min, max]) => (
-              <label key={k} title={t(src)}>
+              <ParamLabel key={k} src={src}>
                 <span>{t(l)}</span>
                 <NumField
                   value={params.carga[k]}
@@ -358,7 +369,7 @@ export function SimSteps({
                   label={t(l)}
                   onCommit={(v) => setParams((p) => ({ ...p, carga: { ...p.carga, [k]: v } }))}
                 />
-              </label>
+              </ParamLabel>
             ))}
           </Group>
         )}
@@ -473,7 +484,7 @@ export function SimSteps({
               size="mini"
               value={params.robotTipo}
               onChange={(r) => setParams((p) => ({ ...p, robotTipo: r, capacityBoxes: capacidadCajas(r, p.maxProd), energia: { ...ROBOTS[r].energia } }))}
-              options={Object.entries(ROBOTS).map(([k, v]) => [k, t(v.label), false, t(v.label)])}
+              options={Object.entries(ROBOTS).map(([k, v]) => [k, t(v.label)])}
             />
           ) : (
             <div className="note" style={{ marginTop: 0 }}>
@@ -555,10 +566,10 @@ export function SimSteps({
                 />
               </label>
               {SSM.map(([k, l, st, src, min]) => (
-                <label key={k} title={t(src)}>
+                <ParamLabel key={k} src={src}>
                   <span>{t(l)}</span>
                   <NumField value={params.ssm[k]} step={st} min={min} label={t(l)} onCommit={(v) => setParams((p) => ({ ...p, ssm: { ...p.ssm, [k]: v } }))} />
-                </label>
+                </ParamLabel>
               ))}
             </>
           )}
@@ -613,27 +624,21 @@ export function SimSteps({
         )}
         {info && <div className="note">{info}</div>}
         {onExport && (
-          <button
-            className="btn"
-            style={{ marginTop: 6 }}
-            onClick={onExport}
-            disabled={busy}
-            title={t('Descarga un .zip con *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida')}
+          <Ayuda
+            className="ayuda-bloque"
+            texto={t('Descarga un .zip con *_timeseries.csv (formato MATLAB), *_poses.csv y *_meta.json (parámetros y versión del motor) de cada corrida')}
           >
-            {t('Exportar corridas')}
-          </button>
+            <button className="btn" style={{ marginTop: 6 }} onClick={onExport} disabled={busy}>
+              {t('Exportar corridas')}
+            </button>
+          </Ayuda>
         )}
         {onCopyLink && (
-          <button
-            className="btn link"
-            style={{ marginTop: 6 }}
-            onClick={onCopyLink}
-            disabled={busy}
-            data-testid="copy-link"
-            title={t('El enlace abre esta misma corrida: escenario, agentes y duración')}
-          >
-            {copied ? t('Enlace copiado') : t('Copiar enlace a esta corrida')}
-          </button>
+          <Ayuda className="ayuda-bloque" texto={t('El enlace abre esta misma corrida: escenario, agentes y duración')}>
+            <button className="btn link" style={{ marginTop: 6 }} onClick={onCopyLink} disabled={busy} data-testid="copy-link">
+              {copied ? t('Enlace copiado') : t('Copiar enlace a esta corrida')}
+            </button>
+          </Ayuda>
         )}
       </Step>
       {videoPanel}
@@ -665,13 +670,7 @@ export function SimAction({ onRun, onCancel, busy, stale, fresh, cambios = [] })
           {t('Simulando… · Cancelar')}
         </button>
       ) : (
-        <button
-          className={`btn${stale ? ' primary' : ''}`}
-          onClick={onRun}
-          data-testid="sim-run"
-          aria-keyshortcuts="Control+Enter Meta+Enter"
-          title={t('Simula lo configurado ({k})', { k: ATAJO })}
-        >
+        <button className={`btn${stale ? ' primary' : ''}`} onClick={onRun} data-testid="sim-run" aria-keyshortcuts="Control+Enter Meta+Enter">
           {t('Simular')}
           <kbd aria-hidden="true">{ATAJO}</kbd>
         </button>

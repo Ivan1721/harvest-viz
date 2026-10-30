@@ -11,7 +11,7 @@ import {
   valoresReglas,
 } from '../modelo.js'
 import { DEFAULTS_SIM } from './SimPanel.jsx'
-import { Seg } from '../ui.jsx'
+import { Ayuda, Seg } from '../ui.jsx'
 import { fmtNum, t, useLang } from '../../i18n/index.js'
 
 const W = 112,
@@ -189,12 +189,12 @@ export function ModelTab({ ho, hr, t: tNow, sel, select }) {
           <h4 style={{ marginTop: 14 }}>{t('Robot')}</h4>
           <div className="sm-robot" data-testid="sm-robot">
             {ESTADOS_ROBOT.filter((e) => !e.flota || p.flota).map((e) => (
-              <div key={e.id} className={`sm-chip${e.id === rActual ? ' now' : ''}`} title={t(e.regla, vals)}>
+              <Ayuda as="div" key={e.id} className={`sm-chip${e.id === rActual ? ' now' : ''}`} texto={t(e.regla, vals)}>
                 <span>
                   {e.id} · {t(e.label)}
                 </span>
                 <span className="num small">{fmtNum((100 * (robotT.get(e.id) || 0)) / (hr.n * hr.dt), { maximumFractionDigits: 1 })} %</span>
-              </div>
+              </Ayuda>
             ))}
           </div>
           {rActual != null && <div className="note">{t(ESTADOS_ROBOT[rActual].regla, vals)}</div>}
