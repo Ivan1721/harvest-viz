@@ -7,7 +7,6 @@ export default {
   'No hay resultados todavía.': 'Ainda não há resultados.',
   'Resultados de la configuración anterior.': 'Resultados da configuração anterior.',
   'Simulando la misma configuración con los parámetros de MATLAB…': 'Simulando a mesma configuração com os parâmetros do MATLAB…',
-  'Tiene valores distintos de los de partida': 'Tem valores diferentes dos iniciais',
   modificado: 'modificado',
   Escenario: 'Cenário',
   'Mapa del estudio: 3 filas × 4 árboles, simulado con el modelo de MATLAB.': 'Mapa do estudo: 3 fileiras × 4 árvores, simulado com o modelo do MATLAB.',
@@ -114,7 +113,6 @@ export default {
   // fase ui-p1: barra de «Simular» y aviso de cambios
   'Posiciones exactas: el simulador registra la pose de cada agente cada {dt} s.': 'Posições exatas: o simulador registra a pose de cada agente a cada {dt} s.',
   '+{n} más': '+{n} mais',
-  'Simula lo configurado ({k})': 'Simula o que está configurado ({k})',
   'Hay 1 cambio sin simular: {c}.': 'Há 1 mudança ainda não simulada: {c}.',
   'Hay {n} cambios sin simular: {c}.': 'Há {n} mudanças ainda não simuladas: {c}.',
   'Resultados al día.': 'Resultados em dia.',

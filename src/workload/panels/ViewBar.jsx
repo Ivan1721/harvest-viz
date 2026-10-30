@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Field, Seg } from '../ui.jsx'
+import { Ayuda, Field, Seg } from '../ui.jsx'
 import { t, useLang } from '../../i18n/index.js'
 
 /**
@@ -125,10 +125,10 @@ export function ViewBar({
               <input type="checkbox" disabled={!hasHR} checked={ov.intent} onChange={(e) => setOv({ ...ov, intent: e.target.checked })} />
               {t('Ruta anticipada')}
             </label>
-            <label className={ov.plantas ? 'on' : ''} title={t('Bajo cada planta: gris = cosechada, ámbar = en curso; sin marca = pendiente')}>
+            <Ayuda as="label" className={ov.plantas ? 'on' : ''} texto={t('Bajo cada planta: gris = cosechada, ámbar = en curso; sin marca = pendiente')}>
               <input type="checkbox" checked={ov.plantas} onChange={(e) => setOv({ ...ov, plantas: e.target.checked })} />
               {t('Estado de las plantas')}
-            </label>
+            </Ayuda>
           </div>
         </div>
       </details>

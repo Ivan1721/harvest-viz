@@ -11,6 +11,9 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+// Campo numérico de un parámetro, ubicado por su fuente (ahora en una <Ayuda>, antes en title)
+const campo = (src) => screen.getByText(src).closest('label').querySelector('input')
+
 function Harness({ onRun = () => {}, onExport, stale = false, start = DEFAULTS_SIM, conCmp = false }) {
   const [params, setParams] = useState(start)
   const [cfg, setCfg] = useState({ nw: 12, row: 3, act: 'mixed', rp: 0 })
@@ -50,11 +53,21 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     expect(titles).toEqual(['1Escenario', '2Agentes', '3Simulación'])
   })
 
+  it('ui-p2: ninguna ayuda queda solo en title (inaccesible con teclado o táctil)', () => {
+    const { container } = render(<Harness conCmp onExport={() => {}} />)
+    // con un huerto generado aparecen los grupos de acopio, carga y robot
+    fireEvent.click(screen.getByText('Alta densidad'))
+    expect([...container.querySelectorAll('[title]')].map((e) => e.outerHTML.slice(0, 80))).toEqual([])
+    // las fuentes de los parámetros quedan enlazadas a su campo
+    const input = campo('MATLAB: 0,75')
+    expect(input.getAttribute('aria-describedby')).toBe(screen.getByText('MATLAB: 0,75').id)
+  })
+
   it('edita un parámetro de la cuadrilla, marca el paso Agentes y lo restablece', () => {
     render(<Harness />)
     expect(screen.getByTestId('crew-params').textContent).toBe('Ajustar la cuadrilla')
     expect(screen.queryByTestId('reset-2')).toBeNull()
-    const input = screen.getByTitle('MATLAB: 0,75').querySelector('input')
+    const input = campo('MATLAB: 0,75')
     fireEvent.change(input, { target: { value: '1.1' } })
     expect(screen.getByTestId('walk').textContent).toBe('1.1')
     expect(screen.getByTestId('crew-params').textContent).toMatch(/modificado/)
@@ -67,7 +80,7 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
 
   it('no aplica un campo vacío ni valores bajo el mínimo (velocidad 0 inmovilizaría a los trabajadores)', () => {
     render(<Harness />)
-    const input = screen.getByTitle('MATLAB: 0,75').querySelector('input')
+    const input = campo('MATLAB: 0,75')
     fireEvent.change(input, { target: { value: '' } })
     expect(screen.getByTestId('walk').textContent).toBe('0.75')
     expect(input.getAttribute('aria-invalid')).toBe('true')
@@ -137,7 +150,7 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
     const pend = screen.getByLabelText('Pendiente a lo largo de las hileras (%)')
     expect(pend.value).toBe('20')
     fireEvent.change(pend, { target: { value: '30' } })
-    fireEvent.change(screen.getByTitle('MATLAB: 0,75').querySelector('input'), { target: { value: '1' } })
+    fireEvent.change(campo('MATLAB: 0,75'), { target: { value: '1' } })
     expect(screen.getByTestId('step-escenario').querySelector('.step-dot')).toBeTruthy()
     fireEvent.click(screen.getByTestId('reset-1'))
     expect(screen.getByLabelText('Pendiente a lo largo de las hileras (%)').value).toBe('20')
@@ -255,8 +268,16 @@ describe('SimSteps (panel izquierdo del Simulador)', () => {
   it('H8: «Comparar con» otra cantidad de robots, solo en huertos generados', () => {
     render(<Harness conCmp />)
     const cmp = screen.getByRole('group', { name: 'Comparar con' })
-    expect(within(cmp).getByRole('button', { name: 'Otra cantidad de robots' }).disabled).toBe(true)
+    const otra = () => within(cmp).getByRole('button', { name: 'Otra cantidad de robots' })
+    // deshabilitada pero enfocable, con el motivo visible y enlazado
+    expect(otra().getAttribute('aria-disabled')).toBe('true')
+    fireEvent.click(otra())
+    expect(screen.getByTestId('cmp').textContent).toBe('sinrobot')
+    const motivo = screen.getByText('Otro robot, Otra cantidad de robots: solo en los huertos generados.')
+    expect(otra().getAttribute('aria-describedby')).toBe(motivo.id)
     fireEvent.click(screen.getByText('Alta densidad'))
+    expect(otra().getAttribute('aria-disabled')).toBeNull()
+    expect(screen.queryByText(/solo en los huertos generados/)).toBeNull()
     fireEvent.click(within(cmp).getByRole('button', { name: 'Otra cantidad de robots' }))
     expect(screen.getByTestId('cmp').textContent).toBe('flota:2')
     const sub = screen.getByRole('group', { name: 'Cantidad de robots de la comparación' })

@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda accesible (lo que quedaba de la crítica de Impeccable del 23-10). Solo interfaz: el motor y los resultados no cambian.
+
+### Agregado
+
+- **Ayuda accesible**: ninguna ayuda queda solo en `title`, que no se ve con el teclado ni en pantallas táctiles. Las fuentes de los parámetros, las reglas de los estados del robot, «Exportar corridas», «Copiar enlace», «Restablecer» y la capa «Estado de las plantas» abren una burbuja al pasar el ratón, con el foco o al tocar; Esc la cierra y queda enlazada con `aria-describedby`. Los supuestos (parámetros sin fuente) van subrayados en ámbar. Una opción deshabilitada sigue enfocable y su motivo se escribe bajo el control («Otro robot, Otra cantidad de robots: solo en los huertos generados.»). La franja de proximidad robot–humano tiene leyenda dibujada (< 0,45 m, < 1,2 m, < 3,6 m y paradas de seguridad).
+
+### Corregido
+
+- A 1.024 px la columna derecha tenía barra horizontal y las pestañas se cortaban («Datos» quedaba fuera); en español, «Datos» se cortaba a cualquier ancho. Las pestañas miden lo que su texto y, bajo 1.200 px (único punto de quiebre; antes eran dos), las columnas pasan a 220 · flexible · 344 px: las seis caben desde 1.024 px en los tres idiomas. Si no cupieran, la fila se desplaza con un degradado al borde y la pestaña activa queda a la vista. A 1.101 px la escena ya no queda más angosta que a 1.024 px.
+
 ## [0.10.0] — 2026-10-29
 
 Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). H8, fase B: la flota de robots en la interfaz (solo interfaz: el motor no cambia; con flota y Burro con carro registra además la pose del carro de cada robot). H8, fase C: el tramo de regreso del robot solo. Follaje de paltos más variado en calidad Alta (solo visual). **Motor 0.8.1**: cambian las corridas con un robot en palta alta densidad y ladera; la réplica de MATLAB no cambia. H8-exp: el lote de la flota (sin cambios en el motor ni en la interfaz).

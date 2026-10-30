@@ -156,7 +156,7 @@ Neutros fríos de papel con dos tintas de identidad y un ámbar reservado para a
 
 ## Layout
 
-Rejilla de tres columnas fijas (240 px · flexible · 380 px) y tres filas (barra superior de 46 px · escena · pie). La escena ocupa el centro y puede dividirse en dos vistas sincronizadas («Comparar»), separadas por 2 px. Las columnas laterales hacen scroll propio con 10 px de margen interior y 6–10 px entre paneles. El ritmo de espaciado es de 3, 4, 6, 8, 10 y 14 px. Hoy hay un solo punto de quiebre (1.200 px); no hay disposición para tablet ni móvil.
+Rejilla de tres columnas fijas (240 px · flexible · 380 px) y tres filas (barra superior de 46 px · escena · pie). La escena ocupa el centro y puede dividirse en dos vistas sincronizadas («Comparar»), separadas por 2 px. Las columnas laterales hacen scroll propio con 10 px de margen interior y 6–10 px entre paneles. El ritmo de espaciado es de 3, 4, 6, 8, 10 y 14 px. Hay un solo punto de quiebre: bajo 1.200 px las columnas pasan a 220 px · flexible · 344 px y las pestañas se compactan, de modo que todo cabe desde 1.024 px. No hay disposición para tablet ni móvil.
 
 ## Elevation & Depth
 
@@ -186,11 +186,19 @@ Los controles son **discretos y exactos**: pequeños, sin adornos y con un estad
 
 - **Style:** contenedor papel de control (radio 10px, 3px de relleno) con opciones de texto 11px semibold en tinta suave.
 - **On:** opción en papel blanco, texto azul tinta y sombra mínima.
-- **Disabled:** opacidad 0,4.
+- **Disabled:** opacidad 0,4; la opción sigue enfocable (`aria-disabled`) y el motivo se escribe visible bajo el control («Otro robot: solo en los huertos generados.»).
 
 ### Tabs
 
 - **Style:** texto sin fondo sobre una línea inferior de 1 px; la pestaña activa lleva subrayado de 2 px en tinta.
+- **Ancho:** cada pestaña mide lo que su texto (12px con 5px de relleno lateral; 11,5px con 4px bajo 1.200 px); las seis caben desde 1.024 px. Si no cupieran, la fila se desplaza, un degradado en el borde derecho avisa y la activa queda siempre a la vista.
+
+### Help (ayuda)
+
+- **Nunca solo en `title`:** la ayuda se abre al pasar el ratón, con el foco (teclado) y al tocar, se cierra con Esc y queda enlazada con `aria-describedby` (componente `Ayuda`).
+- **Style:** burbuja tinta con texto blanco 11,5px, radio 6px y la sombra de los menús; a la derecha del elemento si cabe, si no debajo.
+- **Fuentes de parámetros:** el nombre del campo va subrayado con puntos; los «Supuesto» (sin fuente) con trazos en ámbar modificado.
+- **Leyendas:** los colores que codifican un dato se explican con una leyenda dibujada (proximidad robot–humano, actividades), no con ayuda emergente.
 
 ### Cards / Containers (panel)
 

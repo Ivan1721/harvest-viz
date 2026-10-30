@@ -27,15 +27,7 @@ export function Stack({ run, w }) {
   return (
     <>
       <div className="stackbar">
-        {[1, 2, 3, 4, 5].map((f) =>
-          counts[f] ? (
-            <i
-              key={f}
-              title={`${tr(FLAG[f].label)}: ${fmtDur(counts[f] * run.dt)}`}
-              style={{ width: `${(counts[f] / run.n) * 100}%`, background: FLAG[f].color }}
-            />
-          ) : null,
-        )}
+        {[1, 2, 3, 4, 5].map((f) => (counts[f] ? <i key={f} style={{ width: `${(counts[f] / run.n) * 100}%`, background: FLAG[f].color }} /> : null))}
       </div>
       <div className="legend wrap">
         {[1, 2, 3, 4, 5]
@@ -66,7 +58,7 @@ export function WorkerList({ ho, hr, t, sel, select, labels }) {
           const wo = ho && hr ? ho.workers.find((x) => x.h === w.h) : null
           return (
             <div key={w.h} className={`li ${sel === w.h ? 'sel' : ''}`} onClick={() => select(w.h)}>
-              <span className="dotc" style={{ background: FLAG[f].color }} title={tr(FLAG[f].label)} />
+              <span className="dotc" style={{ background: FLAG[f].color }} role="img" aria-label={tr(FLAG[f].label)} />
               <b>H{w.h}</b>
               <span className="muted small" style={{ width: 54 }}>
                 {tr(ACT_LABEL[w.act])}
