@@ -4,14 +4,15 @@
 //
 // Escribe junto al diseño, en experimentos/<nombre>/:
 //   corridas.csv    una fila por corrida terminada (se agrega a medida que terminan: sirve de caché)
-//   resultados.csv  las corridas del diseño + el efecto de cada robot contra su corrida sin robot
+//   resultados.csv  las corridas del diseño + el efecto de cada robot contra su corrida sin robot (y, con flota, contra 1 robot)
+//   resumen.csv     si el diseño tiene repeticiones: una fila por celda, con la media y el rango de sus semillas
 // El motor es determinista: una corrida con la misma clave (versión del motor + parámetros) no se repite.
 // Es para el PC: en GitHub Actions no corre.
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { Worker, isMainThread, parentPort } from 'node:worker_threads'
-import { COLS, EFECTO_COLS, aCSV, celdas, clave, conEfectos, correr, deCSV } from './experimentos/lib.mjs'
+import { COLS, EFECTO_COLS, RESUMEN_COLS, aCSV, celdas, clave, conEfectos, correr, deCSV, resumen } from './experimentos/lib.mjs'
 
 const FIS_PATH = new URL('../src/hrsim/goal_seeking.fis', import.meta.url)
 
@@ -54,7 +55,9 @@ async function main() {
   const hilos = Math.max(1, Math.min(Number(opt('hilos', os.availableParallelism?.() ?? os.cpus().length)), cola.length || 1))
   console.log(`${diseño.nombre}: ${todas.length} celdas · ${hechas.size} corridas ya hechas · ${cola.length} por correr en ${hilos} hilos`)
 
-  if (!fs.existsSync(fCorridas)) fs.writeFileSync(fCorridas, COLS.join(',') + '\n')
+  // una caché con otras columnas (de una versión anterior de este script) se reescribe con las de ahora antes de agregarle filas
+  if (!fs.existsSync(fCorridas) || fs.readFileSync(fCorridas, 'utf8').split('\n', 1)[0].trim() !== COLS.join(','))
+    fs.writeFileSync(fCorridas, hechas.size ? aCSV([...hechas.values()], COLS) : COLS.join(',') + '\n')
   const t0 = Date.now()
   let n = 0,
     errores = 0
@@ -95,7 +98,13 @@ async function main() {
   // resultados: una fila por celda del diseño (con sus claves de diseño), más el efecto contra «sin robot»
   const filas = todas.filter(({ k }) => hechas.has(k)).map(({ c, k }) => ({ ...hechas.get(k), bloque: c.bloque, clave: k }))
   const cols = [...COLS, ...EFECTO_COLS]
-  fs.writeFileSync(path.join(dir, 'resultados.csv'), aCSV(conEfectos(filas), cols))
+  const conE = conEfectos(filas)
+  fs.writeFileSync(path.join(dir, 'resultados.csv'), aCSV(conE, cols))
   console.log(`${filas.length}/${todas.length} celdas en ${path.join(dir, 'resultados.csv')}`)
+  if (diseño.bloques.some((b) => b.repeticiones)) {
+    const res = resumen(conE)
+    fs.writeFileSync(path.join(dir, 'resumen.csv'), aCSV(res, RESUMEN_COLS))
+    console.log(`${res.length} celdas con su rango de semillas en ${path.join(dir, 'resumen.csv')}`)
+  }
   if (errores) process.exitCode = 1
 }

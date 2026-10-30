@@ -30,7 +30,7 @@ npm run test:components     # Vitest + Testing Library (jsdom), tests/components
 npm run test:e2e            # Playwright, Chromium; serves the BUILT site via vite preview :4175, so build first
 npm run test:coverage       # c8 with thresholds in .c8rc.json (what CI runs instead of npm test)
 npm run lint                # ESLint
-npm run format:check        # Prettier (no semicolons, single quotes, printWidth 160)
+npm run format:check        # Prettier (no semicolons, single quotes, printWidth 160); `npm run format` fixes
 ```
 
 Single tests:
@@ -42,9 +42,9 @@ npx vitest run tests/components/panels.test.jsx
 npx playwright test e2e/workload.spec.js
 ```
 
-Useful env vars: `PBT_RUNS=500` (property-based cases), `FUZZ_RUNS=5000` (contract fuzzing), `UPDATE_GOLDEN=1 node --test tests/mutation/engine-fast.test.mjs` (regenerate engine fingerprints after an intentional engine change), `PW_CHROMIUM=/path/to/chrome` (use an installed Chromium), `npm run test:visual -- --update-snapshots` (accept visual changes; screenshots depend on system fonts). Slow suites (mutation via Stryker: `npm run test:mutation` / `test:mutation:engine`; all browsers: `npm run test:e2e:all`; visual; sensitivity) run in the weekly `extended.yml` workflow. `docs/testing.md` maps each test family to its question and command.
+Useful env vars: `PBT_RUNS=500` (property-based cases), `FUZZ_RUNS=5000` (contract fuzzing), `UPDATE_GOLDEN=1 node --test tests/mutation/engine-fast.test.mjs` (regenerate engine fingerprints after an intentional engine change), `PW_CHROMIUM=/path/to/chrome` (use an installed Chromium; on Ivan's Windows PC Playwright's Chromium is not installed, use `PW_CHROMIUM="C:/Program Files/Google/Chrome/Application/chrome.exe"`; the full local e2e run takes ~15 min and a late `waitSim` timeout is the known flake noted in `docs/estado.md`: rerun that test alone before investigating), `npm run test:visual -- --update-snapshots` (accept visual changes; screenshots depend on system fonts). Slow suites (mutation via Stryker: `npm run test:mutation` / `test:mutation:engine`; all browsers: `npm run test:e2e:all`; visual; sensitivity) run in the weekly `extended.yml` workflow. `docs/testing.md` maps each test family to its question and command.
 
-Other scripts: `npm run bench` (vs `bench/baseline.json`), `npm run sensitivity` (→ `docs/sensibilidad.md`), `npm run experimentos -- experimentos/h7.json` (parallel, cached batch experiments; results in `experimentos/<name>/`), `npm run export:video -- --url … ` (MP4 export via Playwright).
+Other scripts: `npm run bench` (vs `bench/baseline.json`), `npm run bench:visual` (viewer FPS/draw calls per style and view, needs the built site served), `npm run sensitivity` (→ `docs/sensibilidad.md`), `npm run experimentos -- experimentos/h7.json` (parallel, cached batch experiments; results in `experimentos/<name>/`), `npm run export:video -- --url … ` (MP4 export via Playwright).
 
 CI (`.github/workflows/ci.yml`) on every PR: lint, format:check, test:coverage, test:components, build, e2e. Push to `main` runs the same and deploys to Pages only if all pass.
 
