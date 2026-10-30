@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Plantilla del atlas de racimos de palto (diseño «Follaje de paltos», etapa B).
+  Lienzo 2048 × 2048 px en 4 celdas de 1024 × 1024 px. Dibujar un racimo por celda en la capa «racimos» y borrar o
+  esconder las capas «guias» y «referencia» antes de exportar.
+  Exportar: PNG-24 con transparencia, sRGB, sin perfil incrustado, 2048 × 2048 px → public/texturas/palto-racimos.png
+  Orden de las celdas (como las lee la escena):
+    arriba izquierda: 2 · con brotes nuevos     arriba derecha: 3 · visto desde abajo (envés)
+    abajo izquierda:  0 · adulto denso          abajo derecha:  1 · adulto abierto
+  Cada racimo: 12–20 hojas Hass (elípticas, enteras, ápice agudo, 12–20 cm). El pecíolo común va abajo al centro de la
+  celda (punto rosado, a 100 px del borde inferior) y las hojas se abren hacia arriba y a los lados: en la copa, el borde
+  de abajo de la celda queda pegado a la rama y el de arriba apunta hacia afuera. Margen libre de 32 px al borde. Color base medio, sin sombras ni brillos horneados; fondo transparente sin
+  halo blanco. Relieve opcional: otra capa con los nervios en blanco sobre gris medio (#808080).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 2048 2048">
+  <g id="guias" fill="none" stroke="#e0457b" stroke-width="2">
+    <rect x="0" y="0" width="2048" height="2048" />
+    <line x1="1024" y1="0" x2="1024" y2="2048" />
+    <line x1="0" y1="1024" x2="2048" y2="1024" />
+    <g stroke-dasharray="12 10" stroke="#e0457b" opacity="0.6">
+      <rect x="32" y="32" width="960" height="960" />
+      <rect x="1056" y="32" width="960" height="960" />
+      <rect x="32" y="1056" width="960" height="960" />
+      <rect x="1056" y="1056" width="960" height="960" />
+    </g>
+    <g fill="#e0457b" stroke="none" font-family="Arial, sans-serif" font-size="40">
+      <text x="56" y="92">2 · con brotes nuevos</text>
+      <text x="1080" y="92">3 · visto desde abajo (envés)</text>
+      <text x="56" y="1116">0 · adulto denso</text>
+      <text x="1080" y="1116">1 · adulto abierto</text>
+    </g>
+    <g fill="#e0457b" stroke="none">
+      <circle cx="512" cy="924" r="8" />
+      <circle cx="1536" cy="924" r="8" />
+      <circle cx="512" cy="1948" r="8" />
+      <circle cx="1536" cy="1948" r="8" />
+    </g>
+  </g>
+  <g id="referencia" opacity="0.35">
+    <!-- tamaño de una hoja adulta de referencia (~170 × 420 px) y su forma -->
+    <path d="M512 464 C 600 554, 595 784, 512 884 C 429 784, 424 554, 512 464 Z" fill="#5a8f42" />
+    <line x1="512" y1="884" x2="512" y2="924" stroke="#4a5a2a" stroke-width="6" />
+  </g>
+  <g id="racimos" />
+</svg>

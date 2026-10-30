@@ -364,6 +364,20 @@ test('reparto «frente» y avance del bloque: se simulan, se ven las plantas cos
   expect(errors).toEqual([])
 })
 
+test('follaje de paltos en calidad alta: atlas de racimos con tinte y contraluz, sin errores y con la densidad según la opacidad', async ({ page }) => {
+  // el mapa del estudio (12 paltos): los racimos del atlas (2 triángulos cada uno, 700 por árbol) se dibujan y su
+  // material modificado compila; al bajar la opacidad se dibujan menos racimos
+  const errors = await openWorkload(page, { light: false, mode: 'sim', query: 'calidad=alta&view=ho&perf=1' })
+  const tri = () => page.evaluate(() => Math.max(0, ...Object.values(window.__hvPerf || {}).map((m) => m.triangles || 0)))
+  await expect.poll(tri, { timeout: 120_000 }).toBeGreaterThan(12 * 700 * 2)
+  const antes = await tri()
+  await page.getByText('Capas y estilo').click()
+  await setRange(page.getByRole('slider', { name: 'Opacidad del follaje' }), 0.15)
+  await expect(page.getByText('Opacidad del follaje · 15 %')).toBeVisible()
+  await expect.poll(tri, { timeout: 120_000 }).toBeLessThan(antes - 12 * 500 * 2)
+  expect(errors).toEqual([])
+})
+
 test('calidad de la escena: alta en estilo Realista (luz, suelo y Warthog real) sin errores, y se cambia a básica (R1, R2)', async ({ page }) => {
   // en CI no hay GPU: por defecto sería básica, así que se pide alta por la URL (luz de cielo, texturas y N8AO)
   const errors = await openWorkload(page, { light: false, mode: 'sim', query: 'calidad=alta&view=hr' })

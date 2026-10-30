@@ -46,12 +46,17 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 3. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
    distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo.
-4. Del diseño de H7: nada pendiente.
+4. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
+   (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en la rama `follaje-a`. Etapa B:
+   Ivan dibuja `public/texturas/palto-racimos.png` sobre `docs/plantillas/palto-racimos.svg`; luego una rama corta
+   `follaje-b` carga el PNG con respaldo al atlas de canvas. Uva, arándano y cerezo con hojas quedan para otra fase.
+5. Del diseño de H7: nada pendiente.
 
 ## Documentos de diseño (Claude Docs)
 
 | Documento                                     | Enlace                                                                                                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Follaje de paltos (aprobado)                  | https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk                                                     |
 | Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
 | Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
 | H8-exp: diseño del lote (aprobado)            | https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm                                                     |
