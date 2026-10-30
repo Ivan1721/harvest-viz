@@ -4,6 +4,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [0.10.0] — 2026-10-29
+
 Interfaz del Simulador: los 3 problemas P1 de la crítica de Impeccable del 23-10 y los decimales y duraciones (P2). H8, fase B: la flota de robots en la interfaz (solo interfaz: el motor no cambia; con flota y Burro con carro registra además la pose del carro de cada robot). H8, fase C: el tramo de regreso del robot solo. Follaje de paltos más variado en calidad Alta (solo visual). **Motor 0.8.1**: cambian las corridas con un robot en palta alta densidad y ladera; la réplica de MATLAB no cambia. H8-exp: el lote de la flota (sin cambios en el motor ni en la interfaz).
 
 ### Agregado

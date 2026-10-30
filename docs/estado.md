@@ -4,12 +4,16 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 ## Dónde estamos
 
-- **Aplicación 0.9.0, motor 0.8.0**, etiqueta `v0.9.0` en `main` (commit `8b21399`); CI en verde y desplegado en
-  GitHub Pages.
-- La 0.9.0 trae **H8, fase A** (flota de 2–3 robots en el motor, opción `flota`, todavía sin interfaz) y la **escena 3D
+- **Aplicación 0.10.0, motor 0.8.1**, etiqueta `v0.10.0` en `main` (29-10): cierra **H8**, la flota de robots (fases
+  A–C y el lote H8-exp), más la interfaz `ui-p1` y la etapa A del follaje de paltos. Detalle en `CHANGELOG.md`.
+- **H8-exp** (29-10): lote de 4.518 corridas en `experimentos/h8/` e informe «H8: experimentos en lote»
+  (https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ). Donde un robot no alcanza (palta alta densidad y ladera), el
+  segundo lleva lo entregado de 35–70 % a 73–97 % de lo cosechado y el tercero a 94–96 %; se recomienda zonas. Detalle
+  en `docs/simulador.md` («Experimentos en lote (H8)»).
+- La 0.9.0 trajo **H8, fase A** (flota de 2–3 robots en el motor, opción `flota`, todavía sin interfaz) y la **escena 3D
   más realista** completa (R1 luz y suelo con selector de calidad, R2 Warthog real, R3 paltos con hojas). Detalle en
   `CHANGELOG.md`, `docs/simulador.md` («Flota de robots») y `docs/modelos_escenario.md`.
-- Desde la 0.9.0, en `main` y sin versión nueva (la siguiente es la 0.10.0, al cerrar H8): la interfaz `ui-p1` (27-10) y
+- En la 0.10.0 (antes en `main` sin versión): la interfaz `ui-p1` (27-10) y
   **H8, fase B** (28-10), la flota en la interfaz: paso Agentes «Cantidad de robots» y «Cómo se reparten», escena con
   RB-01…RB-03 (color, ruta y etiqueta), pestaña Robot por robot y total de la flota, «Comparar con» otra cantidad de
   robots y enlace `?robots=2&estrategia=…`. Solo interfaz: el motor sigue en 0.8.0 y no cambia ningún resultado (con
@@ -34,12 +38,10 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 1. **Interfaz, lo que queda de la crítica:** la fase `ui-p1` (los 3 P1 y los decimales y duraciones) está en `main`
    desde el 27-10. Falta: a 1.024 px la columna derecha desborda y las pestañas se cortan (P2), y la ayuda que solo
    está en `title` (inaccesible con teclado o táctil).
-2. **H8-exp: el lote de la flota**, entregado el 29-10 en la rama `h8-exp`, a la espera del «aprobado» (informe:
-   https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ). 4.518 corridas (bloques A, S de sensibilidad y R de desempate)
-   en `experimentos/h8/`; detalle en `docs/simulador.md` («Experimentos en lote (H8)»). Tras el «aprobado»: fusión,
-   app **0.10.0** y etiqueta `v0.10.0`, que cierra H8.
-   - Encontrado en el lote: un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle
-     reservada por otro robot (27 de 2.592 corridas con flota). Corregirlo cambia el motor: otra fase.
+2. **Después de H8** (cerrada en la 0.10.0), sin diseño todavía:
+   - Un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle reservada por otro
+     robot (27 de 2.592 corridas con flota del lote H8). Corregirlo cambia el motor: otra fase.
+   - Lo que el diseño de H8 dejó fuera: flota mixta, despacho por demanda y relevo de batería.
    - El visor no lee `semilla` desde la URL: las corridas con semilla no tienen enlace reproducible.
    - Anotado en la fase B: el análisis HRI de la flota (`src/workload/flota.js`) corre en el hilo de la interfaz y suma
      ~2 s en el caso más pesado (4 h, 24 cosecheros, 3 robots); si molesta, pasarlo al worker. La distancia mínima entre
@@ -56,23 +58,23 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 
 ## Documentos de diseño (Claude Docs)
 
-| Documento                                     | Enlace                                                                                                |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Follaje de paltos (aprobado)                  | https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk                                                     |
-| Interfaz: los 3 P1 de la crítica (hecho)      | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
-| Escena 3D más realista (aprobado, hecho)      | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
-| H8: experimentos en lote (informe)            | https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ                                                     |
-| H8-exp: diseño del lote (aprobado)            | https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm                                                     |
-| H8: dos o más robots (aprobado, A y B hechas) | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
-| H7: experimentos en lote                      | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
-| H7: diseño                                    | https://claude.ai/artifact/RqERGRHDwRo9DxnsFrNBZC                                                     |
-| Escenarios y árboles sin trabajar             | https://claude.ai/artifact/PdPLJePMfNRH15HPQSLeuV                                                     |
-| H6: resultados · H6: diseño                   | https://claude.ai/artifact/Czes1GGRtswWAHNgGvVYwL · https://claude.ai/artifact/XZU6KDmFonAWTh71mWCQea |
-| Análisis de la interfaz                       | https://claude.ai/artifact/1FifagoPsWiuxuPsWr354g                                                     |
-| Arquitectura de HarvestView                   | https://claude.ai/artifact/BxjF92gnLAk5TBEXY2nd5c                                                     |
-| Modelo HRI (fases 2 y 3)                      | https://claude.ai/artifact/X2MuzVrrd7q1ngLkZFAuwz                                                     |
-| Perfil MATLAB congelado                       | https://claude.ai/artifact/C4JH8P1AALBQ3vwaamBPCt                                                     |
-| Estado del arte HRI en cosecha                | https://claude.ai/artifact/6J4HskDnYrCiwt3oCk1178                                                     |
+| Documento                                | Enlace                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Follaje de paltos (aprobado)             | https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk                                                     |
+| Interfaz: los 3 P1 de la crítica (hecho) | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
+| Escena 3D más realista (aprobado, hecho) | https://claude.ai/artifact/NKKGEQxSFDFgJaSsq71P94                                                     |
+| H8: experimentos en lote (informe)       | https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ                                                     |
+| H8-exp: diseño del lote (aprobado)       | https://claude.ai/artifact/U7WNYEtot5HkPSK7UhAGSm                                                     |
+| H8: dos o más robots (aprobado, hecho)   | https://claude.ai/artifact/YQ2TBi8tu5t7CP83AiFXLM                                                     |
+| H7: experimentos en lote                 | https://claude.ai/artifact/7YY8og3F2bF3BtvBQSFApd                                                     |
+| H7: diseño                               | https://claude.ai/artifact/RqERGRHDwRo9DxnsFrNBZC                                                     |
+| Escenarios y árboles sin trabajar        | https://claude.ai/artifact/PdPLJePMfNRH15HPQSLeuV                                                     |
+| H6: resultados · H6: diseño              | https://claude.ai/artifact/Czes1GGRtswWAHNgGvVYwL · https://claude.ai/artifact/XZU6KDmFonAWTh71mWCQea |
+| Análisis de la interfaz                  | https://claude.ai/artifact/1FifagoPsWiuxuPsWr354g                                                     |
+| Arquitectura de HarvestView              | https://claude.ai/artifact/BxjF92gnLAk5TBEXY2nd5c                                                     |
+| Modelo HRI (fases 2 y 3)                 | https://claude.ai/artifact/X2MuzVrrd7q1ngLkZFAuwz                                                     |
+| Perfil MATLAB congelado                  | https://claude.ai/artifact/C4JH8P1AALBQ3vwaamBPCt                                                     |
+| Estado del arte HRI en cosecha           | https://claude.ai/artifact/6J4HskDnYrCiwt3oCk1178                                                     |
 
 ## Notas para una sesión en la nube (Linux, sin GPU)
 
