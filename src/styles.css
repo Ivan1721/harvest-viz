@@ -1209,23 +1209,13 @@ span.ayuda[tabindex]:focus-visible {
   border-radius: 8px;
   max-width: 80%;
 }
-/* Pestañas compactas: se encogen al ancho de su texto; si aun así no caben, la fila se desplaza con un degradado al borde */
+/* Pestañas compactas: miden lo que su texto; si no caben (las 7 de Réplica MATLAB), bajan a una segunda fila */
 .wb .tabs {
   margin-bottom: 4px;
   border-bottom: 1px solid var(--line);
   gap: 0;
   flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.wb .tabs::-webkit-scrollbar {
-  display: none;
-}
-.wb .tabs.desborda {
-  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-}
-.wb .tabs.desborda.al-final {
-  mask-image: none;
+  flex-wrap: wrap;
 }
 .wb .tabs button {
   flex: 1 0 auto;

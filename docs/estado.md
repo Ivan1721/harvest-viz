@@ -36,7 +36,7 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 ## Pendientes, en orden sugerido
 
 1. **Interfaz, crítica de Impeccable cerrada:** `ui-p1` en la 0.10.0 y `ui-p2` en `main` desde el 29-10, sin versión
-   todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): pestañas que caben desde 1.024 px, un solo
+   todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): todas las pestañas a la vista desde 1.024 px (dos filas en Réplica), un solo
    punto de quiebre en 1.200 px y componente `Ayuda` en lugar de `title`. Queda: las capturas de `e2e/visual.spec.js`
    cambian por las pestañas; aceptarlas con `npm run test:visual -- --update-snapshots` y revisarlas antes del commit.
 2. **Después de H8** (cerrada en la 0.10.0), sin diseño todavía:

@@ -160,28 +160,6 @@ export function Field({ label, children }) {
 /** Pestañas accesibles (role=tablist/tab, aria-selected, flechas izquierda/derecha). */
 export function Tabs({ value, options, onChange, label, className = 'tabs' }) {
   const keys = options.map(([k]) => k)
-  const ref = useRef(null)
-  const [borde, setBorde] = useState('')
-  // Si no caben, la fila se desplaza: degradado mientras quede algo a la derecha y la activa siempre a la vista
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const medir = () => {
-      const desborda = el.scrollWidth > el.clientWidth + 1
-      setBorde(desborda ? (el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 ? ' desborda al-final' : ' desborda') : '')
-    }
-    medir()
-    el.addEventListener('scroll', medir)
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null
-    ro?.observe(el)
-    return () => {
-      el.removeEventListener('scroll', medir)
-      ro?.disconnect()
-    }
-  }, [])
-  useEffect(() => {
-    ref.current?.querySelector(`[data-tab="${value}"]`)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
-  }, [value])
   const onKey = (e) => {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!d) return
@@ -191,7 +169,7 @@ export function Tabs({ value, options, onChange, label, className = 'tabs' }) {
     e.currentTarget.querySelector(`[data-tab="${k}"]`)?.focus()
   }
   return (
-    <div ref={ref} className={className + borde} role="tablist" aria-label={label} onKeyDown={onKey}>
+    <div className={className} role="tablist" aria-label={label} onKeyDown={onKey}>
       {options.map(([k, l]) => (
         <button
           key={k}

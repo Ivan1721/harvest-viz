@@ -12,7 +12,7 @@ Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda a
 
 ### Corregido
 
-- A 1.024 px la columna derecha tenía barra horizontal y las pestañas se cortaban («Datos» quedaba fuera); en español, «Datos» se cortaba a cualquier ancho. Las pestañas miden lo que su texto y, bajo 1.200 px (único punto de quiebre; antes eran dos), las columnas pasan a 220 · flexible · 344 px: las seis caben desde 1.024 px en los tres idiomas. Si no cupieran, la fila se desplaza con un degradado al borde y la pestaña activa queda a la vista. A 1.101 px la escena ya no queda más angosta que a 1.024 px.
+- A 1.024 px la columna derecha tenía barra horizontal y las pestañas se cortaban («Datos» quedaba fuera); en español, «Datos» se cortaba a cualquier ancho. Las pestañas miden lo que su texto y, bajo 1.200 px (único punto de quiebre; antes eran dos), las columnas pasan a 220 · flexible · 344 px: las seis del Simulador caben en una fila desde 1.024 px en los tres idiomas. Las siete de Réplica MATLAB, que no caben en una fila a ningún ancho, usan dos. A 1.101 px la escena ya no queda más angosta que a 1.024 px.
 
 ## [0.10.0] — 2026-10-29
 
