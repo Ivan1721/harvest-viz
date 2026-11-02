@@ -30,6 +30,26 @@ for (const [w, h] of [
   })
 }
 
+// Réplica MATLAB suma «Validación»: 7 pestañas que no caben en una fila a ningún ancho y usan dos
+for (const [w, h] of [
+  [1024, 768],
+  [1500, 900],
+]) {
+  test(`Réplica MATLAB a ${w} px: las siete pestañas se ven en dos filas`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    const errors = await openWorkload(page)
+    await expect(page.locator('.wb-right [role=tablist]').first().getByRole('tab')).toHaveCount(7)
+    expect(await medir(page)).toEqual({ columna: 0, fuera: [] })
+    const filas = await page.evaluate(
+      () => new Set([...document.querySelectorAll('.wb-right [role=tablist] [role=tab]')].map((b) => b.getBoundingClientRect().top)).size,
+    )
+    expect(filas).toBe(2)
+    await page.getByRole('tab', { name: 'Validación' }).click()
+    await expect(page.locator('table.cmp').first()).toBeVisible({ timeout: 60_000 })
+    expect(errors).toEqual([])
+  })
+}
+
 test('la ayuda se abre con el teclado, se cierra con Esc y el motivo de una opción deshabilitada se ve', async ({ page }) => {
   const errors = await openWorkload(page, { mode: 'sim' })
   await page.getByTestId('crew-params').click()

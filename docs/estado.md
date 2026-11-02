@@ -36,9 +36,9 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 ## Pendientes, en orden sugerido
 
 1. **Interfaz, crítica de Impeccable cerrada:** `ui-p1` en la 0.10.0 y `ui-p2` en `main` desde el 29-10, sin versión
-   todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): pestañas que caben desde 1.024 px, un solo
-   punto de quiebre en 1.200 px y componente `Ayuda` en lugar de `title`. Queda: las capturas de `e2e/visual.spec.js`
-   cambian por las pestañas; aceptarlas con `npm run test:visual -- --update-snapshots` y revisarlas antes del commit.
+   todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): todas las pestañas a la vista desde 1.024 px (dos filas en Réplica), un solo
+   punto de quiebre en 1.200 px y componente `Ayuda` en lugar de `title`. Las capturas de `e2e/visual.spec.js` se
+   regeneraron en Windows con Chrome: el job visual semanal (Linux) puede marcar diferencias por las fuentes, sin bloquear.
 2. **Después de H8** (cerrada en la 0.10.0), sin diseño todavía:
    - Un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle reservada por otro
      robot (27 de 2.592 corridas con flota del lote H8). Corregirlo cambia el motor: otra fase.

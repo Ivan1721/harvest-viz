@@ -191,7 +191,7 @@ Los controles son **discretos y exactos**: pequeños, sin adornos y con un estad
 ### Tabs
 
 - **Style:** texto sin fondo sobre una línea inferior de 1 px; la pestaña activa lleva subrayado de 2 px en tinta.
-- **Ancho:** cada pestaña mide lo que su texto (12px con 5px de relleno lateral; 11,5px con 4px bajo 1.200 px); las seis caben desde 1.024 px. Si no cupieran, la fila se desplaza, un degradado en el borde derecho avisa y la activa queda siempre a la vista.
+- **Ancho:** cada pestaña mide lo que su texto (12px con 5px de relleno lateral; 11,5px con 4px bajo 1.200 px); las seis del Simulador caben en una fila desde 1.024 px. Las que no caben bajan a una segunda fila (las siete de Réplica MATLAB): ninguna queda oculta.
 
 ### Help (ayuda)
 
