@@ -1070,6 +1070,13 @@ export class HRSim {
       r.rstatus = 7
       r.ticksCalle++
     } else if (p.ssm?.enabled) {
+      // el borde del mapa recorta el avance (_moveRobot): la regla mide el movimiento que de verdad ocurrirá. Solo se
+      // toca el comando si hay recorte: recalcularlo siempre cambiaría por redondeo corridas que nunca llegan al borde
+      const nx = r.rpose[0] + wxv * dt,
+        ny = r.rpose[1] + wyv * dt,
+        [cx, cy] = this._dentroDelMapa(nx, ny)
+      if (cx !== nx) wxv = (cx - r.rpose[0]) / dt
+      if (cy !== ny) wyv = (cy - r.rpose[1]) / dt
       const k = this._ssmScale(wxv, wyv, r)
       if (k === 0) {
         wxv = wyv = wth = 0
@@ -1132,9 +1139,15 @@ export class HRSim {
     const nx = r.rpose[0] + wxv * dt,
       ny = r.rpose[1] + wyv * dt,
       nth = r.rpose[2] + wth * dt
-    r.rpose = [Math.max(Math.min(nx, this.huerto.limites.w - 0.05), 0.05), Math.max(Math.min(ny, this.huerto.limites.h - 0.05), 0.05), nth]
+    r.rpose = [...this._dentroDelMapa(nx, ny), nth]
     if (this.robotSpec) this._energiaYCarro(old, r.rpose, r)
     if (this.flota) r.odo += hyp(r.rpose[0] - old[0], r.rpose[1] - old[1])
+  }
+
+  /** Recorte a los límites del mapa: el mismo al mover el robot y al medir su comando en la regla de seguridad. */
+  _dentroDelMapa(x, y) {
+    const { w, h } = this.huerto.limites
+    return [Math.max(Math.min(x, w - 0.05), 0.05), Math.max(Math.min(y, h - 0.05), 0.05)]
   }
 
   /** Distancia mínima entre robots: en todo el huerto y con alguno dentro de una calle. */

@@ -102,11 +102,11 @@ Réplica (12 trabajadores, fila 3, mixta, 45 min): robot 50 % en movimiento, 33 
 Monitorización de velocidad y separación (`HRSim._ssmScale`, parámetros `ssm` en `src/hrsim/ssm.js`), evaluada en cada tick antes de mover el robot y solo cuando el robot se desplaza (no al esperar ni al descargar):
 
 1. **Advertencia**: si algún trabajador está a menos de S_p(v_c) + margen (1 m), la velocidad se limita a 0,3 m/s (`rst = 4`). Incluye a quien viene a cargar su caja (silenciamiento a velocidad lenta, ISO 3691-4).
-2. **Protección**: si algún trabajador que no está atendiendo al robot (estados 10–12) quedaría a menos de S_p(v_c) + v_c·dt, el robot se detiene (`rst = 3`). El término v_c·dt cubre lo que avanza dentro del tick, así que la distancia tampoco se viola al final del tick.
+2. **Protección**: si algún trabajador que no está atendiendo al robot (estados 10–12) quedaría a menos de S_p(v_c) + v_c·dt, el robot se detiene (`rst = 3`). El término v_c·dt cubre lo que avanza dentro del tick, así que la distancia tampoco se viola al final del tick. v_c se mide sobre el avance que de verdad ocurrirá: si el comando sacaría al robot del mapa, se recorta al borde (a 0,05 m) antes de medirlo, igual que al mover el robot (corregido en el motor 0.8.2: antes se medía el comando sin recortar y, pegado al borde, el recorte podía girar el avance hacia un trabajador).
 3. **Reanudación**: vuelve a moverse cuando el campo de protección, a velocidad lenta, está libre durante 1 s.
 4. **Recuperación**: una parada de seguridad cuenta para el tiempo máximo en el waypoint (60 s); si se prolonga, el robot pasa al siguiente waypoint, la misma recuperación que tiene el MATLAB. Ir lento no cuenta.
 
-El perfil `hri` también activa `fixRecallLoop`: sin él, un trabajador llamado por un robot lleno queda girando junto a él y la regla dejaría al robot detenido para siempre. Con `ssm.enabled = false` y `fixRecallLoop = false`, `hri` da exactamente lo mismo que `matlab-2026` (prueba de coherencia). La invariante «ningún trabajador, salvo quien atiende al robot, queda dentro de S_p(v_c) con el robot en movimiento» se verifica tick a tick con parámetros al azar (`tests/model/safety.test.mjs`).
+El perfil `hri` también activa `fixRecallLoop`: sin él, un trabajador llamado por un robot lleno queda girando junto a él y la regla dejaría al robot detenido para siempre. Con `ssm.enabled = false` y `fixRecallLoop = false`, `hri` da exactamente lo mismo que `matlab-2026` (prueba de coherencia). La invariante «ningún trabajador, salvo quien atiende al robot, queda dentro de S_p(v_c) con el robot en movimiento» se verifica tick a tick con parámetros al azar (`tests/model/safety.test.mjs`), en la réplica, en los huertos generados con cada robot y en cada robot de una flota.
 
 En el visor: dos anillos alrededor del robot (protección S_p, naranja/rojo al detenerse; advertencia, gris/violeta al ir lento), marcas de parada en la franja de proximidad y, en Interacción → Fluidez, paradas, tiempo lento y el resto de métricas. Los parámetros se editan en Agentes → Ajustar el robot.
 
@@ -305,7 +305,10 @@ de H7: perfil `hri`, actividad mixta, acopiador, carga variable, cuadrilla cerca
 opuestas y desfase × avance 0, 50 y 80 % × 12 y 24 cosecheros, con la corrida de siempre y las semillas 1 a 5 (3.240
 corridas); **S**, sensibilidad de las distancias de convivencia (`ceder`, `reserva`, `esperaAcopio`) con 3 Warthog en
 alta densidad y cerezo (288); **R**, desempate de estrategias con las semillas 6 a 10 (990). En total 4.518 corridas, unos
-65 min en 8 hilos. Resultados en `experimentos/h8/`.
+65 min en 8 hilos. Resultados en `experimentos/h8/` (motor 0.8.1). Repetido con el motor 0.8.2 (regla de seguridad
+junto al borde del mapa): cambian 919 corridas, casi todas con flota o con Burro con carro, pero las medias por cantidad
+de robots quedan iguales (lo entregado, a menos de 0,2 %; paradas y tiempo dentro de S_p, iguales) y los hallazgos de
+abajo se mantienen.
 
 - **Diseño.** Sin robot, `celdas` quita también `flota` (esas celdas se corren una vez). Un bloque puede traer `lista`
   (las combinaciones una por una) en vez de `factores`: así se escribió el desempate, solo con las celdas empatadas.

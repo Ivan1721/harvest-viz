@@ -4,7 +4,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda accesible (lo que quedaba de la crítica de Impeccable del 23-10). Solo interfaz: el motor y los resultados no cambian.
+Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda accesible (lo que quedaba de la crítica de Impeccable del 23-10). Solo interfaz: el motor y los resultados no cambian. **Motor 0.8.2** (`ssm-borde`): la regla de seguridad mide el avance recortado por el borde del mapa; cambian corridas del perfil `hri` en huertos generados, sobre todo con flota; la réplica de MATLAB no cambia.
 
 ### Agregado
 
@@ -13,6 +13,8 @@ Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda a
 ### Corregido
 
 - A 1.024 px la columna derecha tenía barra horizontal y las pestañas se cortaban («Datos» quedaba fuera); en español, «Datos» se cortaba a cualquier ancho. Las pestañas miden lo que su texto y, bajo 1.200 px (único punto de quiebre; antes eran dos), las columnas pasan a 220 · flexible · 344 px: las seis del Simulador caben en una fila desde 1.024 px en los tres idiomas. Las siete de Réplica MATLAB, que no caben en una fila a ningún ancho, usan dos. A 1.101 px la escena ya no queda más angosta que a 1.024 px.
+- **Regla de seguridad junto al borde del mapa** (motor 0.8.2): la regla medía la velocidad de acercamiento sobre el comando del robot, pero al moverlo el motor lo recorta a los límites del mapa, y ese recorte puede girar el avance hacia un trabajador: el robot quedaba dentro de S_p(v_c) (lo encontró el job semanal de pruebas extendidas del 02-11). Ahora, con la regla encendida, el comando se recorta antes de medirlo, solo en los ticks en que hay recorte. Cambian corridas del perfil `hri` en huertos generados donde el robot pasa pegado al borde (la cabecera junto al acopio), sobre todo con Burro y con flota; el cambio de un tick desvía la corrida, así que cada una varía (en el lote H8, 919 de 4.518 corridas, lo entregado entre −20 % y +60 %), pero las medias no se mueven (+0,03 % en promedio; paradas de seguridad y tiempo dentro de S_p iguales por cantidad de robots). El lote H8 repetido con 0.8.2 mantiene sus conclusiones (`experimentos/h8/` conserva el motor 0.8.1). La réplica de MATLAB, el perfil `matlab-2026` y las huellas del motor no cambian.
+- Las pruebas de la regla de seguridad «con cada robot» pasaban el tipo en `robot` (un booleano del motor) y no en `robotTipo`: corrían siempre con el Warthog. Ahora recorren Warthog, Burro y Burro con carro, en un robot y en flota.
 
 ## [0.10.0] — 2026-10-29
 
