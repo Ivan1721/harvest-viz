@@ -1,18 +1,214 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Plantilla del atlas de racimos de palto (diseño «Follaje de paltos», etapa B).
-  Lienzo 2048 × 2048 px en 4 celdas de 1024 × 1024 px. Dibujar un racimo por celda en la capa «racimos» y borrar o
-  esconder las capas «guias» y «referencia» antes de exportar.
-  Exportar: PNG-24 con transparencia, sRGB, sin perfil incrustado, 2048 × 2048 px → public/texturas/palto-racimos.png
+  Trae el atlas que la escena dibuja hoy en un canvas (texturaRacimos() en src/shared/paltoHojas.jsx, etapa A): mismas
+  hojas, posiciones, giros, tamaños y brillos. Cada hoja es un <use> de una de las 12 hojas base de <defs> (adulta, ancha,
+  joven y envés, cada una recta o torcida a un lado u otro): se mueve, gira, escala, duplica o borra sin redibujarla, y
+  al editar una hoja base cambian todas sus copias. El orden dentro de cada celda es el de dibujo: la última va encima.
+  Lienzo 2048 × 2048 px en 4 celdas de 1024 × 1024 px; cada celda recorta lo que sale de ella.
+  Exportar: esconder la capa «guias», PNG-24 con transparencia, sRGB, sin perfil incrustado, 2048 × 2048 px →
+  public/texturas/palto-racimos.png
   Orden de las celdas (como las lee la escena):
     arriba izquierda: 2 · con brotes nuevos     arriba derecha: 3 · visto desde abajo (envés)
     abajo izquierda:  0 · adulto denso          abajo derecha:  1 · adulto abierto
-  Cada racimo: 12–20 hojas Hass (elípticas, enteras, ápice agudo, 12–20 cm). El pecíolo común va abajo al centro de la
-  celda (punto rosado, a 100 px del borde inferior) y las hojas se abren hacia arriba y a los lados: en la copa, el borde
-  de abajo de la celda queda pegado a la rama y el de arriba apunta hacia afuera. Margen libre de 32 px al borde. Color base medio, sin sombras ni brillos horneados; fondo transparente sin
-  halo blanco. Relieve opcional: otra capa con los nervios en blanco sobre gris medio (#808080).
+  Hoy cada racimo es una roseta: las hojas salen del centro de la celda hacia afuera, en todas direcciones. El diseño
+  proponía para la etapa B el pecíolo común abajo al centro (punto rosado, a 100 px del borde inferior) con las hojas
+  abriéndose hacia arriba y a los lados. Margen libre de 32 px al borde. Color base medio, sin sombras ni brillos
+  horneados; fondo transparente sin halo blanco.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 2048 2048">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2048" height="2048" viewBox="0 0 2048 2048">
+  <defs>
+    <g id="hoja-adulta-0">
+      <linearGradient id="hoja-adulta-0-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#3d6b30" /><stop offset="0.5" stop-color="#5a8f42" /><stop offset="1" stop-color="#386329" />
+      </linearGradient>
+      <clipPath id="hoja-adulta-0-borde"><path d="M109.6 12 C232.4 102.4 243.5 368.6 128 468 C12.5 368.6 -13.3 102.4 109.6 12 Z" /></clipPath>
+      <path d="M109.6 12 C232.4 102.4 243.5 368.6 128 468 C12.5 368.6 -13.3 102.4 109.6 12 Z" fill="url(#hoja-adulta-0-color)" />
+      <g clip-path="url(#hoja-adulta-0-borde)" fill="none" stroke="rgb(190,210,120)">
+        <path d="M109.6 16 Q111.4 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M112.9 92 Q52.9 80 8.9 48 M112.9 92 Q172.9 80 216.9 48 M114.5 136 Q54.5 124 10.5 92 M114.5 136 Q174.5 124 218.5 92 M116 180 Q56 168 12 136 M116 180 Q176 168 220 136 M117.6 224 Q57.6 212 13.6 180 M117.6 224 Q177.6 212 221.6 180 M119.2 268 Q59.2 256 15.2 224 M119.2 268 Q179.2 256 223.2 224 M120.8 312 Q60.8 300 16.8 268 M120.8 312 Q180.8 300 224.8 268 M122.4 356 Q62.4 344 18.4 312 M122.4 356 Q182.4 344 226.4 312 M124 400 Q64 388 20 356 M124 400 Q184 388 228 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-adulta-1">
+      <linearGradient id="hoja-adulta-1-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#3d6b30" /><stop offset="0.5" stop-color="#5a8f42" /><stop offset="1" stop-color="#386329" />
+      </linearGradient>
+      <clipPath id="hoja-adulta-1-borde"><path d="M128 12 C250.9 102.4 243.5 368.6 128 468 C12.5 368.6 5.1 102.4 128 12 Z" /></clipPath>
+      <path d="M128 12 C250.9 102.4 243.5 368.6 128 468 C12.5 368.6 5.1 102.4 128 12 Z" fill="url(#hoja-adulta-1-color)" />
+      <g clip-path="url(#hoja-adulta-1-borde)" fill="none" stroke="rgb(190,210,120)">
+        <path d="M128 16 Q128 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M128 92 Q68 80 24 48 M128 92 Q188 80 232 48 M128 136 Q68 124 24 92 M128 136 Q188 124 232 92 M128 180 Q68 168 24 136 M128 180 Q188 168 232 136 M128 224 Q68 212 24 180 M128 224 Q188 212 232 180 M128 268 Q68 256 24 224 M128 268 Q188 256 232 224 M128 312 Q68 300 24 268 M128 312 Q188 300 232 268 M128 356 Q68 344 24 312 M128 356 Q188 344 232 312 M128 400 Q68 388 24 356 M128 400 Q188 388 232 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-adulta-2">
+      <linearGradient id="hoja-adulta-2-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#3d6b30" /><stop offset="0.5" stop-color="#5a8f42" /><stop offset="1" stop-color="#386329" />
+      </linearGradient>
+      <clipPath id="hoja-adulta-2-borde"><path d="M146.4 12 C269.3 102.4 243.5 368.6 128 468 C12.5 368.6 23.6 102.4 146.4 12 Z" /></clipPath>
+      <path d="M146.4 12 C269.3 102.4 243.5 368.6 128 468 C12.5 368.6 23.6 102.4 146.4 12 Z" fill="url(#hoja-adulta-2-color)" />
+      <g clip-path="url(#hoja-adulta-2-borde)" fill="none" stroke="rgb(190,210,120)">
+        <path d="M146.4 16 Q144.6 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M143.1 92 Q83.1 80 39.1 48 M143.1 92 Q203.1 80 247.1 48 M141.5 136 Q81.5 124 37.5 92 M141.5 136 Q201.5 124 245.5 92 M140 180 Q80 168 36 136 M140 180 Q200 168 244 136 M138.4 224 Q78.4 212 34.4 180 M138.4 224 Q198.4 212 242.4 180 M136.8 268 Q76.8 256 32.8 224 M136.8 268 Q196.8 256 240.8 224 M135.2 312 Q75.2 300 31.2 268 M135.2 312 Q195.2 300 239.2 268 M133.6 356 Q73.6 344 29.6 312 M133.6 356 Q193.6 344 237.6 312 M132 400 Q72 388 28 356 M132 400 Q192 388 236 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-ancha-0">
+      <linearGradient id="hoja-ancha-0-color" gradientUnits="userSpaceOnUse" x1="2.6" y1="0" x2="253.4" y2="0">
+        <stop offset="0" stop-color="#36622c" /><stop offset="0.5" stop-color="#4f853c" /><stop offset="1" stop-color="#325b27" />
+      </linearGradient>
+      <clipPath id="hoja-ancha-0-borde"><path d="M109.6 12 C235 102.4 245.9 368.6 128 468 C10.1 368.6 -15.9 102.4 109.6 12 Z" /></clipPath>
+      <path d="M109.6 12 C235 102.4 245.9 368.6 128 468 C10.1 368.6 -15.9 102.4 109.6 12 Z" fill="url(#hoja-ancha-0-color)" />
+      <g clip-path="url(#hoja-ancha-0-borde)" fill="none" stroke="rgb(180,205,115)">
+        <path d="M109.6 16 Q111.4 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M112.9 92 Q42.1 80 -9.8 48 M112.9 92 Q183.7 80 235.6 48 M114.5 136 Q43.7 124 -8.3 92 M114.5 136 Q185.3 124 237.2 92 M116 180 Q45.2 168 -6.7 136 M116 180 Q186.8 168 238.8 136 M117.6 224 Q46.8 212 -5.1 180 M117.6 224 Q188.4 212 240.4 180 M119.2 268 Q48.4 256 -3.5 224 M119.2 268 Q190 256 241.9 224 M120.8 312 Q50 300 -1.9 268 M120.8 312 Q191.6 300 243.5 268 M122.4 356 Q51.6 344 -0.3 312 M122.4 356 Q193.2 344 245.1 312 M124 400 Q53.2 388 1.2 356 M124 400 Q194.8 388 246.7 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-ancha-1">
+      <linearGradient id="hoja-ancha-1-color" gradientUnits="userSpaceOnUse" x1="2.6" y1="0" x2="253.4" y2="0">
+        <stop offset="0" stop-color="#36622c" /><stop offset="0.5" stop-color="#4f853c" /><stop offset="1" stop-color="#325b27" />
+      </linearGradient>
+      <clipPath id="hoja-ancha-1-borde"><path d="M128 12 C253.4 102.4 245.9 368.6 128 468 C10.1 368.6 2.6 102.4 128 12 Z" /></clipPath>
+      <path d="M128 12 C253.4 102.4 245.9 368.6 128 468 C10.1 368.6 2.6 102.4 128 12 Z" fill="url(#hoja-ancha-1-color)" />
+      <g clip-path="url(#hoja-ancha-1-borde)" fill="none" stroke="rgb(180,205,115)">
+        <path d="M128 16 Q128 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M128 92 Q57.2 80 5.3 48 M128 92 Q198.8 80 250.7 48 M128 136 Q57.2 124 5.3 92 M128 136 Q198.8 124 250.7 92 M128 180 Q57.2 168 5.3 136 M128 180 Q198.8 168 250.7 136 M128 224 Q57.2 212 5.3 180 M128 224 Q198.8 212 250.7 180 M128 268 Q57.2 256 5.3 224 M128 268 Q198.8 256 250.7 224 M128 312 Q57.2 300 5.3 268 M128 312 Q198.8 300 250.7 268 M128 356 Q57.2 344 5.3 312 M128 356 Q198.8 344 250.7 312 M128 400 Q57.2 388 5.3 356 M128 400 Q198.8 388 250.7 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-ancha-2">
+      <linearGradient id="hoja-ancha-2-color" gradientUnits="userSpaceOnUse" x1="2.6" y1="0" x2="253.4" y2="0">
+        <stop offset="0" stop-color="#36622c" /><stop offset="0.5" stop-color="#4f853c" /><stop offset="1" stop-color="#325b27" />
+      </linearGradient>
+      <clipPath id="hoja-ancha-2-borde"><path d="M146.4 12 C271.9 102.4 245.9 368.6 128 468 C10.1 368.6 21 102.4 146.4 12 Z" /></clipPath>
+      <path d="M146.4 12 C271.9 102.4 245.9 368.6 128 468 C10.1 368.6 21 102.4 146.4 12 Z" fill="url(#hoja-ancha-2-color)" />
+      <g clip-path="url(#hoja-ancha-2-borde)" fill="none" stroke="rgb(180,205,115)">
+        <path d="M146.4 16 Q144.6 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M143.1 92 Q72.3 80 20.4 48 M143.1 92 Q213.9 80 265.8 48 M141.5 136 Q70.7 124 18.8 92 M141.5 136 Q212.3 124 264.3 92 M140 180 Q69.2 168 17.2 136 M140 180 Q210.8 168 262.7 136 M138.4 224 Q67.6 212 15.6 180 M138.4 224 Q209.2 212 261.1 180 M136.8 268 Q66 256 14.1 224 M136.8 268 Q207.6 256 259.5 224 M135.2 312 Q64.4 300 12.5 268 M135.2 312 Q206 300 257.9 268 M133.6 356 Q62.8 344 10.9 312 M133.6 356 Q204.4 344 256.3 312 M132 400 Q61.2 388 9.3 356 M132 400 Q202.8 388 254.8 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#4a5a2a" stroke-width="6" />
+    </g>
+    <g id="hoja-joven-0">
+      <linearGradient id="hoja-joven-0-color" gradientUnits="userSpaceOnUse" x1="22.3" y1="0" x2="233.7" y2="0">
+        <stop offset="0" stop-color="#7d9a3f" /><stop offset="0.5" stop-color="#a2b855" /><stop offset="1" stop-color="#768f3a" />
+      </linearGradient>
+      <clipPath id="hoja-joven-0-borde"><path d="M109.6 12 C215.2 102.4 227.3 368.6 128 468 C28.7 368.6 3.9 102.4 109.6 12 Z" /></clipPath>
+      <path d="M109.6 12 C215.2 102.4 227.3 368.6 128 468 C28.7 368.6 3.9 102.4 109.6 12 Z" fill="url(#hoja-joven-0-color)" />
+      <g clip-path="url(#hoja-joven-0-borde)" fill="none" stroke="rgb(225,215,150)">
+        <linearGradient id="hoja-joven-0-base" gradientUnits="userSpaceOnUse" x1="0" y1="281.6" x2="0" y2="512"><stop offset="0" stop-color="rgb(150,90,45)" stop-opacity="0" /><stop offset="1" stop-color="rgb(150,90,45)" stop-opacity="0.55" /></linearGradient>
+        <rect width="256" height="512" fill="url(#hoja-joven-0-base)" stroke="none" />
+        <path d="M109.6 16 Q111.4 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M112.9 92 Q61.3 80 23.4 48 M112.9 92 Q164.5 80 202.3 48 M114.5 136 Q62.9 124 25 92 M114.5 136 Q166.1 124 203.9 92 M116 180 Q64.4 168 26.6 136 M116 180 Q167.6 168 205.5 136 M117.6 224 Q66 212 28.2 180 M117.6 224 Q169.2 212 207.1 180 M119.2 268 Q67.6 256 29.8 224 M119.2 268 Q170.8 256 208.7 224 M120.8 312 Q69.2 300 31.4 268 M120.8 312 Q172.4 300 210.2 268 M122.4 356 Q70.8 344 32.9 312 M122.4 356 Q174 344 211.8 312 M124 400 Q72.4 388 34.5 356 M124 400 Q175.6 388 213.4 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#8a5a32" stroke-width="6" />
+    </g>
+    <g id="hoja-joven-1">
+      <linearGradient id="hoja-joven-1-color" gradientUnits="userSpaceOnUse" x1="22.3" y1="0" x2="233.7" y2="0">
+        <stop offset="0" stop-color="#7d9a3f" /><stop offset="0.5" stop-color="#a2b855" /><stop offset="1" stop-color="#768f3a" />
+      </linearGradient>
+      <clipPath id="hoja-joven-1-borde"><path d="M128 12 C233.7 102.4 227.3 368.6 128 468 C28.7 368.6 22.3 102.4 128 12 Z" /></clipPath>
+      <path d="M128 12 C233.7 102.4 227.3 368.6 128 468 C28.7 368.6 22.3 102.4 128 12 Z" fill="url(#hoja-joven-1-color)" />
+      <g clip-path="url(#hoja-joven-1-borde)" fill="none" stroke="rgb(225,215,150)">
+        <linearGradient id="hoja-joven-1-base" gradientUnits="userSpaceOnUse" x1="0" y1="281.6" x2="0" y2="512"><stop offset="0" stop-color="rgb(150,90,45)" stop-opacity="0" /><stop offset="1" stop-color="rgb(150,90,45)" stop-opacity="0.55" /></linearGradient>
+        <rect width="256" height="512" fill="url(#hoja-joven-1-base)" stroke="none" />
+        <path d="M128 16 Q128 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M128 92 Q76.4 80 38.6 48 M128 92 Q179.6 80 217.4 48 M128 136 Q76.4 124 38.6 92 M128 136 Q179.6 124 217.4 92 M128 180 Q76.4 168 38.6 136 M128 180 Q179.6 168 217.4 136 M128 224 Q76.4 212 38.6 180 M128 224 Q179.6 212 217.4 180 M128 268 Q76.4 256 38.6 224 M128 268 Q179.6 256 217.4 224 M128 312 Q76.4 300 38.6 268 M128 312 Q179.6 300 217.4 268 M128 356 Q76.4 344 38.6 312 M128 356 Q179.6 344 217.4 312 M128 400 Q76.4 388 38.6 356 M128 400 Q179.6 388 217.4 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#8a5a32" stroke-width="6" />
+    </g>
+    <g id="hoja-joven-2">
+      <linearGradient id="hoja-joven-2-color" gradientUnits="userSpaceOnUse" x1="22.3" y1="0" x2="233.7" y2="0">
+        <stop offset="0" stop-color="#7d9a3f" /><stop offset="0.5" stop-color="#a2b855" /><stop offset="1" stop-color="#768f3a" />
+      </linearGradient>
+      <clipPath id="hoja-joven-2-borde"><path d="M146.4 12 C252.1 102.4 227.3 368.6 128 468 C28.7 368.6 40.8 102.4 146.4 12 Z" /></clipPath>
+      <path d="M146.4 12 C252.1 102.4 227.3 368.6 128 468 C28.7 368.6 40.8 102.4 146.4 12 Z" fill="url(#hoja-joven-2-color)" />
+      <g clip-path="url(#hoja-joven-2-borde)" fill="none" stroke="rgb(225,215,150)">
+        <linearGradient id="hoja-joven-2-base" gradientUnits="userSpaceOnUse" x1="0" y1="281.6" x2="0" y2="512"><stop offset="0" stop-color="rgb(150,90,45)" stop-opacity="0" /><stop offset="1" stop-color="rgb(150,90,45)" stop-opacity="0.55" /></linearGradient>
+        <rect width="256" height="512" fill="url(#hoja-joven-2-base)" stroke="none" />
+        <path d="M146.4 16 Q144.6 230.4 128 512" stroke-width="6" stroke-opacity="0.55" stroke-linecap="butt" />
+        <path d="M143.1 92 Q91.5 80 53.7 48 M143.1 92 Q194.7 80 232.6 48 M141.5 136 Q89.9 124 52.1 92 M141.5 136 Q193.1 124 231 92 M140 180 Q88.4 168 50.5 136 M140 180 Q191.6 168 229.4 136 M138.4 224 Q86.8 212 48.9 180 M138.4 224 Q190 212 227.8 180 M136.8 268 Q85.2 256 47.3 224 M136.8 268 Q188.4 256 226.2 224 M135.2 312 Q83.6 300 45.8 268 M135.2 312 Q186.8 300 224.6 268 M133.6 356 Q82 344 44.2 312 M133.6 356 Q185.2 344 223.1 312 M132 400 Q80.4 388 42.6 356 M132 400 Q183.6 388 221.5 356" stroke-width="2.4" stroke-opacity="0.3" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#8a5a32" stroke-width="6" />
+    </g>
+    <g id="hoja-enves-0">
+      <linearGradient id="hoja-enves-0-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#5f7a54" /><stop offset="0.5" stop-color="#7a9169" /><stop offset="1" stop-color="#5a744f" />
+      </linearGradient>
+      <clipPath id="hoja-enves-0-borde"><path d="M109.6 12 C232.4 102.4 243.5 368.6 128 468 C12.5 368.6 -13.3 102.4 109.6 12 Z" /></clipPath>
+      <path d="M109.6 12 C232.4 102.4 243.5 368.6 128 468 C12.5 368.6 -13.3 102.4 109.6 12 Z" fill="url(#hoja-enves-0-color)" />
+      <g clip-path="url(#hoja-enves-0-borde)" fill="none" stroke="rgb(225,232,195)">
+        <path d="M109.6 16 Q111.4 230.4 128 512" stroke-width="8" stroke-opacity="0.8" stroke-linecap="butt" />
+        <path d="M112.9 92 Q52.9 80 8.9 48 M112.9 92 Q172.9 80 216.9 48 M114.5 136 Q54.5 124 10.5 92 M114.5 136 Q174.5 124 218.5 92 M116 180 Q56 168 12 136 M116 180 Q176 168 220 136 M117.6 224 Q57.6 212 13.6 180 M117.6 224 Q177.6 212 221.6 180 M119.2 268 Q59.2 256 15.2 224 M119.2 268 Q179.2 256 223.2 224 M120.8 312 Q60.8 300 16.8 268 M120.8 312 Q180.8 300 224.8 268 M122.4 356 Q62.4 344 18.4 312 M122.4 356 Q182.4 344 226.4 312 M124 400 Q64 388 20 356 M124 400 Q184 388 228 356" stroke-width="2.4" stroke-opacity="0.5" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#5d6640" stroke-width="6" />
+    </g>
+    <g id="hoja-enves-1">
+      <linearGradient id="hoja-enves-1-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#5f7a54" /><stop offset="0.5" stop-color="#7a9169" /><stop offset="1" stop-color="#5a744f" />
+      </linearGradient>
+      <clipPath id="hoja-enves-1-borde"><path d="M128 12 C250.9 102.4 243.5 368.6 128 468 C12.5 368.6 5.1 102.4 128 12 Z" /></clipPath>
+      <path d="M128 12 C250.9 102.4 243.5 368.6 128 468 C12.5 368.6 5.1 102.4 128 12 Z" fill="url(#hoja-enves-1-color)" />
+      <g clip-path="url(#hoja-enves-1-borde)" fill="none" stroke="rgb(225,232,195)">
+        <path d="M128 16 Q128 230.4 128 512" stroke-width="8" stroke-opacity="0.8" stroke-linecap="butt" />
+        <path d="M128 92 Q68 80 24 48 M128 92 Q188 80 232 48 M128 136 Q68 124 24 92 M128 136 Q188 124 232 92 M128 180 Q68 168 24 136 M128 180 Q188 168 232 136 M128 224 Q68 212 24 180 M128 224 Q188 212 232 180 M128 268 Q68 256 24 224 M128 268 Q188 256 232 224 M128 312 Q68 300 24 268 M128 312 Q188 300 232 268 M128 356 Q68 344 24 312 M128 356 Q188 344 232 312 M128 400 Q68 388 24 356 M128 400 Q188 388 232 356" stroke-width="2.4" stroke-opacity="0.5" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#5d6640" stroke-width="6" />
+    </g>
+    <g id="hoja-enves-2">
+      <linearGradient id="hoja-enves-2-color" gradientUnits="userSpaceOnUse" x1="5.1" y1="0" x2="250.9" y2="0">
+        <stop offset="0" stop-color="#5f7a54" /><stop offset="0.5" stop-color="#7a9169" /><stop offset="1" stop-color="#5a744f" />
+      </linearGradient>
+      <clipPath id="hoja-enves-2-borde"><path d="M146.4 12 C269.3 102.4 243.5 368.6 128 468 C12.5 368.6 23.6 102.4 146.4 12 Z" /></clipPath>
+      <path d="M146.4 12 C269.3 102.4 243.5 368.6 128 468 C12.5 368.6 23.6 102.4 146.4 12 Z" fill="url(#hoja-enves-2-color)" />
+      <g clip-path="url(#hoja-enves-2-borde)" fill="none" stroke="rgb(225,232,195)">
+        <path d="M146.4 16 Q144.6 230.4 128 512" stroke-width="8" stroke-opacity="0.8" stroke-linecap="butt" />
+        <path d="M143.1 92 Q83.1 80 39.1 48 M143.1 92 Q203.1 80 247.1 48 M141.5 136 Q81.5 124 37.5 92 M141.5 136 Q201.5 124 245.5 92 M140 180 Q80 168 36 136 M140 180 Q200 168 244 136 M138.4 224 Q78.4 212 34.4 180 M138.4 224 Q198.4 212 242.4 180 M136.8 268 Q76.8 256 32.8 224 M136.8 268 Q196.8 256 240.8 224 M135.2 312 Q75.2 300 31.2 268 M135.2 312 Q195.2 300 239.2 268 M133.6 356 Q73.6 344 29.6 312 M133.6 356 Q193.6 344 237.6 312 M132 400 Q72 388 28 356 M132 400 Q192 388 236 356" stroke-width="2.4" stroke-opacity="0.5" />
+      </g>
+      <line x1="128" y1="468" x2="128" y2="508" stroke="#5d6640" stroke-width="6" />
+    </g>
+    <filter id="brillo-75" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.75" /><feFuncG type="linear" slope="0.75" /><feFuncB type="linear" slope="0.75" /></feComponentTransfer></filter>
+    <filter id="brillo-76" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.76" /><feFuncG type="linear" slope="0.76" /><feFuncB type="linear" slope="0.76" /></feComponentTransfer></filter>
+    <filter id="brillo-77" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.77" /><feFuncG type="linear" slope="0.77" /><feFuncB type="linear" slope="0.77" /></feComponentTransfer></filter>
+    <filter id="brillo-78" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.78" /><feFuncG type="linear" slope="0.78" /><feFuncB type="linear" slope="0.78" /></feComponentTransfer></filter>
+    <filter id="brillo-79" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.79" /><feFuncG type="linear" slope="0.79" /><feFuncB type="linear" slope="0.79" /></feComponentTransfer></filter>
+    <filter id="brillo-80" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.8" /><feFuncG type="linear" slope="0.8" /><feFuncB type="linear" slope="0.8" /></feComponentTransfer></filter>
+    <filter id="brillo-82" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.82" /><feFuncG type="linear" slope="0.82" /><feFuncB type="linear" slope="0.82" /></feComponentTransfer></filter>
+    <filter id="brillo-85" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.85" /><feFuncG type="linear" slope="0.85" /><feFuncB type="linear" slope="0.85" /></feComponentTransfer></filter>
+    <filter id="brillo-86" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.86" /><feFuncG type="linear" slope="0.86" /><feFuncB type="linear" slope="0.86" /></feComponentTransfer></filter>
+    <filter id="brillo-88" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.88" /><feFuncG type="linear" slope="0.88" /><feFuncB type="linear" slope="0.88" /></feComponentTransfer></filter>
+    <filter id="brillo-90" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.9" /><feFuncG type="linear" slope="0.9" /><feFuncB type="linear" slope="0.9" /></feComponentTransfer></filter>
+    <filter id="brillo-91" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.91" /><feFuncG type="linear" slope="0.91" /><feFuncB type="linear" slope="0.91" /></feComponentTransfer></filter>
+    <filter id="brillo-92" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.92" /><feFuncG type="linear" slope="0.92" /><feFuncB type="linear" slope="0.92" /></feComponentTransfer></filter>
+    <filter id="brillo-93" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.93" /><feFuncG type="linear" slope="0.93" /><feFuncB type="linear" slope="0.93" /></feComponentTransfer></filter>
+    <filter id="brillo-94" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.94" /><feFuncG type="linear" slope="0.94" /><feFuncB type="linear" slope="0.94" /></feComponentTransfer></filter>
+    <filter id="brillo-95" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.95" /><feFuncG type="linear" slope="0.95" /><feFuncB type="linear" slope="0.95" /></feComponentTransfer></filter>
+    <filter id="brillo-96" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.96" /><feFuncG type="linear" slope="0.96" /><feFuncB type="linear" slope="0.96" /></feComponentTransfer></filter>
+    <filter id="brillo-97" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.97" /><feFuncG type="linear" slope="0.97" /><feFuncB type="linear" slope="0.97" /></feComponentTransfer></filter>
+    <filter id="brillo-98" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.98" /><feFuncG type="linear" slope="0.98" /><feFuncB type="linear" slope="0.98" /></feComponentTransfer></filter>
+    <filter id="brillo-99" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.99" /><feFuncG type="linear" slope="0.99" /><feFuncB type="linear" slope="0.99" /></feComponentTransfer></filter>
+    <filter id="brillo-100" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1" /><feFuncG type="linear" slope="1" /><feFuncB type="linear" slope="1" /></feComponentTransfer></filter>
+    <filter id="brillo-101" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.01" /><feFuncG type="linear" slope="1.01" /><feFuncB type="linear" slope="1.01" /></feComponentTransfer></filter>
+    <filter id="brillo-103" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.03" /><feFuncG type="linear" slope="1.03" /><feFuncB type="linear" slope="1.03" /></feComponentTransfer></filter>
+    <filter id="brillo-105" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.05" /><feFuncG type="linear" slope="1.05" /><feFuncB type="linear" slope="1.05" /></feComponentTransfer></filter>
+    <filter id="brillo-106" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.06" /><feFuncG type="linear" slope="1.06" /><feFuncB type="linear" slope="1.06" /></feComponentTransfer></filter>
+    <filter id="brillo-107" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.07" /><feFuncG type="linear" slope="1.07" /><feFuncB type="linear" slope="1.07" /></feComponentTransfer></filter>
+    <filter id="brillo-108" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.08" /><feFuncG type="linear" slope="1.08" /><feFuncB type="linear" slope="1.08" /></feComponentTransfer></filter>
+    <filter id="brillo-109" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.09" /><feFuncG type="linear" slope="1.09" /><feFuncB type="linear" slope="1.09" /></feComponentTransfer></filter>
+    <filter id="brillo-110" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.1" /><feFuncG type="linear" slope="1.1" /><feFuncB type="linear" slope="1.1" /></feComponentTransfer></filter>
+    <filter id="brillo-111" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.11" /><feFuncG type="linear" slope="1.11" /><feFuncB type="linear" slope="1.11" /></feComponentTransfer></filter>
+    <filter id="brillo-112" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.12" /><feFuncG type="linear" slope="1.12" /><feFuncB type="linear" slope="1.12" /></feComponentTransfer></filter>
+    <filter id="brillo-113" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.13" /><feFuncG type="linear" slope="1.13" /><feFuncB type="linear" slope="1.13" /></feComponentTransfer></filter>
+    <filter id="brillo-115" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.15" /><feFuncG type="linear" slope="1.15" /><feFuncB type="linear" slope="1.15" /></feComponentTransfer></filter>
+    <filter id="brillo-116" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.16" /><feFuncG type="linear" slope="1.16" /><feFuncB type="linear" slope="1.16" /></feComponentTransfer></filter>
+    <filter id="brillo-118" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.18" /><feFuncG type="linear" slope="1.18" /><feFuncB type="linear" slope="1.18" /></feComponentTransfer></filter>
+    <filter id="brillo-119" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="1.19" /><feFuncG type="linear" slope="1.19" /><feFuncB type="linear" slope="1.19" /></feComponentTransfer></filter>
+    <clipPath id="recorte-0"><rect x="0" y="1024" width="1024" height="1024" /></clipPath>
+    <clipPath id="recorte-1"><rect x="1024" y="1024" width="1024" height="1024" /></clipPath>
+    <clipPath id="recorte-2"><rect x="0" y="0" width="1024" height="1024" /></clipPath>
+    <clipPath id="recorte-3"><rect x="1024" y="0" width="1024" height="1024" /></clipPath>
+  </defs>
   <g id="guias" fill="none" stroke="#e0457b" stroke-width="2">
     <rect x="0" y="0" width="2048" height="2048" />
     <line x1="1024" y1="0" x2="1024" y2="2048" />
@@ -36,10 +232,85 @@
       <circle cx="1536" cy="1948" r="8" />
     </g>
   </g>
-  <g id="referencia" opacity="0.35">
-    <!-- tamaño de una hoja adulta de referencia (~170 × 420 px) y su forma -->
-    <path d="M512 464 C 600 554, 595 784, 512 884 C 429 784, 424 554, 512 464 Z" fill="#5a8f42" />
-    <line x1="512" y1="884" x2="512" y2="924" stroke="#4a5a2a" stroke-width="6" />
+  <g id="racimos">
+    <g id="celda-0" clip-path="url(#recorte-0)">
+      <!-- 0 · adulto denso: 14 adulta, 6 ancha (la última hoja queda encima) -->
+      <use id="c0-h01" xlink:href="#hoja-adulta-0" transform="translate(588.3 1323.3) rotate(388.5) scale(0.751) translate(-128 -512)" filter="url(#brillo-112)" />
+      <use id="c0-h02" xlink:href="#hoja-adulta-0" transform="translate(664.5 1655) rotate(135.8) scale(0.915) translate(-128 -512)" filter="url(#brillo-78)" />
+      <use id="c0-h03" xlink:href="#hoja-adulta-1" transform="translate(489.2 1383.2) rotate(337.2) scale(0.956) translate(-128 -512)" filter="url(#brillo-109)" />
+      <use id="c0-h04" xlink:href="#hoja-adulta-1" transform="translate(479 1762.8) rotate(200.3) scale(0.921) translate(-128 -512)" filter="url(#brillo-110)" />
+      <use id="c0-h05" xlink:href="#hoja-adulta-2" transform="translate(356.2 1517.5) rotate(297.9) scale(0.844) translate(-128 -512)" filter="url(#brillo-96)" />
+      <use id="c0-h06" xlink:href="#hoja-adulta-2" transform="translate(382 1641.8) rotate(219) scale(1.061) translate(-128 -512)" filter="url(#brillo-93)" />
+      <use id="c0-h07" xlink:href="#hoja-adulta-2" transform="translate(610.4 1795.6) rotate(158.6) scale(1.022) translate(-128 -512)" filter="url(#brillo-107)" />
+      <use id="c0-h08" xlink:href="#hoja-adulta-2" transform="translate(471.8 1769) rotate(202.1) scale(0.955) translate(-128 -512)" filter="url(#brillo-82)" />
+      <use id="c0-h09" xlink:href="#hoja-adulta-0" transform="translate(326.7 1292.9) rotate(324.7) scale(0.883) translate(-128 -512)" filter="url(#brillo-107)" />
+      <use id="c0-h10" xlink:href="#hoja-adulta-2" transform="translate(255.1 1536.7) rotate(258.6) scale(1.085) translate(-128 -512)" filter="url(#brillo-103)" />
+      <use id="c0-h11" xlink:href="#hoja-adulta-2" transform="translate(668.2 1749.4) rotate(124.8) scale(0.874) translate(-128 -512)" filter="url(#brillo-103)" />
+      <use id="c0-h12" xlink:href="#hoja-adulta-1" transform="translate(368.2 1779.7) rotate(190.7) scale(1.100) translate(-128 -512)" filter="url(#brillo-77)" />
+      <use id="c0-h13" xlink:href="#hoja-adulta-1" transform="translate(268.5 1443.9) rotate(268.3) scale(1.199) translate(-128 -512)" filter="url(#brillo-112)" />
+      <use id="c0-h14" xlink:href="#hoja-adulta-0" transform="translate(266.8 1414.3) rotate(316.6) scale(0.812) translate(-128 -512)" filter="url(#brillo-78)" />
+      <use id="c0-h15" xlink:href="#hoja-ancha-1" transform="translate(435.6 1333.9) rotate(356.2) scale(0.928) translate(-128 -512)" filter="url(#brillo-95)" />
+      <use id="c0-h16" xlink:href="#hoja-ancha-0" transform="translate(785.8 1611.1) rotate(99) scale(1.075) translate(-128 -512)" filter="url(#brillo-116)" />
+      <use id="c0-h17" xlink:href="#hoja-ancha-2" transform="translate(599.3 1258.7) rotate(369.7) scale(0.767) translate(-128 -512)" filter="url(#brillo-113)" />
+      <use id="c0-h18" xlink:href="#hoja-ancha-1" transform="translate(575.8 1414.7) rotate(410.3) scale(0.911) translate(-128 -512)" filter="url(#brillo-76)" />
+      <use id="c0-h19" xlink:href="#hoja-ancha-1" transform="translate(426.2 1727.1) rotate(196.5) scale(0.821) translate(-128 -512)" filter="url(#brillo-97)" />
+      <use id="c0-h20" xlink:href="#hoja-ancha-2" transform="translate(645.7 1726.5) rotate(144.9) scale(1.128) translate(-128 -512)" filter="url(#brillo-105)" />
+    </g>
+    <g id="celda-1" clip-path="url(#recorte-1)">
+      <!-- 1 · adulto abierto: 8 adulta, 5 ancha (la última hoja queda encima) -->
+      <use id="c1-h01" xlink:href="#hoja-adulta-1" transform="translate(1556.1 1641.7) rotate(191.8) scale(0.947) translate(-128 -512)" filter="url(#brillo-99)" />
+      <use id="c1-h02" xlink:href="#hoja-adulta-2" transform="translate(1745.7 1304.6) rotate(391.5) scale(1.103) translate(-128 -512)" filter="url(#brillo-90)" />
+      <use id="c1-h03" xlink:href="#hoja-adulta-2" transform="translate(1536.3 1165.5) rotate(380.5) scale(0.978) translate(-128 -512)" filter="url(#brillo-85)" />
+      <use id="c1-h04" xlink:href="#hoja-adulta-1" transform="translate(1781 1342.7) rotate(395.8) scale(1.041) translate(-128 -512)" filter="url(#brillo-115)" />
+      <use id="c1-h05" xlink:href="#hoja-adulta-0" transform="translate(1840 1625.2) rotate(88.4) scale(1.191) translate(-128 -512)" filter="url(#brillo-96)" />
+      <use id="c1-h06" xlink:href="#hoja-adulta-1" transform="translate(1688.7 1189.6) rotate(399) scale(1.193) translate(-128 -512)" filter="url(#brillo-91)" />
+      <use id="c1-h07" xlink:href="#hoja-adulta-0" transform="translate(1520.4 1696.2) rotate(166) scale(1.051) translate(-128 -512)" filter="url(#brillo-98)" />
+      <use id="c1-h08" xlink:href="#hoja-adulta-0" transform="translate(1524.4 1296) rotate(353.7) scale(0.974) translate(-128 -512)" filter="url(#brillo-79)" />
+      <use id="c1-h09" xlink:href="#hoja-ancha-2" transform="translate(1380 1446) rotate(291.6) scale(0.762) translate(-128 -512)" filter="url(#brillo-78)" />
+      <use id="c1-h10" xlink:href="#hoja-ancha-0" transform="translate(1209.9 1407.5) rotate(294.5) scale(1.139) translate(-128 -512)" filter="url(#brillo-95)" />
+      <use id="c1-h11" xlink:href="#hoja-ancha-1" transform="translate(1733.4 1335.9) rotate(421.5) scale(0.843) translate(-128 -512)" filter="url(#brillo-95)" />
+      <use id="c1-h12" xlink:href="#hoja-ancha-1" transform="translate(1758.7 1710.9) rotate(107.6) scale(1.045) translate(-128 -512)" filter="url(#brillo-108)" />
+      <use id="c1-h13" xlink:href="#hoja-ancha-1" transform="translate(1552.2 1760.2) rotate(176.5) scale(0.928) translate(-128 -512)" filter="url(#brillo-108)" />
+    </g>
+    <g id="celda-2" clip-path="url(#recorte-2)">
+      <!-- 2 · con brotes nuevos: 12 adulta, 6 joven (la última hoja queda encima) -->
+      <use id="c2-h01" xlink:href="#hoja-adulta-1" transform="translate(753.5 336.1) rotate(420.2) scale(0.979) translate(-128 -512)" filter="url(#brillo-98)" />
+      <use id="c2-h02" xlink:href="#hoja-adulta-2" transform="translate(498.7 667.8) rotate(179.2) scale(1.187) translate(-128 -512)" filter="url(#brillo-94)" />
+      <use id="c2-h03" xlink:href="#hoja-adulta-1" transform="translate(520.8 207.7) rotate(371.6) scale(1.195) translate(-128 -512)" filter="url(#brillo-76)" />
+      <use id="c2-h04" xlink:href="#hoja-adulta-0" transform="translate(350.2 275.2) rotate(341) scale(0.953) translate(-128 -512)" filter="url(#brillo-90)" />
+      <use id="c2-h05" xlink:href="#hoja-adulta-1" transform="translate(601.9 612.4) rotate(138.4) scale(0.890) translate(-128 -512)" filter="url(#brillo-100)" />
+      <use id="c2-h06" xlink:href="#hoja-adulta-0" transform="translate(535.6 407.5) rotate(377.4) scale(0.982) translate(-128 -512)" filter="url(#brillo-106)" />
+      <use id="c2-h07" xlink:href="#hoja-adulta-0" transform="translate(630.3 695) rotate(154.2) scale(1.085) translate(-128 -512)" filter="url(#brillo-101)" />
+      <use id="c2-h08" xlink:href="#hoja-adulta-0" transform="translate(439.6 498.9) rotate(282.4) scale(0.930) translate(-128 -512)" filter="url(#brillo-82)" />
+      <use id="c2-h09" xlink:href="#hoja-adulta-0" transform="translate(663.5 719.3) rotate(123.3) scale(1.136) translate(-128 -512)" filter="url(#brillo-79)" />
+      <use id="c2-h10" xlink:href="#hoja-adulta-1" transform="translate(456.6 555.6) rotate(248.3) scale(0.755) translate(-128 -512)" filter="url(#brillo-109)" />
+      <use id="c2-h11" xlink:href="#hoja-adulta-2" transform="translate(393 781.8) rotate(209.6) scale(1.196) translate(-128 -512)" filter="url(#brillo-91)" />
+      <use id="c2-h12" xlink:href="#hoja-adulta-0" transform="translate(594.1 417.5) rotate(389.2) scale(1.073) translate(-128 -512)" filter="url(#brillo-86)" />
+      <use id="c2-h13" xlink:href="#hoja-joven-0" transform="translate(746.2 302.6) rotate(415.8) scale(0.654) translate(-128 -512)" filter="url(#brillo-75)" />
+      <use id="c2-h14" xlink:href="#hoja-joven-2" transform="translate(363.1 775.1) rotate(208.4) scale(0.742) translate(-128 -512)" filter="url(#brillo-88)" />
+      <use id="c2-h15" xlink:href="#hoja-joven-2" transform="translate(511.7 635) rotate(191.4) scale(0.828) translate(-128 -512)" filter="url(#brillo-118)" />
+      <use id="c2-h16" xlink:href="#hoja-joven-2" transform="translate(741.7 364.9) rotate(411) scale(0.723) translate(-128 -512)" filter="url(#brillo-110)" />
+      <use id="c2-h17" xlink:href="#hoja-joven-1" transform="translate(710.8 317.8) rotate(419.3) scale(0.642) translate(-128 -512)" filter="url(#brillo-79)" />
+      <use id="c2-h18" xlink:href="#hoja-joven-1" transform="translate(419.7 564.1) rotate(219.9) scale(0.972) translate(-128 -512)" filter="url(#brillo-93)" />
+    </g>
+    <g id="celda-3" clip-path="url(#recorte-3)">
+      <!-- 3 · visto desde abajo: 6 enves, 10 adulta (la última hoja queda encima) -->
+      <use id="c3-h01" xlink:href="#hoja-enves-0" transform="translate(1706.1 357.6) rotate(406.2) scale(0.868) translate(-128 -512)" filter="url(#brillo-92)" />
+      <use id="c3-h02" xlink:href="#hoja-enves-2" transform="translate(1425.4 385.6) rotate(320.5) scale(1.054) translate(-128 -512)" filter="url(#brillo-96)" />
+      <use id="c3-h03" xlink:href="#hoja-enves-2" transform="translate(1572.6 242.1) rotate(390) scale(0.982) translate(-128 -512)" filter="url(#brillo-110)" />
+      <use id="c3-h04" xlink:href="#hoja-enves-1" transform="translate(1301.5 472.3) rotate(293.9) scale(0.937) translate(-128 -512)" filter="url(#brillo-115)" />
+      <use id="c3-h05" xlink:href="#hoja-enves-2" transform="translate(1543.2 754.7) rotate(189) scale(0.848) translate(-128 -512)" filter="url(#brillo-78)" />
+      <use id="c3-h06" xlink:href="#hoja-enves-0" transform="translate(1357.3 635.2) rotate(235.8) scale(0.934) translate(-128 -512)" filter="url(#brillo-77)" />
+      <use id="c3-h07" xlink:href="#hoja-adulta-2" transform="translate(1672.8 469.2) rotate(414.8) scale(1.094) translate(-128 -512)" filter="url(#brillo-80)" />
+      <use id="c3-h08" xlink:href="#hoja-adulta-1" transform="translate(1557.9 222.3) rotate(347.5) scale(0.783) translate(-128 -512)" filter="url(#brillo-108)" />
+      <use id="c3-h09" xlink:href="#hoja-adulta-2" transform="translate(1742.7 417.6) rotate(439.5) scale(0.907) translate(-128 -512)" filter="url(#brillo-99)" />
+      <use id="c3-h10" xlink:href="#hoja-adulta-2" transform="translate(1435.2 276.4) rotate(316.9) scale(0.947) translate(-128 -512)" filter="url(#brillo-107)" />
+      <use id="c3-h11" xlink:href="#hoja-adulta-1" transform="translate(1690.8 412.6) rotate(435.6) scale(1.160) translate(-128 -512)" filter="url(#brillo-111)" />
+      <use id="c3-h12" xlink:href="#hoja-adulta-1" transform="translate(1669.2 785.1) rotate(143) scale(1.171) translate(-128 -512)" filter="url(#brillo-119)" />
+      <use id="c3-h13" xlink:href="#hoja-adulta-1" transform="translate(1808.5 524.9) rotate(74.5) scale(0.824) translate(-128 -512)" filter="url(#brillo-93)" />
+      <use id="c3-h14" xlink:href="#hoja-adulta-1" transform="translate(1469.1 590.2) rotate(233.5) scale(0.828) translate(-128 -512)" filter="url(#brillo-118)" />
+      <use id="c3-h15" xlink:href="#hoja-adulta-2" transform="translate(1821.1 439.7) rotate(449.2) scale(1.124) translate(-128 -512)" filter="url(#brillo-94)" />
+      <use id="c3-h16" xlink:href="#hoja-adulta-0" transform="translate(1350.9 698.6) rotate(247) scale(1.145) translate(-128 -512)" filter="url(#brillo-79)" />
+    </g>
   </g>
-  <g id="racimos" />
 </svg>
