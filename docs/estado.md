@@ -1,6 +1,6 @@
 # Estado del proyecto y pendientes
 
-Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 29-10-2026.
+Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 04-11-2026.
 
 ## Dónde estamos
 
@@ -25,6 +25,11 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
   y ladera (−2,6 % a +10,1 % por corrida, media casi igual); la réplica de MATLAB y la flota no cambian. El lote de H7
   se repitió con 0.8.1 y sus conclusiones se mantienen (los CSV de `experimentos/h7/` siguen con el motor 0.7.0).
   Detalle en `CHANGELOG.md` y `docs/simulador.md` («Tramo de regreso»).
+- **`ssm-borde`** (04-11, **motor 0.8.2**, sin versión de la app todavía): la regla de seguridad mide el avance recortado
+  por el borde del mapa (antes, pegado al borde, el robot podía quedar dentro de S_p; lo encontró `test:full` del job
+  semanal del 02-11). Cambian corridas `hri` en huertos generados; el lote H8 repetido con 0.8.2 cambia 919 de 4.518
+  corridas con medias iguales y las mismas conclusiones (`experimentos/h8/` sigue con 0.8.1). Las pruebas de la regla ahora
+  recorren cada tipo de robot (antes pasaban `robot` en vez de `robotTipo` y corrían siempre con el Warthog).
 - **Entorno de trabajo:** `.claude/settings.json` permite sin preguntar lint, pruebas, build y git de lectura, y la skill
   `cerrar-fase` (`.claude/skills/cerrar-fase/`) corre la lista de entrega de una fase y arma el informe para el
   «aprobado». En el PC de Ivan, `gh` está instalado pero sin sesión, y los e2e corren con el Chrome instalado
@@ -38,7 +43,8 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
 1. **Interfaz, crítica de Impeccable cerrada:** `ui-p1` en la 0.10.0 y `ui-p2` en `main` desde el 29-10, sin versión
    todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): todas las pestañas a la vista desde 1.024 px (dos filas en Réplica), un solo
    punto de quiebre en 1.200 px y componente `Ayuda` en lugar de `title`. Las capturas de `e2e/visual.spec.js` se
-   regeneraron en Windows con Chrome: el job visual semanal (Linux) puede marcar diferencias por las fuentes, sin bloquear.
+   regeneraron en Windows con Chrome: el job visual semanal (Linux) puede marcar diferencias por las fuentes, sin bloquear
+   (falló así el 02-11). `ui-p2` y `ssm-borde` esperan el cierre de etapa (0.11.0) cuando Ivan lo pida.
 2. **Después de H8** (cerrada en la 0.10.0), sin diseño todavía:
    - Un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle reservada por otro
      robot (27 de 2.592 corridas con flota del lote H8). Corregirlo cambia el motor: otra fase.
@@ -50,7 +56,10 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
      de «con alguno en una calle».
 3. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
-   distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo.
+   distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo. El job semanal «Interfaz en
+   Chromium, Firefox y WebKit» llega a su límite de 40 min y se cancela (19-10, 26-10 y 02-11): dividir el archivo
+   también lo resolvería; si no, subir el límite.
+   - Pendiente aparte: el PR de Dependabot (Ivan1721/harvest-viz#8, 6 actualizaciones menores, CI en verde) sin fusionar.
 4. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
    (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en `main` desde el 29-10. Etapa B:
    Ivan dibuja `public/texturas/palto-racimos.png` sobre `docs/plantillas/palto-racimos.svg`; luego una rama corta
