@@ -96,7 +96,7 @@ test('borde del mapa: la regla mide el avance recortado, no el comandado', () =>
 test('borde del mapa, con flota: ningún robot se acerca más de lo que midió la regla', () => {
   const ssm = { a: 0.5595225347205997, vh: 1.9023654429474846, warn: 1.5906988279893994, vSlow: 0.25357825027313086, tResume: 2 }
   const flota = { n: 3, estrategia: 'desfase' }
-  const s = new HRSim({ huerto: 'arandano', robot: 'burro-carro', nw: 11, act: 'ground', duration: 300, profile: 'hri', ssm, flota }, FIS).run()
+  const s = new HRSim({ huerto: 'arandano', robotTipo: 'warthog', nw: 11, act: 'ground', duration: 300, profile: 'hri', ssm, flota }, FIS).run()
   for (let i = 0; i < flota.n; i++) checkInvariant(s, s.rec.fx[i], s.rec.fy[i], s.rec.fst[i])
 })
 
@@ -130,7 +130,7 @@ test(`property-based: la invariante también en los huertos generados (${RUNS} c
         ...SSM_AL_AZAR,
       }),
       ({ huerto, robot, nw, act, ...ssm }) => {
-        const s = new HRSim({ huerto, robot, nw, act, duration: 600, profile: 'hri', ssm }, FIS).run()
+        const s = new HRSim({ huerto, robotTipo: robot, nw, act, duration: 600, profile: 'hri', ssm }, FIS).run()
         checkInvariant(s)
       },
     ),
@@ -151,7 +151,7 @@ test(`property-based: la invariante en cada robot de una flota (${RUNS} casos)`,
         ...SSM_AL_AZAR,
       }),
       ({ huerto, robot, n, estrategia, nw, act, ...ssm }) => {
-        const s = new HRSim({ huerto, robot, nw, act, duration: 300, profile: 'hri', ssm, flota: { n, estrategia } }, FIS).run()
+        const s = new HRSim({ huerto, robotTipo: robot, nw, act, duration: 300, profile: 'hri', ssm, flota: { n, estrategia } }, FIS).run()
         for (let i = 0; i < n; i++) checkInvariant(s, s.rec.fx[i], s.rec.fy[i], s.rec.fst[i])
       },
     ),
