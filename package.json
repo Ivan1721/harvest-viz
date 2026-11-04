@@ -32,6 +32,7 @@
     "experimentos": "node scripts/experimentos.mjs",
     "bench:visual": "node scripts/bench-visual.mjs",
     "export:video": "node scripts/export-video.mjs",
+    "atlas:follaje": "node scripts/atlas-follaje.mjs",
     "test:mutation:engine": "stryker run stryker.engine.config.json"
   },
   "dependencies": {

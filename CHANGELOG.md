@@ -4,10 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
-Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda accesible (lo que quedaba de la crítica de Impeccable del 23-10). Solo interfaz: el motor y los resultados no cambian. **Motor 0.8.2** (`ssm-borde`): la regla de seguridad mide el avance recortado por el borde del mapa; cambian corridas del perfil `hri` en huertos generados, sobre todo con flota; la réplica de MATLAB no cambia.
+Interfaz del Simulador, fase `ui-p2`: la columna derecha a 1.024 px y la ayuda accesible (lo que quedaba de la crítica de Impeccable del 23-10). Solo interfaz: el motor y los resultados no cambian. **Motor 0.8.2** (`ssm-borde`): la regla de seguridad mide el avance recortado por el borde del mapa; cambian corridas del perfil `hri` en huertos generados, sobre todo con flota; la réplica de MATLAB no cambia. Follaje de paltos, etapa B (`follaje-b`): el atlas de racimos dibujado a mano (solo visual).
 
 ### Agregado
 
+- **Atlas de racimos dibujado a mano** (follaje de paltos, etapa B, calidad Alta): la escena carga `public/texturas/palto-racimos.png` (1,8 MB, solo en calidad Alta y en huertos de palto) y, mientras baja o si no carga, usa el atlas de canvas de la etapa A. La plantilla `docs/plantillas/palto-racimos.svg` trae los racimos de la etapa A como hojas sueltas, para moverlas, girarlas o redibujarlas; `npm run atlas:follaje` la exporta al PNG. Primer cambio: el racimo «con brotes nuevos» pasa de roseta a abanico, con el pecíolo junto a la rama.
 - **Ayuda accesible**: ninguna ayuda queda solo en `title`, que no se ve con el teclado ni en pantallas táctiles. Las fuentes de los parámetros, las reglas de los estados del robot, «Exportar corridas», «Copiar enlace», «Restablecer» y la capa «Estado de las plantas» abren una burbuja al pasar el ratón, con el foco o al tocar; Esc la cierra y queda enlazada con `aria-describedby`. Los supuestos (parámetros sin fuente) van subrayados en ámbar. Una opción deshabilitada sigue enfocable y su motivo se escribe bajo el control («Otro robot, Otra cantidad de robots: solo en los huertos generados.»). La franja de proximidad robot–humano tiene leyenda dibujada (< 0,45 m, < 1,2 m, < 3,6 m y paradas de seguridad).
 
 ### Corregido
