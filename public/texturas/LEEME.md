@@ -10,3 +10,9 @@ Fotos de Poly Haven, licencia **CC0** (dominio público: uso libre, sin atribuci
 | `gravel_ground_01.jpg` | Grava de la zona de carga     | 3 m       | [Poly Haven: Gravel Ground 01](https://polyhaven.com/a/gravel_ground_01) |
 
 Descargadas el 23-10-2026 desde la API de Poly Haven. Licencia: <https://polyhaven.com/license>.
+
+## Follaje de paltos (calidad alta)
+
+`palto-racimos.png`: atlas de 2×2 racimos de hojas de palto Hass (2048 × 2048 px, con transparencia), dibujo propio sobre
+`docs/plantillas/palto-racimos.svg` (diseño «Follaje de paltos», etapa B). Se regenera desde la plantilla con
+`npm run atlas:follaje`. Lo carga `src/shared/paltoHojas.jsx` (`ATLAS_PNG`); sin él, la escena dibuja el atlas en un canvas.

@@ -1,13 +1,14 @@
 // Paltos con hojas (R3 del diseño «escena 3D más realista», calidad Alta). Sobre el palto de siempre (avocadoParts:
-// esferas de follaje en domo) se ponen tarjetas con racimos de hojas de palto dibujadas en un canvas (sin imágenes
-// externas); las esferas quedan adentro, más chicas y oscuras, como la sombra del interior de una copa densa. Se eligió
+// esferas de follaje en domo) se ponen tarjetas con racimos de hojas de palto (un atlas: ver «Follaje» más abajo); las
+// esferas quedan adentro, más chicas y oscuras, como la sombra del interior de una copa densa. Se eligió
 // en el prototipo (prototipos/r3) frente a ez-tree: forma de palto Hass y ~58 cuadros/s con 1.125 árboles.
 //
 // - Variantes: VARIANTES paltos distintos se generan una vez y se instancian en todo el huerto (pocas llamadas de dibujo);
 //   cada árbol lleva además su giro, su escala (±6 %) y su tinte según su semilla.
-// - Follaje (diseño «Follaje de paltos», etapa A): cuatro hojas distintas (adulta, ancha, joven y vista por el envés) en
-//   un atlas de 2×2 racimos; cada tarjeta toma un racimo, un tinte según su altura y su lado de la copa, y la normal de
-//   la copa (mezcla de la del plano con la de su esfera), para que la copa se ilumine como un volumen y no como cartones.
+// - Follaje (diseño «Follaje de paltos», etapas A y B): cuatro hojas distintas (adulta, ancha, joven y vista por el envés)
+//   en un atlas de 2×2 racimos (el PNG dibujado a mano, o el canvas mientras baja); cada tarjeta toma un racimo, un
+//   tinte según su altura y su lado de la copa, y la normal de la copa (mezcla de la del plano con la de su esfera),
+//   para que la copa se ilumine como un volumen y no como cartones.
 //   El material suma una luz a través de la hoja cuando el sol queda detrás.
 // - Nivel de detalle: si un racimo ocupa menos de ~1,5 px (huerto grande o cámara lejos) se ven las esferas de siempre.
 // - Opacidad del follaje: el control recorta cuántos racimos se dibujan (prefijo al azar del índice) y vuelve
@@ -114,13 +115,29 @@ export const RACIMOS = [
   { hojas: { enves: 6, adulta: 10 }, abierto: 0.32 }, // visto desde abajo
 ]
 
+// etapa B: atlas dibujado a mano sobre docs/plantillas/palto-racimos.svg (`npm run atlas:follaje` lo exporta)
+export const ATLAS_PNG = 'texturas/palto-racimos.png'
+
 let texRacimos = null
 /**
  * Atlas de racimos: 2×2 celdas de 1.024 px, cada una con un racimo de hojas en distintas posiciones, giros, tamaños y
- * tonos (técnica de follaje de juegos). La etapa B del diseño reemplaza este canvas por un PNG dibujado a mano.
+ * tonos (técnica de follaje de juegos). Se dibuja al tiro en un canvas (etapa A) y, cuando baja el PNG de la etapa B,
+ * su imagen reemplaza a la del canvas en la misma textura; si el PNG no carga, queda el canvas.
  */
 export function texturaRacimos() {
   if (texRacimos) return texRacimos
+  const tex = atlasCanvas()
+  const img = new Image()
+  img.onload = () => {
+    tex.image = img
+    tex.needsUpdate = true
+  }
+  img.src = import.meta.env.BASE_URL + ATLAS_PNG
+  texRacimos = tex
+  return tex
+}
+
+function atlasCanvas() {
   const rnd = mulberry(99)
   const variantes = {}
   for (const tipo of Object.keys(HOJAS)) variantes[tipo] = [-1, 0, 1].map((c) => dibujarHoja(tipo, c * 0.6))
@@ -149,10 +166,10 @@ export function texturaRacimos() {
       g.restore()
     }
   })
-  texRacimos = new THREE.CanvasTexture(c)
-  texRacimos.colorSpace = THREE.SRGBColorSpace
-  texRacimos.anisotropy = 4
-  return texRacimos
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 4
+  return tex
 }
 
 /** Tronco y cinco ramas principales que entran en la copa (se ven entre los racimos). */

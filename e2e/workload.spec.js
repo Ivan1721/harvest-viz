@@ -372,6 +372,12 @@ test('follaje de paltos en calidad alta: atlas de racimos con tinte y contraluz,
   const errors = await openWorkload(page, { light: false, mode: 'sim', query: 'calidad=alta&view=ho&perf=1' })
   const tri = () => page.evaluate(() => Math.max(0, ...Object.values(window.__hvPerf || {}).map((m) => m.triangles || 0)))
   await expect.poll(tri, { timeout: 120_000 }).toBeGreaterThan(12 * 700 * 2)
+  // etapa B: el atlas dibujado a mano (public/texturas/palto-racimos.png) se descarga
+  await expect
+    .poll(() => page.evaluate(() => performance.getEntriesByType('resource').filter((r) => /texturas\/palto-racimos\.png$/.test(r.name)).length), {
+      timeout: 60_000,
+    })
+    .toBe(1)
   const antes = await tri()
   await page.getByText('Capas y estilo').click()
   await setRange(page.getByRole('slider', { name: 'Opacidad del follaje' }), 0.15)
