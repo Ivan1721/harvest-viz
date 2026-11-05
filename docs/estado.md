@@ -44,7 +44,8 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
    todavía (diseño: https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa): todas las pestañas a la vista desde 1.024 px (dos filas en Réplica), un solo
    punto de quiebre en 1.200 px y componente `Ayuda` en lugar de `title`. Las capturas de `e2e/visual.spec.js` se
    regeneraron en Windows con Chrome: el job visual semanal (Linux) puede marcar diferencias por las fuentes, sin bloquear
-   (falló así el 02-11). `ui-p2` y `ssm-borde` esperan el cierre de etapa (0.11.0) cuando Ivan lo pida.
+   (falló así el 02-11). `ui-p2`, `ssm-borde`, `follaje-b` y las dependencias de Dependabot (#8, fusionadas el 04-11) esperan el cierre de etapa
+   (0.11.0) cuando Ivan lo pida.
 2. **Después de H8** (cerrada en la 0.10.0), sin diseño todavía:
    - Un Burro con carro trabado por tracción salta su waypoint y cruza la hilera hacia una calle reservada por otro
      robot (27 de 2.592 corridas con flota del lote H8). Corregirlo cambia el motor: otra fase.
@@ -59,11 +60,12 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
    distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo. El job semanal «Interfaz en
    Chromium, Firefox y WebKit» llega a su límite de 40 min y se cancela (19-10, 26-10 y 02-11): dividir el archivo
    también lo resolvería; si no, subir el límite.
-   - Pendiente aparte: el PR de Dependabot (Ivan1721/harvest-viz#8, 6 actualizaciones menores, CI en verde) sin fusionar.
 4. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
-   (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en `main` desde el 29-10. Etapa B:
-   Ivan dibuja `public/texturas/palto-racimos.png` sobre `docs/plantillas/palto-racimos.svg`; luego una rama corta
-   `follaje-b` carga el PNG con respaldo al atlas de canvas. Uva, arándano y cerezo con hojas quedan para otra fase.
+   (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en `main` desde el 29-10. Etapa B
+   en curso: `follaje-b` (04-11) carga `public/texturas/palto-racimos.png` con respaldo al atlas de canvas; Ivan redibujó la
+   celda «con brotes nuevos» (arriba a la izquierda) de `docs/plantillas/palto-racimos.svg` en Illustrator. Para las otras
+   celdas: Ivan edita el SVG y hace push; Claude corre `npm run atlas:follaje` y hace commit del PNG. Uva, arándano y cerezo
+   con hojas quedan para otra fase.
 5. Del diseño de H7: nada pendiente.
 
 ## Documentos de diseño (Claude Docs)
