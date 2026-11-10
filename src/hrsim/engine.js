@@ -63,6 +63,7 @@ function nuevoRobot(id, waypoints, pose, NH) {
     skips: 0,
     handoffCount: 0,
     capacityBlocked: 0,
+    parciales: 0, // recogidas parciales (huertos generados)
     rstatus: 0,
     goingToUnload: false,
     needUnload: false,
@@ -440,7 +441,7 @@ export class HRSim {
           // el robot ya está en la caja
           w.stage = 1
           w.state = 11
-          w.timer = p.loadTimePerBox * Math.max(w.nBoxes, 1)
+          w.timer = p.loadTimePerBox * Math.max(Math.min(w.cargar ?? w.nBoxes, w.nBoxes), 1)
         }
         break
       }
@@ -510,7 +511,7 @@ export class HRSim {
           if (w.routeIdx < w.route.length - 1) w.routeIdx += 1
           else {
             w.state = 11
-            w.timer = p.loadTimePerBox * Math.max(w.nBoxes, 1)
+            w.timer = p.loadTimePerBox * Math.max(Math.min(w.cargar ?? w.nBoxes, w.nBoxes), 1)
           }
         }
         break
@@ -829,16 +830,30 @@ export class HRSim {
     }
     // recogida (protocolo worker_loads: el dueño carga la caja)
     r.waiting = false
+    let reservadas = 0 // huertos generados: cajas que este robot ya comprometió con otros cosecheros en la misma parada
     for (let h = 0; h < NH; h++) {
       const w = W[h]
       if (!(w.nBoxes >= 1 && w.prodBox > 0 && w.box && r.boxInserted[h])) continue
       // con carro, el cosechero carga la caja en el carro: cuenta el más cercano de los dos
       let dist = hyp(rpos[0] - w.box[0], rpos[1] - w.box[1])
       if (r.carro) dist = Math.min(dist, hyp(r.carro[0] - w.box[0], r.carro[1] - w.box[1]))
-      const hasRoom = r.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
+      // huertos generados (motor 0.9.0): recogida parcial. El robot recibe las cajas enteras que le caben y el resto de
+      // la pila queda en su punto para la próxima pasada. Si en la misma parada cargan dos cosecheros, el segundo cuenta
+      // solo el espacio que no reservó el primero. En el mapa del estudio se conserva la regla de MATLAB (todo o nada):
+      // ahí `caben` es la pila completa o 0.
+      const libres = Math.floor((p.capacityBoxes * unit - r.prodRobot + 1e-9) / unit)
+      const caben = this.cosecha
+        ? Math.max(0, Math.min(w.nBoxes, libres - reservadas))
+        : r.prodRobot + w.prodBox <= p.capacityBoxes * unit + 1e-9
+          ? w.nBoxes
+          : 0
+      const hasRoom = caben >= 1
       if (dist < PICKUP_RADIUS && !hasRoom) {
-        r.capacityBlocked++
-        r.needUnload = true
+        // (si el espacio que queda está reservado, el robot todavía no está lleno: lo estará cuando termine esa carga)
+        if (!(this.cosecha && libres >= 1)) {
+          r.capacityBlocked++
+          r.needUnload = true
+        }
         // MATLAB deja call=true aunque el robot ya no tenga espacio: el trabajador vuelve a girar y cargar
         // indefinidamente sin cosechar. Con fixRecallLoop se cancela la llamada (difiere de MATLAB).
         if (p.fixRecallLoop) w.call = false
@@ -846,11 +861,16 @@ export class HRSim {
       let ready = true
       if (dist < PICKUP_RADIUS && hasRoom && !w.done) {
         w.call = true
+        if (this.cosecha) {
+          w.cargar = caben // el cosechero carga solo las cajas que caben
+          reservadas += caben
+        }
         r.waiting = true
         ready = false
       }
       if (dist < PICKUP_RADIUS && hasRoom && ready) {
-        const picked = w.prodBox
+        const parcial = caben < w.nBoxes
+        const picked = parcial ? caben * unit : w.prodBox
         w.call = false
         w.done = false
         r.handoffCount++
@@ -861,15 +881,20 @@ export class HRSim {
         )
         r.prodRobot += picked
         this.ev.picks.push({ idx: this.idx, h: h + 1, amount: picked, ...(fl ? { r: r.id } : {}) })
-        for (const c of this.ev.crates) if (c.h === h + 1 && c.picked === Infinity) c.picked = this.idx
+        {
+          let quedan = parcial ? caben : Infinity
+          for (const c of this.ev.crates) if (c.h === h + 1 && c.picked === Infinity && quedan-- > 0) c.picked = this.idx
+        }
         {
           const b = this.ev.boxes.find((q) => q.h === h + 1 && !q.served)
           if (b) {
             b.picked = this.idx
             b.served = true
+            // el resto de la pila sigue esperando desde que se detectó (misma posición, mismo robot)
+            if (parcial) this.ev.boxes.push({ ...b, picked: Infinity, served: false })
           }
         }
-        if (r.boxWpPos[h]) {
+        if (r.boxWpPos[h] && !parcial) {
           let imin = -1,
             dmin = Infinity
           r.waypoints.forEach((q, i) => {
@@ -887,18 +912,28 @@ export class HRSim {
             this.log(`Box waypoint removed for h${h + 1} | next k=${r.kWp + 1}/${r.waypoints.length}`, r)
           }
         }
-        w.prodBox = 0
-        w.nBoxes = 0
-        w.box = null
-        r.boxInserted[h] = false
-        r.boxWpPos[h] = null
-        r.bBox[h] = 0
-        if (fl) this.boxOwner[h] = -1
+        w.cargar = null
+        if (parcial) {
+          // queda el resto: la pila, su waypoint y su robot (con flota) se conservan; el robot va a descargar
+          w.nBoxes -= caben
+          w.prodBox = unit * w.nBoxes
+          r.needUnload = true
+          r.parciales++
+        } else {
+          w.prodBox = 0
+          w.nBoxes = 0
+          w.box = null
+          r.boxInserted[h] = false
+          r.boxWpPos[h] = null
+          r.bBox[h] = 0
+          if (fl) this.boxOwner[h] = -1
+        }
       }
     }
     // huertos generados: con el robot lleno, va a descargar al acopio por las calles y vuelve a donde estaba
     // (en el mapa del estudio la vuelta base ya pasa por la zona de carga a cada rato; en 1 ha, no)
-    if (this.cosecha && !r.goingToUnload && (r.needUnload || r.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
+    // (mientras espera al acopiador sigue con la carga a bordo: sin `!r.acopioWait` insertaba un segundo desvío)
+    if (this.cosecha && !r.goingToUnload && !r.acopioWait && (r.needUnload || r.prodRobot >= 0.9 * p.capacityBoxes * unit - 1e-9)) {
       // dentro de una calle no puede dar la vuelta (no cabe): sigue hasta el próximo waypoint en una cabecera y
       // desde ahí va al acopio por el carril; si está en la cabecera de arriba, baja por la calle vecina (dos giros de
       // 90°, sin giro en U entre copas). Después vuelve a ese punto y retoma la vuelta.
@@ -1331,6 +1366,8 @@ export class HRSim {
       handoffs: sum((r) => r.handoffCount),
       waypointSkips: sum((r) => r.skips),
       capacityBlocked: sum((r) => r.capacityBlocked),
+      // huertos generados: recogidas en que el robot cargó solo parte de la pila
+      ...(this.cosecha ? { partialPickups: sum((r) => r.parciales) } : {}),
       ...(this.p.ssm?.enabled ? { safetyStops: sum((r) => r.ssmStops) } : {}),
       ...(this.cosecha?.carga ? resumenCarga(this.cosecha, this.W, this.rec.wst, this.dt) : {}),
       ...(this.acopio ? resumenAcopio(this.acopio, this.rec.rst ? this.rec.rst.filter((v) => v === 6).length * this.dt : 0, this.rec.t.length) : {}),

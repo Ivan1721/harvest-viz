@@ -8,8 +8,9 @@ import { FIS, MATLAB, norm, KNOWN_HR_DEVIATIONS } from '../helpers.mjs'
 
 const FULL = process.env.FULL === '1'
 const keys = Object.keys(MATLAB).sort()
-// muestra determinista: 1 de cada 12 claves + todas las desviaciones conocidas
-const sample = FULL ? keys : keys.filter((k, i) => i % 12 === 0 || (k.startsWith('HR|') && KNOWN_HR_DEVIATIONS.has(k.slice(3))))
+// muestra determinista: 1 de cada 11 claves + todas las desviaciones conocidas. El paso es 11 y no 12 porque las claves
+// ordenadas repiten las 24 combinaciones de fila, actividad y disposición: con 12 la muestra caía siempre en dos de ellas.
+const sample = FULL ? keys : keys.filter((k, i) => i % 11 === 0 || (k.startsWith('HR|') && KNOWN_HR_DEVIATIONS.has(k.slice(3))))
 
 for (const key of sample) {
   const [kind, nw, row, act, rp] = key.split('|')

@@ -206,8 +206,9 @@ test('palta alta densidad, 4 h: un segundo robot en zonas rompe el límite de tr
   const uno = new HRSim({ nw: 12, huerto: AD, duration: 14400 }, FIS).run().summary()
   const dos = new HRSim({ nw: 12, huerto: AD, duration: 14400, flota: { n: 2, estrategia: 'zonas' } }, FIS).run().summary()
   const frac = (m) => m.TotalProductionCargoZone_crop_units / m.TotalRecollectedCrops_crop_units
-  assert.ok(frac(uno) < 0.75, `un robot: ${(100 * frac(uno)).toFixed(0)} %`)
-  assert.ok(frac(dos) > 0.9, `dos robots: ${(100 * frac(dos)).toFixed(0)} %`)
+  // motor 0.9.0 (recogida parcial): un robot entrega el 80 % de lo cosechado (66 % con la regla de todo o nada)
+  assert.ok(frac(uno) < 0.85, `un robot: ${(100 * frac(uno)).toFixed(0)} %`)
+  assert.ok(frac(dos) > 0.9 && frac(dos) > frac(uno) + 0.1, `dos robots: ${(100 * frac(dos)).toFixed(0)} %`)
   assert.ok(dos.flota.jainCajas > 0.95, `equidad entre robots ${dos.flota.jainCajas}`)
   // las zonas se reparten al terminar la vuelta de cada robot, no al mismo tiempo: se solapan un rato, y la reserva lo resuelve
   assert.ok(dos.flota.esperaCalle_s < 0.01 * 2 * 14400, `espera por calle ${dos.flota.esperaCalle_s} s`)
