@@ -1,6 +1,6 @@
 # Estado del proyecto y pendientes
 
-Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 04-11-2026.
+Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con `CLAUDE.md` al empezar. Al 10-11-2026.
 
 ## Dónde estamos
 
@@ -8,8 +8,9 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
   A–C y el lote H8-exp), más la interfaz `ui-p1` y la etapa A del follaje de paltos. Detalle en `CHANGELOG.md`.
 - **H8-exp** (29-10): lote de 4.518 corridas en `experimentos/h8/` e informe «H8: experimentos en lote»
   (https://claude.ai/artifact/G7TrM9s2MYFA95LyT9cVaQ). Donde un robot no alcanza (palta alta densidad y ladera), el
-  segundo lleva lo entregado de 35–70 % a 73–97 % de lo cosechado y el tercero a 94–96 %; se recomienda zonas. Detalle
-  en `docs/simulador.md` («Experimentos en lote (H8)»).
+  segundo lleva lo entregado de 35–70 % a 73–97 % de lo cosechado y el tercero a 94–96 %; se recomienda zonas. Con el
+  motor 0.9.0 (ver `robot-lleno`) el salto es menor: de 69–84 % a 91–98 % y 94–97 %. Detalle en `docs/simulador.md`
+  («Experimentos en lote (H8)»).
 - La 0.9.0 trajo **H8, fase A** (flota de 2–3 robots en el motor, opción `flota`, todavía sin interfaz) y la **escena 3D
   más realista** completa (R1 luz y suelo con selector de calidad, R2 Warthog real, R3 paltos con hojas). Detalle en
   `CHANGELOG.md`, `docs/simulador.md` («Flota de robots») y `docs/modelos_escenario.md`.
@@ -23,13 +24,24 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
   las calles de los huertos generados), como ya lo hacía la flota. Antes, con número impar de calles, bajaba la última
   calle de ~100 m en diagonal entre las copas y al doble de velocidad. Cambia corridas de 1 robot en palta alta densidad
   y ladera (−2,6 % a +10,1 % por corrida, media casi igual); la réplica de MATLAB y la flota no cambian. El lote de H7
-  se repitió con 0.8.1 y sus conclusiones se mantienen (los CSV de `experimentos/h7/` siguen con el motor 0.7.0).
+  se repitió con 0.8.1 y sus conclusiones se mantienen (los CSV de `experimentos/h7/` son del motor 0.9.0 desde el 09-11).
   Detalle en `CHANGELOG.md` y `docs/simulador.md` («Tramo de regreso»).
 - **`ssm-borde`** (04-11, **motor 0.8.2**, sin versión de la app todavía): la regla de seguridad mide el avance recortado
   por el borde del mapa (antes, pegado al borde, el robot podía quedar dentro de S_p; lo encontró `test:full` del job
   semanal del 02-11). Cambian corridas `hri` en huertos generados; el lote H8 repetido con 0.8.2 cambia 919 de 4.518
-  corridas con medias iguales y las mismas conclusiones (`experimentos/h8/` sigue con 0.8.1). Las pruebas de la regla ahora
-  recorren cada tipo de robot (antes pasaban `robot` en vez de `robotTipo` y corrían siempre con el Warthog).
+  corridas con medias iguales y las mismas conclusiones. Las pruebas de la regla ahora recorren cada tipo de robot (antes
+  pasaban `robot` en vez de `robotTipo` y corrían siempre con el Warthog).
+- **`robot-lleno`** (10-11, **motor 0.9.0**, sin versión de la app todavía; diseño aprobado el 09-11): salió de la
+  revisión completa del proyecto del 09-11. En los huertos generados, el robot lleno ya no inserta un segundo desvío
+  mientras espera al acopiador, y una pila mayor que su espacio libre se recoge por partes (**recogida parcial**: cajas
+  enteras, regla fija sin parámetro; antes no se recogía nunca). El mapa del estudio conserva la regla de MATLAB: la
+  réplica y las huellas del motor no cambian. Los lotes H7 y H8 se repitieron completos y sus CSV
+  (`experimentos/h7/`, `experimentos/h8/`) son ahora del motor 0.9.0. Las conclusiones se mantienen con otra
+  magnitud: en H7, con robot llega al acopio el 65–97 % de lo cosechado en palta alta densidad a 4 h (antes 21–91 %); en
+  H8, 1 robot lleva el 69–84 % (antes 35–70 %), 2 el 91–98 % y 3 el 94–97 %, y zonas gana menos comparaciones (27 de
+  144; con 24 cosecheros las tres estrategias empatan). Los informes de H7 y H8 llevan una nota de corrección con
+  fecha. De paso: la muestra de la regresión MATLAB de CI cubre las 24 combinaciones (1 de cada 11) y se corrigió una
+  aserción de `acopio.test.mjs` que no podía fallar. Detalle en `CHANGELOG.md` y `docs/simulador.md`.
 - **Entorno de trabajo:** `.claude/settings.json` permite sin preguntar lint, pruebas, build y git de lectura, y la skill
   `cerrar-fase` (`.claude/skills/cerrar-fase/`) corre la lista de entrega de una fase y arma el informe para el
   «aprobado». En el PC de Ivan, `gh` está instalado pero sin sesión, y los e2e corren con el Chrome instalado
@@ -55,23 +67,41 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
      ~2 s en el caso más pesado (4 h, 24 cosecheros, 3 robots); si molesta, pasarlo al worker. La distancia mínima entre
      robots «de toda la corrida» sale ~0,2 m porque los robots parten del mismo punto del acopio; la que importa es la
      de «con alguno en una calle».
-3. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
+3. **Revisión del proyecto del 09-11**, lo que no entró en `robot-lleno` (sin diseño todavía):
+   - Motor: más cosecheros que tramos da un `TypeError` en vez de un mensaje (`huertos/rectangular.js`; se alcanza
+     desde la interfaz con 2 hileras × 2–5 árboles y 12 cosecheros). `resolveParams` acepta claves desconocidas y no
+     valida varios números (`costProduction: -4`, `lapRepeats: 0`).
+   - Visor, al comparar variantes: el reloj avanza al doble (las dos corridas comparten `run.name`) y el video sale con
+     una sola escena. Además: el aviso de enlace inválido nunca se ve; una corrida cargada con la misma configuración
+     que la incluida no reemplaza a la incluida; «Cultivo recogido (total)» muestra la carga a bordo. Sin comprobar:
+     `ajustes` con `{"costs":null}` deja la app sin abrir, una carga fallida deja la escena anterior bajo el título
+     nuevo y el follaje desaparece al cambiar el número de árboles en calidad Alta.
+   - Pruebas y CI: `npm run export:video` espera el texto «Fuente», que ya no está; la cobertura de `.jsx` no se
+     mide; la prueba de i18n revisa 5 de los 22 archivos que llaman a `t()`; las pruebas e2e de «la textura se
+     descarga» pasan aunque el recurso dé 404. El job semanal de tres navegadores corre en serie (`workers: 1`):
+     dividir `workload.spec.js` no alcanza, hace falta una matriz por navegador o subir el límite.
+   - Recogida parcial: la escena dibuja una caja por pila, así que la pila no se ve «bajar»; el bloque R de H8
+     (desempate) no cubre los 6 empates nuevos; el lote de H6 (`experimentos/h6/`, motor 0.4.0) no se repitió.
+   - Oclusión: fallos menores con JSON cargados por el usuario (hojas sin `tree`, ids de fruto repetidos, JSON
+     malformado sin aviso).
+4. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
    distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo. El job semanal «Interfaz en
    Chromium, Firefox y WebKit» llega a su límite de 40 min y se cancela (19-10, 26-10 y 02-11): dividir el archivo
    también lo resolvería; si no, subir el límite.
-4. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
+5. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
    (hojas variadas, atlas de 2×2 racimos, tinte, normales de copa, contraluz, 8 variantes) en `main` desde el 29-10. Etapa B
    en curso: `follaje-b` (04-11) carga `public/texturas/palto-racimos.png` con respaldo al atlas de canvas; Ivan redibujó la
    celda «con brotes nuevos» (arriba a la izquierda) de `docs/plantillas/palto-racimos.svg` en Illustrator. Para las otras
    celdas: Ivan edita el SVG y hace push; Claude corre `npm run atlas:follaje` y hace commit del PNG. Uva, arándano y cerezo
    con hojas quedan para otra fase.
-5. Del diseño de H7: nada pendiente.
+6. Del diseño de H7: nada pendiente.
 
 ## Documentos de diseño (Claude Docs)
 
 | Documento                                    | Enlace                                                                                                |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Robot lleno: segundo desvío y pilas (hecho)  | https://claude.ai/artifact/WPvgubKaVeTCjLTJxwRWC3                                                     |
 | Follaje de paltos (aprobado)                 | https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk                                                     |
 | Interfaz P2: columna derecha y ayuda (hecho) | https://claude.ai/artifact/SHDHf4P8a3b7Hi2Cvp86Xa                                                     |
 | Interfaz: los 3 P1 de la crítica (hecho)     | https://claude.ai/artifact/V3yVi97T549ATWcXxmp7DF                                                     |
