@@ -31,8 +31,8 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
   semanal del 02-11). Cambian corridas `hri` en huertos generados; el lote H8 repetido con 0.8.2 cambia 919 de 4.518
   corridas con medias iguales y las mismas conclusiones. Las pruebas de la regla ahora recorren cada tipo de robot (antes
   pasaban `robot` en vez de `robotTipo` y corrían siempre con el Warthog).
-- **`robot-lleno`** (10-11, **motor 0.9.0**, sin versión de la app todavía; diseño aprobado el 09-11): salió de la
-  revisión completa del proyecto del 09-11. En los huertos generados, el robot lleno ya no inserta un segundo desvío
+- **`robot-lleno`** (en `main` desde el 10-11, **motor 0.9.0**, sin versión de la app todavía; diseño aprobado el
+  09-11): salió de la revisión completa del proyecto del 09-11. En los huertos generados, el robot lleno ya no inserta un segundo desvío
   mientras espera al acopiador, y una pila mayor que su espacio libre se recoge por partes (**recogida parcial**: cajas
   enteras, regla fija sin parámetro; antes no se recogía nunca). El mapa del estudio conserva la regla de MATLAB: la
   réplica y las huellas del motor no cambian. Los lotes H7 y H8 se repitieron completos y sus CSV
@@ -86,7 +86,8 @@ Traspaso para seguir en otra sesión (por ejemplo, en la nube). Léelo junto con
      malformado sin aviso).
 4. **Pruebas de interfaz:** `e2e/workload.spec.js` tarda ~15 min de los ~18 del job; dividirlo en varios archivos.
    En local, tras ~25 pruebas en el mismo navegador, alguna simulación supera los 60 s de `waitSim` (cada vez una prueba
-   distinta; sola pasa). En CI lo cubre el reintento. Probar un navegador nuevo por archivo. El job semanal «Interfaz en
+   distinta; sola pasa). El 10-11 fue la de acopio con acopiador y camión, que sola falló una vez más
+   antes de pasar 7 de 7. En CI lo cubre el reintento. Probar un navegador nuevo por archivo. El job semanal «Interfaz en
    Chromium, Firefox y WebKit» llega a su límite de 40 min y se cancela (19-10, 26-10 y 02-11): dividir el archivo
    también lo resolvería; si no, subir el límite.
 5. **Follaje de paltos** (diseño aprobado el 29-10: https://claude.ai/artifact/XwuENSResPLc9ApkEQeBsk). Etapa A
