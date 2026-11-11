@@ -46,10 +46,11 @@ Cuando el robot entra a las calles (H3):
 
 - La vuelta base pasa en zigzag por las calles ocupadas con un waypoint cada 3 m: el controlador apunta al waypoint, y con uno solo al fondo de una calle de 2 m rozaba las copas tras el giro de entrada.
 - La caja se inserta en el tramo de la ruta que pasa por ella (no antes del waypoint actual) y, al alcanzar un waypoint, el control del mismo tick ya apunta al siguiente. En `matlab-2026` ambas cosas siguen como en MATLAB.
-- Con el robot al 90 % de su capacidad (o si una caja no cabe), va a descargar al acopio por las calles y vuelve a donde estaba.
+- Con el robot al 90 % de su capacidad, o sin espacio para una caja más, va a descargar al acopio por las calles y vuelve a donde estaba.
+- **Recogida parcial** (motor 0.9.0): si la pila de un cosechero no cabe entera, el robot recibe las cajas enteras que caben, el cosechero carga solo esas (cajas cargadas × `loadTimePerBox`) y el resto queda en su punto, con su waypoint, para la próxima pasada; el robot va a descargar. Si dos cosecheros cargan en la misma parada, el segundo cuenta solo el espacio que no reservó el primero. Con flota, el resto sigue asignado al robot que empezó la pila. Es una regla fija de los huertos generados, sin parámetro: antes la recogida era todo o nada, como en MATLAB, y una pila mayor que lo que cabía en el robot no se recogía nunca (con 1 Warthog en palta alta densidad, a las 4 h cerca de la mitad de la cosecha quedaba así). El resumen informa `partialPickups`. En `matlab-2026` se conserva la regla de MATLAB.
 - La bolsa no saca del árbol más fruta de la que cabe (el MATLAB recorta la bolsa y descarta el excedente; con fruta finita rompería la conservación).
 
-Resultados de referencia (45 min, cuadrilla mixta): en 4 × 2 m el robot sube la cosecha 27 % con 12 cosecheros (1.360 → 1.734 kg) y 34 % con 24, con la misma carga metabólica; con 24 un solo robot no da abasto (1.530 kg en cajas esperando al final). En 3 × 3 m, donde no cabe, no aporta (−3 %), igual que en la palta tradicional.
+Resultados de referencia (45 min, cuadrilla mixta): en 4 × 2 m el robot sube la cosecha 29 % con 12 cosecheros (1.357 → 1.744 kg) y 35 % con 24, con la misma carga metabólica; con 24 un solo robot no da abasto (2.070 kg en cajas esperando al final; motor 0.9.0). En 3 × 3 m, donde no cabe, no aporta (−3 %), igual que en la palta tradicional.
 
 En ladera (H4), siempre como factor sobre el valor en plano (`huertos/pendiente.js`; con pendiente 0 todo da exactamente igual que en plano, verificado):
 
@@ -79,7 +80,7 @@ En los huertos generados se elige el robot (Simulador → Robot; `robotTipo`), c
 - **Tracción**: solo empujan las ruedas del robot: m_tot·g·(C_rr·cos θ + sen θ) ≤ μ·m_robot·g·cos θ, con μ = 0,65 (la especificación proponía 0,6; con 0,6 el Burro no subiría el 15 % con 250 kg que garantiza su ficha). Si no alcanza, el robot no avanza (`rst = 5`, «sin tracción») y, pasado el tiempo máximo en el waypoint, salta al siguiente. Con el carro lleno el Burro sube hasta ≈ 8 %.
 - **Frenada**: a_ef = min(a_ctrl, μ·g·cos θ·m_frena/m_tot + g·sen θ) (θ < 0 cuesta abajo; m_frena = masa sobre ruedas que frenan, sin el carro). Reemplaza al piso provisorio de H4: el robot solo frena igual en ladera que en plano; con el carro sin freno cuesta abajo, si a_ef < 0,3 m/s² baja a 0,3 m/s, y en el perfil `hri` S_p usa max(0,3; a_ef).
 - **Carro**: remolque con enganche en el eje (orientación del carro → la del robot a razón de (v/L)·sen(θ_r − θ_c), L = 1,5 m); el cosechero carga la caja en el carro o en el robot, el que esté más cerca. Ni el robot ni el carro rozan copas (verificado).
-- **Lleno**: con el 90 % de la capacidad va a descargar. Dentro de una calle sigue hasta la cabecera; desde la de arriba baja por la calle vecina (sin giro en U entre copas). El acopio está sobre el carril del robot.
+- **Lleno**: con el 90 % de la capacidad, o sin espacio para una caja más, va a descargar. Dentro de una calle sigue hasta la cabecera; desde la de arriba baja por la calle vecina (sin giro en U entre copas). El acopio está sobre el carril del robot. Con acopiador, mientras espera que lo descarguen no inserta otro desvío (hasta el motor 0.8.2 insertaba un segundo, y en algunas corridas quedaba «yendo a descargar» vacío). De una pila que no cabe entera se lleva las cajas que caben (ver «Recogida parcial»).
 
 Métricas (Interacción → Fluidez y `indice.csv`): energía (Wh), Wh por kg entregado, batería restante, descargas y tiempo sin tracción.
 
@@ -256,8 +257,8 @@ prueba, 12 cosecheros, 4 h; los demás, iguales al kilo), pero la media casi no 
 lote de H7 repetido con el motor corregido cambia 87 de sus 1.510 celdas con robot y mantiene sus cuatro conclusiones:
 el límite de transporte en alta densidad pasa de 21–85 % a 21–91 % de lo cosechado, el efecto de alejar el bloque
 (Warthog, 45 min) de +33→+55 % a +33→+53 %, y el costo de la regla de seguridad de 3,9 a 1,4 puntos como máximo; el
-reparto y los resultados de cerezo y palta tradicional no cambian. `experimentos/h7/` conserva los resultados del motor
-0.7.0.
+reparto y los resultados de cerezo y palta tradicional no cambian. (`experimentos/h7/` guarda desde el motor 0.9.0 los
+resultados de ese motor: ver «Experimentos en lote (H7)».)
 
 Limitaciones:
 
@@ -284,12 +285,13 @@ en el documento «H6: resultados de los experimentos en lote». Código: `script
 
 ## Experimentos en lote (H7)
 
-`npm run experimentos -- experimentos/h7.json` repite las preguntas de H6 con el modelo de H7 (motor 0.7.0): bloque A,
+`npm run experimentos -- experimentos/h7.json` repite las preguntas de H6 con el modelo de H7: bloque A,
 acopiador y carga variable (sí/no cada uno) × 12 y 24 cosecheros × robot × 45 min y 4 h; bloque B, avance del bloque
 (0, 50 y 80 %) × reparto × robot, con acopiador y carga variable; bloque C, la base realista sin regla de seguridad.
 Factores con objetos (`acopio`, `carga`, `reparto`) aceptan `null` = sin la opción, y `avance` 0 = sin avance: esas
-celdas tienen la misma clave que la corrida de siempre. 2125 celdas, 2000 corridas distintas (unos 12 min en 2 hilos);
-resultados en `experimentos/h7/`. Columnas nuevas: `acopiador`, `carga_variable`, `reparto`, `avance_pct`,
+celdas tienen la misma clave que la corrida de siempre. 2125 celdas, 2000 corridas distintas (unos 19 min en 7 hilos
+con el motor 0.9.0); resultados en `experimentos/h7/` (motor 0.9.0; hasta el 09-11-2026 guardaba los del motor 0.7.0).
+Columnas nuevas: `acopiador`, `carga_variable`, `reparto`, `avance_pct`,
 `despachado_kg`, `acopiador_ocupado_pct`, `espera_robot_acopio_s`, `fruta_dejada_kg`, `caminata_media_m` y
 `calles_robot`; el efecto de cada robot se mide contra la corrida sin robot con las mismas opciones. Hallazgos en el
 documento «H7: experimentos en lote»: el robot ayuda en proporción a la caminata que le ahorra al cosechero, así que su
@@ -297,18 +299,44 @@ aporte crece con la distancia al acopio (avance del bloque) y con la cuadrilla r
 límite de transporte de un solo robot se mantiene y la regla de seguridad cuesta a lo más 3,9 puntos (1,4 con el motor
 0.8.1; ver «Tramo de regreso»).
 
+**Lote repetido con el motor 0.9.0** (recogida parcial y un solo desvío con acopiador; ver «Cuando el robot entra a las
+calles»). Contra el mismo lote con el motor 0.8.2 cambian 283 de las 1.510 celdas con robot: 263 de palta alta densidad
+y 20 de 4 h en cerezo, uva y palta tradicional. Las cuatro conclusiones se mantienen, con otra magnitud en una:
+
+| Medida (palta alta densidad salvo indicación)                  | Motor 0.8.2  | Motor 0.9.0  |
+| -------------------------------------------------------------- | ------------ | ------------ |
+| Llega al acopio a 4 h con robot, % de lo cosechado             | 21–91        | 65–97        |
+| … con Warthog y 12 cosecheros                                  | 51–66        | 70–86        |
+| … con Warthog y 24 cosecheros                                  | 29–38        | 75–77        |
+| … con Burro con carro                                          | 64–91        | 77–97        |
+| Llega al acopio a 4 h con robot en cerezo y en uva, %          | 69–91, 82–94 | 75–91, 84–94 |
+| Efecto del robot en la cosecha, 12 cosecheros, 4 h, %          | +44 a +51    | +44 a +47    |
+| Efecto en la cosecha al alejar el bloque (Warthog, 45 min), %  | +33→+50→+53  | +33→+50→+49  |
+| Costo máximo de la regla de seguridad, puntos (mediana 0,1)    | 1,4          | 5,5          |
+| Espera total del robot en la cola del acopiador, máximo en 4 h | 180 s        | 680 s        |
+
+El límite de transporte de un solo robot sigue (sin robot llega el 97–100 %), pero es bastante menor que el informado:
+buena parte de lo que quedaba junto a las calles eran pilas mayores que lo que cabía en el robot, que no se recogían
+nunca. La cosecha baja un poco donde hay recogidas parciales (el cosechero carga el robot más veces) y la espera media de
+las cajas sube, porque ahora cuentan las pilas que antes no se recogían (Warthog, 12 cosecheros, 4 h: de 151 s a
+1.705 s). El acopiador sigue sin saturarse (ocupado 0–22 % del turno). El lote de H6 (`experimentos/h6/`) no se
+repitió: sus CSV son del motor 0.4.0.
+
 ## Experimentos en lote (H8)
 
-`npm run experimentos -- experimentos/h8.json` compara 1, 2 y 3 robots (motor 0.8.1) con la base realista del bloque B
+`npm run experimentos -- experimentos/h8.json` compara 1, 2 y 3 robots con la base realista del bloque B
 de H7: perfil `hri`, actividad mixta, acopiador, carga variable, cuadrilla cerca del acopio y 4 h. Tres bloques: **A**,
 6 huertos (los 5 de H7 y palta en ladera) × sin robot, Warthog y Burro con carro × 1 robot o 2 y 3 robots en zonas,
 opuestas y desfase × avance 0, 50 y 80 % × 12 y 24 cosecheros, con la corrida de siempre y las semillas 1 a 5 (3.240
 corridas); **S**, sensibilidad de las distancias de convivencia (`ceder`, `reserva`, `esperaAcopio`) con 3 Warthog en
 alta densidad y cerezo (288); **R**, desempate de estrategias con las semillas 6 a 10 (990). En total 4.518 corridas, unos
-65 min en 8 hilos. Resultados en `experimentos/h8/` (motor 0.8.1). Repetido con el motor 0.8.2 (regla de seguridad
-junto al borde del mapa): cambian 919 corridas, casi todas con flota o con Burro con carro, pero las medias por cantidad
-de robots quedan iguales (lo entregado, a menos de 0,2 %; paradas y tiempo dentro de S_p, iguales) y los hallazgos de
-abajo se mantienen.
+65 min en 8 hilos con el motor 0.8.1 y 2 h en 7 hilos con el 0.9.0. Resultados en `experimentos/h8/` (motor 0.9.0;
+hasta el 09-11-2026 guardaba los del motor 0.8.1). Historia: repetido con el motor 0.8.2 (regla de seguridad junto al
+borde del mapa) cambiaban 919 corridas, casi todas con flota o con Burro con carro, con las medias por cantidad de
+robots iguales (lo entregado, a menos de 0,2 %). Repetido con el motor 0.9.0 (recogida parcial y un solo desvío con
+acopiador) cambian las magnitudes: los hallazgos de abajo son los del motor 0.9.0 y traen entre paréntesis la cifra del
+motor 0.8.1 cuando difiere. Contra los CSV del 0.8.1 cambian 1.650 de las 4.572 filas con robot; esa cuenta incluye las
+que ya cambiaba el 0.8.2.
 
 - **Diseño.** Sin robot, `celdas` quita también `flota` (esas celdas se corren una vez). Un bloque puede traer `lista`
   (las combinaciones una por una) en vez de `factores`: así se escribió el desempate, solo con las celdas empatadas.
@@ -322,29 +350,39 @@ abajo se mantienen.
   corridas para lo entregado (kg y % de lo cosechado), la cosecha, los efectos, energía por kg, caminata, esperas de la
   flota, distancias y seguridad. Una caché `corridas.csv` con otras columnas se reescribe con las de ahora.
 
-Hallazgos (documento «H8: experimentos en lote — ¿el segundo robot rompe el límite de transporte?»):
+Hallazgos (documento «H8: experimentos en lote — ¿el segundo robot rompe el límite de transporte?», con su nota de
+corrección del 10-11-2026):
 
-- **Sí lo rompe.** En palta alta densidad y ladera, con el bloque junto al acopio, lo que llega al acopio pasa de
-  35–70 % de lo cosechado con 1 robot a 73–97 % con 2 y a 94–96 % con 3 (Warthog; con 24 cosecheros el tercero suma
-  19–21 puntos). En cerezo, uva y arándano con Burro con carro, el segundo suma de 0 a 12 puntos. En palta tradicional y
-  arándano con Warthog (el robot recorre la cabecera), más robots no entregan más.
-- **El primer robot sube la cosecha; los siguientes, lo entregado.** En alta densidad, 1 robot cosecha 48 % más que sin
-  robot pero entrega 22 % menos (las cajas esperan junto a las calles); con 2 robots entrega 37 % más.
-- **Zonas** gana en 32 de 144 comparaciones pareadas por semilla, opuestas en 1 y desfase en ninguna; los 111 empates
-  siguen empatados con 11 corridas y, por la regla del diseño, se recomienda zonas. Opuestas y desfase pierden por esperar
-  calle libre (hasta 15–19 % del turno con 3 robots).
-- **Convivencia y seguridad.** Con zonas, la espera de calle es ≤ 1,4 % del turno con 2 robots y ≤ 5,5 % con 3. Las
-  paradas de seguridad crecen con los robots (103, 167 y 212 por turno en promedio con 1, 2 y 3); el tiempo de las
-  personas dentro de S_p(v) sigue bajo 1 s por turno en promedio. La energía por kg entregado sube ×1,5–2 donde los
-  robots caben en las calles y ×2,7–5 donde recorren la cabecera.
-- **Avance del bloque.** Con el bloque lejos, un robot se queda corto en más huertos (uva, 24 cosecheros, avance 50 %:
-  52 % con 1 robot, 89 % con 2). En palta alta densidad y ladera con avance 50–80 %, la cuadrilla se acaba el bloque
-  antes de las 4 h y hasta 1 robot alcanza: esas celdas no miden el límite de transporte.
-- **Distancias de convivencia (bloque S):** moverlas cambia lo entregado a lo más 3,4 puntos en promedio.
+- **Sí lo rompe, con un salto menor que el informado.** En palta alta densidad y ladera, con el bloque junto al acopio,
+  lo que llega al acopio pasa de 69–84 % de lo cosechado con 1 robot (35–70 %) a 91–98 % con 2 (73–97 %) y a 94–97 %
+  con 3 (94–96 %). Con Warthog y 24 cosecheros, 2 robots ya llevan el 98 % y el tercero no suma (antes sumaba 19–21
+  puntos). En cerezo, uva y arándano con Burro con carro, el segundo suma de 0 a 7 puntos (0 a 12). En palta
+  tradicional y arándano con Warthog (el robot recorre la cabecera), más robots no entregan más.
+- **El primer robot sube la cosecha; los siguientes, lo entregado.** En alta densidad con 12 cosecheros, 1 robot cosecha
+  43 % más que sin robot (48 %) y entrega 2 % más (antes, 22 % menos: las pilas que no cabían quedaban junto a las
+  calles); con 2 robots entrega 40 % más (37 %) y con 3, 43 %.
+- **Zonas** gana en 27 de 144 comparaciones pareadas por semilla (32); opuestas y desfase, en ninguna (1 y 0); 117
+  empates (111). Donde el transporte limitaba, la ventaja de zonas se achica: en palta alta densidad y ladera con
+  Warthog y 12 cosecheros pasa de 13–15 puntos a 2–6, y con 24 cosecheros las tres estrategias entregan lo mismo
+  (96–98 %; antes zonas iba primera por 8–25 puntos). Se sigue recomendando zonas: es la única que gana alguna
+  comparación y, por la regla del diseño, la más simple. El bloque R (desempate) se armó con los empates del motor
+  0.8.1: los 6 empates nuevos no tienen las semillas 6 a 10.
+- **Convivencia y seguridad.** Casi sin cambios. Con zonas, la espera de calle es ≤ 1,4 % del turno con 2 robots y
+  ≤ 5,5 % con 3; opuestas y desfase esperan hasta 13–19 % con 3 robots. Las paradas de seguridad crecen con los robots
+  (105, 169 y 212 por turno en promedio con 1, 2 y 3); el tiempo de las personas dentro de S_p(v) sigue bajo 1 s por
+  turno en promedio (21 s en la peor corrida). La energía por kg entregado sube ×1,7 con 2 robots y ×2,1 con 3 donde
+  caben en las calles (×1,6 y ×1,9) y, donde recorren la cabecera, igual que antes (×2,7–5).
+- **Avance del bloque.** El caso que mostraba que con el bloque lejos un robot se queda corto en más huertos se
+  debilita: uva, 24 cosecheros, avance 50 %, da 82 % con 1 robot y 89 % con 2 (antes 52 % y 89 %). En palta alta
+  densidad y ladera con avance 50–80 %, la cuadrilla se acaba el bloque antes de las 4 h y hasta 1 robot alcanza
+  (96–98 % con 12 cosecheros; antes, 69–72 % con avance 50 %): esas celdas no miden el límite de transporte.
+- **Distancias de convivencia (bloque S):** moverlas cambia lo entregado a lo más 0,9 puntos en promedio (2,4 con el
+  mismo cálculo sobre el lote del motor 0.8.1; el informe cita 3,4).
 
 Limitación encontrada: un Burro con carro trabado por tracción en la pendiente vence el tiempo máximo de su waypoint, pasa
 al siguiente y cruza en línea recta la hilera hacia una calle que puede tener reservada otro robot (distancia entre robots
-< 1 m en 27 de 2.592 corridas con flota, 25 de ellas en la ladera). Corregirlo cambia el motor: queda pendiente.
+< 1 m en 27 de 2.592 corridas con flota, 25 de ellas en la ladera; con el motor 0.9.0 siguen siendo 27, 25 en la
+ladera). Corregirlo cambia el motor: queda pendiente.
 
 ## Validación (métricas agregadas)
 

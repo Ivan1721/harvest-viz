@@ -74,7 +74,8 @@ for (const [nombre, mk] of [
     const a = sm.acopio
     assert.ok(a.despachado > 0 && a.despachado <= a.recibido + 1e-9)
     assert.equal(a.despachado % (2 * 380), 0, 'sale en camiones de 2 bins de 380 kg')
-    assert.ok(Math.abs(a.recibido - sm.TotalProductionCargoZone_crop_units) <= o.duration && a.recibido <= sm.TotalProductionCargoZone_crop_units + 15 + 1e-9)
+    // lo recibido por el acopiador es lo entregado; sin robot puede ir una bolsa (15 kg) por delante del contador del cosechero
+    assert.ok(Math.abs(a.recibido - sm.TotalProductionCargoZone_crop_units) <= (nombre === 'con robot' ? 0 : 15) + 1e-9)
     assert.ok(a.kcal > 0 && a.ocupadoPct > 0)
     const run = simToRun(s, { robot: nombre === 'con robot' })
     assert.equal(run.acopio.desp.at(-1), a.despachado)
